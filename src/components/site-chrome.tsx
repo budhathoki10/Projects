@@ -11,7 +11,10 @@ export async function SiteHeader() {
           <Logo />
         </Link>
         <nav className="flex items-center gap-5 text-sm">
-          <Link href="/#how" className="hidden text-muted hover:text-foreground sm:inline">
+          <Link href="/templates" className="hidden text-muted hover:text-foreground sm:inline">
+            Templates
+          </Link>
+          <Link href="/#how" className="hidden text-muted hover:text-foreground md:inline">
             How it works
           </Link>
           <Link href="/#pricing" className="hidden text-muted hover:text-foreground sm:inline">

@@ -175,7 +175,7 @@ describe("exports and small helpers", () => {
     expect(buf.subarray(0, 2).toString()).toBe("PK");
     const { value } = await mammoth.extractRawText({ buffer: buf });
     expect(value).toContain("Asha Gurung");
-    expect(value).toContain("EXPERIENCE");
+    expect(value).toContain("Experience");
     expect(value).toContain("Onboarded 40 new business accounts through video calls and written guides");
     expect(cvFileName(profile, "Customer Success Lead", "docx")).toBe("asha-gurung-cv-customer-success-lead.docx");
   });

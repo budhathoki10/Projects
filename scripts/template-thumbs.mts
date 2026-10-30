@@ -7,7 +7,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "@playwright/test";
 import sharp from "sharp";
-import { BUILTIN_TEMPLATES } from "../src/lib/templates/builtin/index.ts";
+import { BUILTIN_TEMPLATES } from "../src/lib/templates/builtin";
 
 const base = process.env.BASE_URL ?? "http://localhost:3000";
 const only = new Set(process.argv.slice(2));

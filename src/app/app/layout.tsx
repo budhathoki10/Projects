@@ -1,48 +1,32 @@
-import Link from "next/link";
 import { logout } from "@/app/actions/auth";
-import { AppNav } from "@/components/app-nav";
+import { AppShell } from "@/components/app-shell";
 import { VerifyEmailBanner } from "@/components/auth-forms";
-import { Logo } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
-import { hasPass } from "@/lib/plans";
-import { dueFollowUpCount } from "@/lib/services/jobs";
+import { hasPass, limitsFor } from "@/lib/plans";
+import { dueFollowUpCount, listJobs } from "@/lib/services/jobs";
+import { usageThisMonth } from "@/lib/services/usage";
+
+const DAY = 24 * 60 * 60 * 1000;
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  const followUps = await dueFollowUpCount(user.id);
+  const [followUps, jobs, usage] = await Promise.all([dueFollowUpCount(user.id), listJobs(user.id), usageThisMonth(user.id)]);
+  const pass = hasPass(user) && user.passUntil ? { daysLeft: Math.max(1, Math.ceil((user.passUntil.getTime() - Date.now()) / DAY)) } : null;
   return (
-    <>
-      <header className="border-b border-border bg-surface print:hidden">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-10 px-5">
-          <Link href="/app" aria-label="Your job hunt" className="py-3">
-            <Logo />
-          </Link>
-          <AppNav followUps={followUps} />
-          <div className="ml-auto flex items-center gap-4 py-3 text-[13px] sm:ml-0">
-            {hasPass(user) ? (
-              <Link href="/app/billing" className="font-medium">
-                Job-hunt pass
-              </Link>
-            ) : (
-              <Link href="/app/billing" className="text-muted hover:text-foreground">
-                Free plan · <span className="text-foreground underline underline-offset-4">Get a pass</span>
-              </Link>
-            )}
-            <span className="hidden text-muted md:inline">{user.email}</span>
-            <form action={logout}>
-              <button type="submit" className="text-muted hover:text-foreground">
-                Log out
-              </button>
-            </form>
+    <AppShell
+      user={{ name: user.name, email: user.email, pass, allowance: { used: usage.tailor, limit: limitsFor(user).tailor } }}
+      followUps={followUps}
+      jobs={jobs.map((j) => ({ id: j.id, title: j.post.title, company: j.post.company }))}
+      logout={logout}
+      banner={
+        !user.emailVerifiedAt && (
+          <div className="print:hidden">
+            <VerifyEmailBanner email={user.email} />
           </div>
-        </div>
-      </header>
-      {!user.emailVerifiedAt && (
-        <div className="print:hidden">
-          <VerifyEmailBanner email={user.email} />
-        </div>
-      )}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-10 print:max-w-none print:p-0">{children}</main>
-    </>
+        )
+      }
+    >
+      {children}
+    </AppShell>
   );
 }

@@ -1,9 +1,12 @@
 import { readFileSync } from "node:fs";
+import mammoth from "mammoth";
+import sharp from "sharp";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { CvDocument } from "@/components/cv/cv-document";
 import { heuristicProfile } from "@/lib/cv/heuristic";
+import { cvDocxBuffer } from "@/lib/export/docx";
 import { EMPTY_PROFILE, type Profile } from "@/lib/model/types";
 import { BUILTIN_TEMPLATES, CATEGORY_IDS } from "@/lib/templates/builtin";
 import { atsReport, atsTwin, contrastIssues, contrastRatio, photoAdvice } from "@/lib/templates/checks";
@@ -214,4 +217,24 @@ describe("finding templates", () => {
 
 it("knows every section", () => {
   expect(new Set(DEFAULT_SPEC.sections.map((s) => s.id))).toEqual(new Set(SECTION_IDS));
+});
+
+describe("Word export follows the template", () => {
+  const families = [...new Map(BUILTIN_TEMPLATES.map((t) => [t.family, t])).values()];
+
+  it.each(families.map((t) => [t.family, t] as const))("%s: every fact is in the Word file", async (_, t) => {
+    const photo = await sharp({ create: { width: 20, height: 20, channels: 3, background: "#888888" } }).png().toBuffer();
+    const buf = await cvDocxBuffer(long, t.spec, photo);
+    const { value } = await mammoth.extractRawText({ buffer: buf });
+    for (const fact of facts(long)) expect(value, `${t.id} Word file is missing "${fact}"`).toContain(fact);
+  });
+
+  it("uses the template's fonts, colours and paper size", async () => {
+    const t = getBuiltin("sl-033")!; // Charter: Playfair Display and Lora, burgundy, A4
+    const xml = await import("jszip").then(async ({ default: JSZip }) => (await JSZip.loadAsync(await cvDocxBuffer(SAMPLE_PROFILE, t.spec))).file("word/document.xml")!.async("string"));
+    expect(xml).toContain('w:ascii="Playfair Display"');
+    expect(xml).toContain('w:ascii="Lora"');
+    expect(xml).toContain(t.spec.palette.accent.slice(1).toUpperCase());
+    expect(xml).toContain('w:w="11906"'); // A4 width in twips
+  });
 });

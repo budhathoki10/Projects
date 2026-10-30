@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { tailorCv, toggleChange } from "@/app/actions/tailor";
 import { AiActionButton } from "@/components/ai-action-button";
-import { CvPreview } from "@/components/cv-preview";
+import { JobCvLook, type LookOption } from "@/components/studio/job-cv-look";
 import { Badge, ButtonLink, Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { wordDiff } from "@/lib/diff";
@@ -11,9 +11,13 @@ import type { Change, Profile } from "@/lib/model/types";
 import { limitsFor } from "@/lib/plans";
 import { getTailoredCv } from "@/lib/services/documents";
 import { ownedJob } from "@/lib/services/jobs";
+import { photoUrl } from "@/lib/services/photos";
 import { getProfile, profileReady } from "@/lib/services/profile";
+import { listMyTemplates, resolveCvStyle } from "@/lib/services/templates";
 import { usageThisMonth } from "@/lib/services/usage";
 import { applyChanges } from "@/lib/tailor/apply";
+import { recommendTemplates } from "@/lib/templates/registry";
+import { parseSpec } from "@/lib/templates/spec";
 
 export const metadata: Metadata = { title: "Tailored CV" };
 
@@ -107,6 +111,15 @@ export default async function CvTab({ params }: PageProps<"/app/jobs/[id]/cv">) 
   const changes = doc?.cv?.changes ?? [];
   const cv = applyChanges(profile, changes);
   const using = changes.filter((c) => c.accepted && c.flags.length === 0).length;
+  const [style, photo, mine] = await Promise.all([resolveCvStyle(user.id, job), photoUrl(user.id), listMyTemplates(user.id)]);
+  const options: LookOption[] = [
+    { id: style.template.id, name: style.template.name, spec: style.template.spec },
+    ...recommendTemplates(profile, job.post, 4).map((t) => ({ id: t.id, name: t.name, spec: t.spec })),
+    ...mine.flatMap((t) => {
+      const spec = parseSpec(t.spec);
+      return spec ? [{ id: t.id, name: t.name, spec }] : [];
+    }),
+  ].filter((o, i, all) => all.findIndex((x) => x.id === o.id) === i);
 
   if (!doc) {
     return (
@@ -166,9 +179,16 @@ export default async function CvTab({ params }: PageProps<"/app/jobs/[id]/cv">) 
             )}
           </div>
         </div>
-        <div className="overflow-hidden rounded-md border border-strong-border">
-          <CvPreview cv={cv} />
-        </div>
+        <JobCvLook
+          key={`${style.template.id}-${JSON.stringify(style.fit)}`}
+          jobId={job.id}
+          cv={cv}
+          photoUrl={photo}
+          current={{ id: style.template.id, name: style.template.name }}
+          spec={style.spec}
+          fitted={Boolean(style.fit)}
+          options={options}
+        />
       </section>
     </div>
   );
