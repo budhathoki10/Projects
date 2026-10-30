@@ -60,16 +60,14 @@ export async function saveTemplate(userId: string, input: { id?: string | null; 
       .returning();
     return row ?? null;
   }
-  // Count and insert in one statement, so two saves at once can't pass the limit.
-  const rows = await db.execute<{ id: string }>(sql`
-    insert into cv_templates (user_id, name, based_on, spec)
-    select ${userId}, ${name}, ${input.basedOn ?? null}, ${JSON.stringify(input.spec)}::jsonb
-    where (select count(*) from cv_templates where user_id = ${userId}) < ${MAX_TEMPLATES}
-    returning id`);
-  const id = rows[0]?.id;
-  if (!id) throw new TemplateLimitError(`You can keep up to ${MAX_TEMPLATES} templates. Delete one to make room.`);
-  const [row] = await db.select().from(schema.cvTemplates).where(eq(schema.cvTemplates.id, id));
-  return row;
+  // A per-user lock makes "count, then insert" atomic, so saves arriving together can't pass the limit.
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`cv_templates:${userId}`}))`);
+    const [{ n }] = await tx.select({ n: count() }).from(schema.cvTemplates).where(eq(schema.cvTemplates.userId, userId));
+    if (n >= MAX_TEMPLATES) throw new TemplateLimitError(`You can keep up to ${MAX_TEMPLATES} templates. Delete one to make room.`);
+    const [row] = await tx.insert(schema.cvTemplates).values({ userId, name, spec: input.spec, basedOn: input.basedOn ?? null }).returning();
+    return row;
+  });
 }
 
 export async function renameTemplate(userId: string, id: string, name: string) {

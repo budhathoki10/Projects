@@ -3,7 +3,7 @@ import { db, schema } from "@/db";
 import { shortId } from "@/lib/util";
 
 export async function resetDb() {
-  await db.execute(sql`truncate users, sessions, auth_tokens, payments, profiles, jobs, documents, interviews, usage cascade`);
+  await db.execute(sql`truncate users, sessions, auth_tokens, payments, profiles, profile_photos, cv_templates, jobs, documents, interviews, usage cascade`);
 }
 
 export async function makeUser(overrides: Partial<typeof schema.users.$inferInsert> = {}) {
