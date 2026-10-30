@@ -40,7 +40,7 @@ export default async function CoverTab({ params }: PageProps<"/app/jobs/[id]/cov
   return (
     <div className="max-w-3xl">
       <CoverLetterEditor
-        key={doc.updatedAt.toISOString()}
+        key={doc.id}
         jobId={job.id}
         initial={doc.text}
         flags={unsupportedFacts(doc.text, profile, JSON.stringify(job.post))}

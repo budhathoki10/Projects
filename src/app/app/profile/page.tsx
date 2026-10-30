@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ProfileImport } from "@/components/profile-import";
-import { Eyebrow } from "@/components/ui";
+import { Eyebrow, FormMessage } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { EMPTY_PROFILE } from "@/lib/model/types";
 import { getProfileRow, profileReady } from "@/lib/services/profile";
@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Your CV" };
 
 export default async function ProfilePage({ searchParams }: PageProps<"/app/profile">) {
   const user = await requireUser();
-  const [{ welcome, needed }, row] = await Promise.all([searchParams, getProfileRow(user.id)]);
+  const [{ welcome, needed, imported, at }, row] = await Promise.all([searchParams, getProfileRow(user.id)]);
   const profile = row?.data ?? null;
   const ready = profileReady(profile);
 
@@ -23,6 +23,17 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
           Everything Shortlist writes for you comes from here and nowhere else. If it isn&apos;t in your profile, it won&apos;t appear in a tailored CV
           or cover letter.
         </p>
+        {imported && (
+          <div className="mt-4">
+            <FormMessage
+              success={
+                imported === "ai"
+                  ? "Your CV is in. Check every section below: this is the only source of facts we'll use."
+                  : "Your CV is in. We read it with our basic reader, so check each section carefully and fix anything that landed in the wrong place."
+              }
+            />
+          </div>
+        )}
         {needed === "1" && !ready && (
           <p role="alert" className="mt-4 border-l-2 border-pen bg-pen-soft px-3 py-2 text-sm text-pen">
             Add your CV first, with at least one job, project or qualification, so there&apos;s something to tailor.
@@ -46,7 +57,8 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
         </div>
       )}
 
-      <ProfileEditor key={row?.updatedAt.toISOString() ?? "new"} initial={profile ?? { ...EMPTY_PROFILE, name: user.name, email: user.email }} />
+      {/* Remount only after an import, so saving keeps the form (and its message) in place. */}
+      <ProfileEditor key={typeof at === "string" ? at : "profile"} initial={profile ?? { ...EMPTY_PROFILE, name: user.name, email: user.email }} />
     </div>
   );
 }

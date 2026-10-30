@@ -2,34 +2,28 @@ import os from "node:os";
 import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3100;
-export const TEST_DATABASE_URL =
-  process.env.TEST_DATABASE_URL ?? "postgres://pitchcraft:pitchcraft@localhost:5432/pitchcraft_test";
+const PORT = 3200;
+const FIXTURES = 4200;
+export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgres://shortlist:shortlist@localhost:5432/shortlist_test";
 // Emails are written here instead of being sent, so tests can follow the links.
-export const EMAIL_OUTBOX = path.join(os.tmpdir(), "pitchcraft-e2e-outbox.jsonl");
+export const EMAIL_OUTBOX = path.join(os.tmpdir(), "shortlist-e2e-outbox.jsonl");
+export const FIXTURE_BASE = `http://127.0.0.1:${FIXTURES}`;
+export const PADDLE_SECRET = "e2e-paddle-secret";
 
-export const E2E_RESEND_WEBHOOK_SECRET = `whsec_${Buffer.from("e2e-resend-webhook-secret").toString("base64")}`;
-
-// The app runs against a separate database with fake businesses and local fixture websites.
+// The app runs against its own database, with local stand-ins for job sites and Khalti, and no AI key.
 const appEnv = {
   DATABASE_URL: TEST_DATABASE_URL,
   APP_URL: `http://localhost:${PORT}`,
-  LEADS_PROVIDER: "mock",
-  MOCK_SITE_BASE: "http://127.0.0.1:4100",
-  AUDIT_ALLOW_PRIVATE_HOSTS: "1",
-  PAGESPEED_DISABLED: "1",
+  FETCH_ALLOW_PRIVATE_HOSTS: "1",
   ANTHROPIC_API_KEY: "",
-  CRON_SECRET: "e2e-cron-secret",
   CRON_JOB_SECRET: "e2e-cron-job-secret",
-  REPLY_DOMAIN: "reply.pitchcraft.test",
-  OUTREACH_FROM_ADDRESS: "outreach@pitchcraft.test",
-  RESEND_WEBHOOK_SECRET: E2E_RESEND_WEBHOOK_SECRET,
-  PADDLE_WEBHOOK_SECRET: "e2e-paddle-secret",
+  PADDLE_WEBHOOK_SECRET: PADDLE_SECRET,
+  NEXT_PUBLIC_PADDLE_PRICE_30: "pri_30",
+  NEXT_PUBLIC_PADDLE_PRICE_90: "pri_90",
   KHALTI_SECRET_KEY: "e2e-khalti-key",
-  KHALTI_API_BASE: "http://127.0.0.1:4100/khalti",
+  KHALTI_API_BASE: `${FIXTURE_BASE}/khalti`,
   RESEND_API_KEY: "",
   EMAIL_DEV_OUTBOX: EMAIL_OUTBOX,
-  PADDLE_API_KEY: "",
 };
 
 export default defineConfig({
@@ -44,7 +38,8 @@ export default defineConfig({
   webServer: [
     {
       command: "node e2e/fixture-sites/server.mjs",
-      url: "http://127.0.0.1:4100/good.html",
+      url: `${FIXTURE_BASE}/jobs/northwind.html`,
+      env: { FIXTURE_PORT: String(FIXTURES) },
       reuseExistingServer: true,
     },
     {

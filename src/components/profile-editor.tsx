@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useId, useState } from "react";
 import { updateProfile } from "@/app/actions/profile";
 import type { Education, Experience, Profile, Project } from "@/lib/model/types";
 import { Button, FormMessage, inputClass } from "./ui";
@@ -12,21 +12,40 @@ const lines = (s: string) => s.split("\n");
 const join = (xs: string[]) => xs.join("\n");
 
 function Text({ label, value, onChange, placeholder, wide }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; wide?: boolean }) {
+  const id = useId();
   return (
-    <label className={`block space-y-1 text-[13px] font-medium ${wide ? "sm:col-span-2" : ""}`}>
-      <span>{label}</span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={`${inputClass} font-normal`} />
-    </label>
+    <div className={`space-y-1 ${wide ? "sm:col-span-2" : ""}`}>
+      <label htmlFor={id} className="block text-[13px] font-medium">
+        {label}
+      </label>
+      <input id={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={inputClass} />
+    </div>
   );
 }
 
+/** The hint is linked with aria-describedby, so screen readers announce just the label as the field's name. */
 function Area({ label, value, onChange, rows = 4, hint, placeholder }: { label: string; value: string; onChange: (v: string) => void; rows?: number; hint?: string; placeholder?: string }) {
+  const id = useId();
   return (
-    <label className="block space-y-1 text-[13px] font-medium sm:col-span-2">
-      <span>{label}</span>
-      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows} placeholder={placeholder} className={`${inputClass} font-normal leading-relaxed`} />
-      {hint && <span className="block text-xs font-normal text-muted">{hint}</span>}
-    </label>
+    <div className="space-y-1 sm:col-span-2">
+      <label htmlFor={id} className="block text-[13px] font-medium">
+        {label}
+      </label>
+      <textarea
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={rows}
+        placeholder={placeholder}
+        aria-describedby={hint ? `${id}-hint` : undefined}
+        className={`${inputClass} leading-relaxed`}
+      />
+      {hint && (
+        <p id={`${id}-hint`} className="text-xs text-muted">
+          {hint}
+        </p>
+      )}
+    </div>
   );
 }
 

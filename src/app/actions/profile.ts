@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { cvFileToText, MAX_CV_BYTES, UnreadableFileError } from "@/lib/cv/extract-text";
@@ -11,7 +12,7 @@ import { getProfile, saveProfile } from "@/lib/services/profile";
 import { refundAllowance, spendAllowance } from "@/lib/services/usage";
 import { cleanText, localId } from "@/lib/text";
 
-export type ProfileState = { error?: string; success?: string; method?: "ai" | "basic" } | undefined;
+export type ProfileState = { error?: string; success?: string } | undefined;
 
 /** Read a CV (file or pasted text) into the profile, replacing what's there. */
 export async function importCv(_: ProfileState, formData: FormData): Promise<ProfileState> {
@@ -39,13 +40,8 @@ export async function importCv(_: ProfileState, formData: FormData): Promise<Pro
   await saveProfile(user.id, profile);
   await rescoreAll(user.id, profile);
   revalidatePath("/app", "layout");
-  return {
-    method,
-    success:
-      method === "ai"
-        ? "Your CV is in. Check every section below: this is the only source of facts we'll use."
-        : "Your CV is in. We read it with our basic reader, so check each section carefully and fix anything that landed in the wrong place.",
-  };
+  // A redirect, because the import form moves once a profile exists and would lose its message.
+  redirect(`/app/profile?imported=${method}&at=${Date.now()}`);
 }
 
 const Str = (max: number) => z.string().trim().max(max);

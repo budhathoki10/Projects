@@ -1,10 +1,10 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
-export const INTEGRATION_DB = process.env.INTEGRATION_DATABASE_URL ?? "postgres://pitchcraft:pitchcraft@localhost:5432/pitchcraft_integration";
+export const INTEGRATION_DB = process.env.INTEGRATION_DATABASE_URL ?? "postgres://shortlist:shortlist@localhost:5432/shortlist_integration";
 export const FIXTURE_PORT = 4101;
 
-// Runs the real database-backed services against Postgres and local fixture websites.
+// Runs the real database-backed services against Postgres and a local fixture server.
 export default defineConfig({
   resolve: {
     alias: {
@@ -21,11 +21,13 @@ export default defineConfig({
     testTimeout: 30_000,
     env: {
       DATABASE_URL: INTEGRATION_DB,
-      LEADS_PROVIDER: "mock",
-      MOCK_SITE_BASE: `http://127.0.0.1:${FIXTURE_PORT}`,
-      AUDIT_ALLOW_PRIVATE_HOSTS: "1",
-      PAGESPEED_DISABLED: "1",
+      FIXTURE_BASE: `http://127.0.0.1:${FIXTURE_PORT}`,
+      FETCH_ALLOW_PRIVATE_HOSTS: "1",
       ANTHROPIC_API_KEY: "",
+      KHALTI_API_BASE: `http://127.0.0.1:${FIXTURE_PORT}/khalti`,
+      KHALTI_SECRET_KEY: "e2e-khalti-key",
+      NEXT_PUBLIC_PADDLE_PRICE_30: "pri_30",
+      NEXT_PUBLIC_PADDLE_PRICE_90: "pri_90",
       APP_URL: "http://localhost:3000",
     },
   },

@@ -21,10 +21,15 @@ export async function saveTailoredCv(userId: string, jobId: string, cv: Tailored
   else await db.insert(schema.documents).values({ userId, jobId, kind: "cv", cv });
 }
 
-export async function saveCoverLetter(userId: string, jobId: string, text: string) {
+/** Save edits in place. A fresh draft (`replace`) starts a new document, so the editor knows to reload. */
+export async function saveCoverLetter(userId: string, jobId: string, text: string, opts: { replace?: boolean } = {}) {
   const existing = await getCoverLetter(userId, jobId);
-  if (existing) await db.update(schema.documents).set({ text, updatedAt: new Date() }).where(eq(schema.documents.id, existing.id));
-  else await db.insert(schema.documents).values({ userId, jobId, kind: "cover_letter", text });
+  if (existing && !opts.replace) {
+    await db.update(schema.documents).set({ text, updatedAt: new Date() }).where(eq(schema.documents.id, existing.id));
+    return;
+  }
+  if (existing) await db.delete(schema.documents).where(eq(schema.documents.id, existing.id));
+  await db.insert(schema.documents).values({ userId, jobId, kind: "cover_letter", text });
 }
 
 export async function getInterview(userId: string, jobId: string) {

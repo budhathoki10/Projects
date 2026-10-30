@@ -72,7 +72,7 @@ export async function writeCover(_: TailorState, formData: FormData): Promise<Ta
   const { user, job, profile, match } = await context(formData.get("jobId"));
   const result = await metered(user.id, user.passUntil, "cover", () => writeCoverLetter(profile, job.post, match));
   if (!result) return { error: LIMIT_MESSAGE };
-  await saveCoverLetter(user.id, job.id, result.text);
+  await saveCoverLetter(user.id, job.id, result.text, { replace: true });
   revalidatePath(`/app/jobs/${job.id}/cover-letter`);
   return { success: "Here's a draft. Make it sound like you before sending." };
 }

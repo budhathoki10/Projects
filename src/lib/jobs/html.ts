@@ -19,7 +19,9 @@ export function htmlToText(html: string): string {
       .replace(/<(script|style|noscript|svg|head|nav|footer|header|form)[\s\S]*?<\/\1>/gi, " ")
       .replace(/<li[^>]*>/gi, "\n• ")
       .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/(p|div|li|h[1-6]|tr|section|article|ul|ol)>/gi, "\n")
+      // Each <li> already starts its own line, so closing one adds nothing.
+      .replace(/<\/li>/gi, "")
+      .replace(/<\/(p|div|h[1-6]|tr|section|article|ul|ol)>/gi, "\n")
       .replace(/<[^>]+>/g, " "),
   )
     .replace(/[ \t ]+/g, " ")

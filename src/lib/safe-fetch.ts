@@ -56,7 +56,7 @@ export function isPrivateAddress(ip: string): boolean {
 }
 
 function allowPrivate() {
-  return process.env.AUDIT_ALLOW_PRIVATE_HOSTS === "1";
+  return process.env.FETCH_ALLOW_PRIVATE_HOSTS === "1";
 }
 
 /**

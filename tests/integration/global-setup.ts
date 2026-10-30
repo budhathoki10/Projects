@@ -36,7 +36,7 @@ export async function setup() {
   execFileSync("npx", ["tsx", "scripts/migrate.mts"], { env: { ...process.env, DATABASE_URL: INTEGRATION_DB }, stdio: "inherit" });
 
   fixtures = spawn("node", ["e2e/fixture-sites/server.mjs"], { env: { ...process.env, FIXTURE_PORT: String(FIXTURE_PORT) }, stdio: "ignore" });
-  await waitFor(`http://127.0.0.1:${FIXTURE_PORT}/good.html`);
+  await waitFor(`http://127.0.0.1:${FIXTURE_PORT}/jobs/northwind.html`);
 }
 
 export async function teardown() {

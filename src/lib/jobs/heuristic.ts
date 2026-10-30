@@ -9,11 +9,15 @@ const NICE = /^(nice[- ]to[- ]haves?|bonus( points)?|preferred( qualifications)?
 const OTHER = /^(responsibilities|what you('|’)ll do|the role|about (us|the company|the role)|benefits|perks|why join|how to apply|what we offer|compensation)\b/i;
 const BULLET = /^\s*(?:[-•*▪●◦–]|\d+[.)])\s+/;
 
+/** Acronyms that look like skills but aren't: currencies, units, time zones, common abbreviations. */
+const NOT_SKILLS = new Set("USD NPR INR EUR GBP AED AUD CAD JPY QAR SAR CV CVs FAQ ASAP PTO WFH CEO CTO CFO COO VP UTC GMT IST NST EST PST AM PM OK USA UK UAE EU".split(" "));
+
 /** Skill-looking words a dictionary might miss: tools with dots or symbols, CamelCase names, acronyms. */
 function oddTerms(line: string): string[] {
   const words = line.match(/[A-Za-z][A-Za-z0-9+#./-]*[A-Za-z0-9+#]/g) ?? [];
   return words.filter((w, i) => {
     if (/^(I|A|An|The|We|You|Our|Your|In|On|At|To|And|Or|For|With|Of|Is|Are|Be|Must|Will|Can|This|That|Experience|Strong|Excellent|Good|Great|Ability|Knowledge|Working|Proven|Familiarity|Understanding)$/.test(w)) return false;
+    if (NOT_SKILLS.has(w)) return false;
     if (/[+#]|\.[a-z]/i.test(w) && w.length <= 20) return true;
     if (/^[A-Z]{2,6}$/.test(w)) return true;
     return i > 0 && /^[a-z]+[A-Z]/.test(w);

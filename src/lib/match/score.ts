@@ -60,10 +60,14 @@ export function scoreMatch(profile: Profile, post: JobPost): Match {
       const status = hits.some((h) => h.where === "missing") ? "missing" : hits.some((h) => h.where === "listed") ? "listed" : "shown";
       return { text: r.text, kind: r.kind, status, evidence: hits.find((h) => h.evidence)?.evidence ?? null } as const;
     }
-    // Requirements with no named skill ("great communication"): judge by shared words with the best line.
-    const best = [...shown, ...listed].map((l) => ({ l, o: overlap(r.text, l) })).sort((a, b) => b.o - a.o)[0];
-    const status = !best || best.o < 0.3 ? "missing" : best.o >= 0.6 ? "shown" : "listed";
-    return { text: r.text, kind: r.kind, status, evidence: status === "missing" ? null : best.l } as const;
+    // Requirements with no named skill ("experience reducing churn"): judge by shared words.
+    // Proof from a role or project counts as shown; a match only in the skills list counts as listed.
+    const best = (lines: string[]) => lines.map((l) => ({ l, o: overlap(r.text, l) })).sort((a, b) => b.o - a.o)[0];
+    const inWork = best(shown);
+    if (inWork && inWork.o >= 0.5) return { text: r.text, kind: r.kind, status: "shown", evidence: inWork.l } as const;
+    const inList = best(listed);
+    if (inList && inList.o >= 0.5) return { text: r.text, kind: r.kind, status: "listed", evidence: inList.l } as const;
+    return { text: r.text, kind: r.kind, status: "missing", evidence: null } as const;
   });
 
   return { score: total ? Math.round((earned / total) * 100) : 0, keywords, requirements };

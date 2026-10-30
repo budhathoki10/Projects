@@ -62,10 +62,15 @@ export function contentWords(text: string): string[] {
   return (text.toLowerCase().match(/[a-z0-9][a-z0-9+#.\-/]*[a-z0-9+#]|[a-z0-9]/g) ?? []).filter((w) => w.length > 2 && !STOP.has(w));
 }
 
+/** Crude English stemming, so "reducing", "reduced" and "reduces" compare equal. */
+export function stem(word: string): string {
+  return word.replace(/(ations?|ings?|ed|es|er|ers|ly|s)$/, "").replace(/(.)\1$/, "$1");
+}
+
 export function overlap(a: string, b: string): number {
-  const wa = new Set(contentWords(a));
+  const wa = new Set(contentWords(a).map(stem));
   if (wa.size === 0) return 0;
-  const wb = new Set(contentWords(b));
+  const wb = new Set(contentWords(b).map(stem));
   let hit = 0;
   for (const w of wa) if (wb.has(w)) hit++;
   return hit / wa.size;
