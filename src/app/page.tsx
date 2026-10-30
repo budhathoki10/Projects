@@ -1,12 +1,25 @@
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { ButtonLink, Eyebrow, FormMessage } from "@/components/ui";
+import { TemplateThumb } from "@/components/studio/template-bits";
 import { LIMITS, PASSES } from "@/lib/plans";
+
+const SHOWCASE = [
+  ["sl-084", "Saffron"],
+  ["sl-011", "Meridian"],
+  ["sl-061", "Masthead"],
+  ["sl-033", "Charter"],
+  ["sl-093", "Fjord"],
+  ["sl-053", "Waypoint"],
+  ["sl-072", "Blueprint"],
+  ["sl-090", "Kathmandu"],
+] as const;
 
 const STEPS = [
   ["Add your CV once", "Upload a PDF or Word file, or paste it. Check what we read. From then on, it's the only source of facts about you."],
   ["Paste a job", "A link or the description. You see straight away what you already show, what's only on your skills list, and what's missing."],
   ["Tailor it", "Your most relevant work moves up, in the employer's words. You accept each change. Download a PDF or Word file."],
+  ["Make it look right", "Pick from 100 templates or design your own. Each job can have its own look, and the PDF and Word file follow it."],
   ["Apply, then follow up", "Track every application. A week with no answer, we remind you, with a polite note ready to send."],
 ] as const;
 
@@ -113,6 +126,37 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           </div>
         </section>
 
+        <section aria-labelledby="templates" className="overflow-hidden border-t border-border">
+          <div className="mx-auto max-w-5xl px-5 pt-20">
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <div className="max-w-xl">
+                <h2 id="templates" className="font-serif text-4xl font-medium tracking-tight">
+                  100 templates. Or make your own.
+                </h2>
+                <p className="mt-3 text-muted">
+                  Every template says plainly whether applicant tracking systems can read it. Change fonts, colours and sections, add a photo where
+                  it&apos;s expected, fit it to one page, and use a different look for every job.
+                </p>
+              </div>
+              <ButtonLink href="/templates" variant="secondary">
+                See all 100 templates
+              </ButtonLink>
+            </div>
+          </div>
+          <ul className="mx-auto mt-10 flex max-w-6xl gap-5 overflow-x-auto px-5 pb-20 [scrollbar-width:none]">
+            {SHOWCASE.map(([id, name], i) => (
+              <li key={id} className={`w-44 shrink-0 sm:w-52 ${i % 2 ? "mt-8" : ""}`}>
+                <Link href="/templates" className="group block">
+                  <div className="overflow-hidden rounded-md shadow-[0_1px_3px_rgb(0_0_0/0.08),0_12px_32px_rgb(0_0_0/0.10)] ring-1 ring-border transition group-hover:-translate-y-1">
+                    <TemplateThumb id={id} name={name} />
+                  </div>
+                  <p className="mt-2 text-sm font-medium">{name}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
         <section className="mx-auto max-w-5xl px-5 py-20">
           <div className="grid gap-10 md:grid-cols-[1fr_1.4fr]">
             <h2 className="font-serif text-4xl font-medium tracking-tight">Why one CV doesn&apos;t work</h2>
@@ -154,6 +198,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                     ["Tailored CVs with match check", `${LIMITS.free.tailor} a month`, "As many as you need"],
                     ["Cover letters", `${LIMITS.free.cover} a month`, "As many as you need"],
                     ["Interview practice", `${LIMITS.free.interview} sessions a month`, "As many as you need"],
+                    ["All 100 CV templates, and your own", "Yes", "Yes"],
                     ["Application tracker and follow-up reminders", "Yes", "Yes"],
                     ["PDF download", "Yes", "Yes"],
                     ["Word (.docx) download", "No", "Yes"],

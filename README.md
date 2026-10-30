@@ -1,22 +1,45 @@
 # Shortlist
 
-A job-hunt helper for anyone applying for jobs. You add your CV once, then for each job you paste:
+A job-hunt helper for anyone applying for jobs. Add your CV once. Then for each job you paste, Shortlist gives you:
 
 1. **Match check.** Which requirements your CV already shows, which ones are only in your skills list, and which you're missing.
 2. **Tailored CV.** The summary and bullets are rewritten for the job. You accept or reject each change, and any change that adds a fact not in your CV is blocked.
-3. **Cover letter**, written from your real experience and editable.
-4. **Interview prep.** Likely questions, including the gaps, with feedback on your typed answers.
-5. **Tracker.** Saved, Applied, Interviewing, Offer, Closed. A week after you apply with no answer, Today and a daily email remind you, with a polite follow-up message ready to copy.
-6. **Progress.** Applications this week, replies, interviews and response rate.
+3. **CV Studio.**
+   - **100 templates** in 12 categories, each honestly labelled for applicant tracking systems (ATS), previewed with your own CV.
+   - **Make your own template** with an editor: layout, fonts, colours, section order, photo, fit to one page, undo and redo, and "what an ATS reads".
+   - **Each job can have its own look.** PDF and Word follow it.
+4. **Cover letter.** Written from your real experience, editable, and printed in the same look as your CV.
+5. **Interview prep.** Likely questions, including the gaps, with feedback on your typed answers. Booked interviews show on Today and Interviews.
+6. **Tracker.** A board you can drag between stages, or a table. A week after you apply with no answer, Today and a daily email remind you, with a polite follow-up message ready to copy.
+7. **Today.**
+   - One "next best step"
+   - KPIs with an 8-week trend
+   - Weekly goal ring and pipeline
+   - CV strength meter
+   - A Ctrl+K command bar to jump anywhere
 
 The rule everything follows: **Shortlist only uses what's in your profile.** The AI can reword and reorder. It can't add an employer, title, degree, number or skill you don't have. A plain-code check (`src/lib/tailor/fact-check.ts`) catches anything that slips through, so it doesn't rely on the model behaving.
 
-![Match check](docs/screenshots/match.png)
+![Today](docs/screenshots/today.png)
 
 | | | |
 |---|---|---|
-| ![Home](docs/screenshots/home.png) | ![Tailored CV](docs/screenshots/tailored-cv.png) | ![Cover letter](docs/screenshots/cover-letter.png) |
-| ![Jobs](docs/screenshots/jobs.png) | ![Today](docs/screenshots/today.png) | ![Interview prep](docs/screenshots/interview.png) |
+| ![CV Studio](docs/screenshots/studio.png) | ![Templates](docs/screenshots/templates.png) | ![Template editor](docs/screenshots/editor.png) |
+| ![Preview with your CV](docs/screenshots/template-preview.png) | ![Match check](docs/screenshots/match.png) | ![Tailored CV](docs/screenshots/tailored-cv.png) |
+| ![Jobs](docs/screenshots/jobs.png) | ![Dark mode](docs/screenshots/today-dark.png) | ![Phone](docs/screenshots/mobile-today.png) |
+
+## The docs
+
+| File | What's in it |
+|---|---|
+| [docs/PRODUCT.md](docs/PRODUCT.md) | Who it's for, every feature, principles, what's out of scope |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | What's built, what's next, and the launch blockers |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, data model, flows, AI calls |
+| [docs/DESIGN.md](docs/DESIGN.md) | Design tokens, app shell, page layouts, writing rules |
+| [docs/TEMPLATES.md](docs/TEMPLATES.md) | The template spec, the 10 layout engines, how to add a template |
+| [SECURITY.md](SECURITY.md) | Threat model and every control |
+| [TESTING.md](TESTING.md) | Every test suite and the manual launch checks |
+| [docs/LAUNCH.md](docs/LAUNCH.md) | Step-by-step go-live checklist |
 
 ## Plans
 
@@ -26,7 +49,8 @@ The rule everything follows: **Shortlist only uses what's in your profile.** The
 | Cover letters | 3 a month | 200 a month |
 | Interview prep sessions | 3 a month | 200 a month |
 | CV imports | 5 a month | 50 a month |
-| Tracker, reminders, PDF | Yes | Yes |
+| All 100 templates, your own templates, PDF | Yes | Yes |
+| Tracker, reminders, Today, Progress | Yes | Yes |
 | Word (.docx) download | No | Yes |
 | Price | $0 | $15 for 30 days or $35 for 90 days (NPR 1,500 / 3,500 with Khalti) |
 
@@ -126,8 +150,11 @@ Where things live:
 | `src/lib/cv/` | Reading PDF, DOCX and text CVs into a profile |
 | `src/lib/jobs/` | Fetching job links safely and reading job posts (JSON-LD first, then the page text) |
 | `src/lib/match/` | The match score and keyword highlighting. Plain code, no AI |
+| `src/lib/templates/` | Template spec, fonts, checks, fit, the 100 built-ins and the registry |
+| `src/components/cv/` | The one CV renderer, the live page, mini previews and the matching letter |
+| `src/components/studio/` | Gallery, editor, photo upload, a job's look |
 | `src/lib/tailor/` | Tailoring, cover letters, interview questions and feedback, follow-up messages, and the fact check |
-| `src/lib/export/docx.ts` | Word export. PDF comes from the print page (`/app/print/cv/[id]`) |
+| `src/lib/export/docx.ts` | Word export following the template. PDF comes from the print pages (`/app/print/cv/[id]`, `/app/print/letter/[id]`) |
 | `src/lib/services/` | Database reads and writes |
 | `src/lib/billing/` | Paddle and Khalti |
 | `src/app/app/` | The signed-in app |
@@ -137,6 +164,8 @@ Where things live:
 - CVs are personal data. They're stored in the user's account only, can be downloaded as JSON from Settings, and are deleted with the account. They aren't used to train models. The Privacy page says so.
 - Every job, document and download is checked against the signed-in user. The tests try to open another person's pages and downloads.
 - Job links are fetched with `safeFetch`, which refuses private and internal addresses (also after redirects), limits size and time, and never sends cookies.
+- Templates are data, not code: every value is an enum, a hex colour or a bounded number, checked on save and on read. Nobody else can see or use your templates.
+- Profile photos are re-encoded (removing location data), kept in the database, and served only to their owner.
 - CV and job text is passed to the model as quoted data, with instructions to ignore any instructions inside it.
 - Monthly allowances are counted with a single atomic database update, so parallel requests can't go past the limit. A failed AI call gives the allowance back.
 - Webhook signatures are verified, and payment amounts are taken from the payment provider, not from the browser.
@@ -151,4 +180,6 @@ Where things live:
 
 ## Tests
 
-`npm run test:all` runs lint, typecheck, unit, integration (real Postgres) and browser tests. See [TESTING.md](TESTING.md).
+`npm run test:all` runs lint, typecheck, unit (126), integration with a real Postgres (23) and browser tests (16, including axe accessibility checks). See [TESTING.md](TESTING.md).
+
+After changing a template or `src/components/cv/cv.css`, run `npm run templates:thumbs` with the dev server on and commit the new thumbnails.

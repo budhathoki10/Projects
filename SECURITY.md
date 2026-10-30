@@ -35,7 +35,7 @@ Email the address in `SUPPORT_EMAIL` with "Security" in the subject. Please don'
 
 ### Job links: SSRF (`src/lib/safe-fetch.ts`)
 - Only `http` and `https` are allowed, on the standard ports 80 and 443.
-- The hostname is resolved and every address checked. Private, loopback, link-local, CGNAT, multicast and metadata ranges are refused, for IPv4 and IPv6 (including mapped addresses).
+- The hostname is resolved and every address checked. Private, loopback, link-local, CGNAT, multicast and metadata ranges are refused, for IPv4 and IPv6, including IPv4-mapped addresses in either form (`::ffff:127.0.0.1` and `::ffff:7f00:1`).
 - Redirects are followed by hand (at most 5), and each hop is checked again.
 - Limits: 10 seconds, 3 MB, no cookies, a fixed user agent.
 - `FETCH_ALLOW_PRIVATE_HOSTS` exists only for tests.
@@ -49,7 +49,8 @@ Email the address in `SUPPORT_EMAIL` with "Security" in the subject. Please don'
 ### Rendering and templates (`src/lib/templates/spec.ts`)
 - A TemplateSpec is validated with zod on every save and every read from the database. Colours must match `^#[0-9a-f]{6}$`, fonts and layouts come from allowlists, and numbers are bounded. No user value is ever placed into CSS as free text, so there's no way to inject CSS or HTML.
 - Template names are plain text, limited to 60 characters, and rendered by React, which escapes them.
-- Users can save at most 50 templates.
+- Users can save at most 50 templates. Creating one takes a per-user database lock, so parallel requests can't pass the limit.
+- The PDF page's `@page` rule is built only from the validated page size (an enum) and margin (a bounded number).
 - CV content is rendered as text by React. There's no `dangerouslySetInnerHTML` anywhere.
 
 ### Uploads
@@ -73,6 +74,9 @@ Email the address in `SUPPORT_EMAIL` with "Security" in the subject. Please don'
 - Secrets live only in environment variables. `.env*` files are git-ignored.
 - Only variables named `NEXT_PUBLIC_*` reach the browser: the Paddle client token and price ids, which are meant to be public.
 - `CRON_JOB_SECRET` is compared in constant time, and is better sent as a header than in the URL.
+
+### Request size
+Server actions accept bodies up to 6 MB (`next.config.ts`): enough for a 5 MB CV or a 3 MB photo plus form overhead, and no more.
 
 ### Headers
 `next.config.ts` sets:

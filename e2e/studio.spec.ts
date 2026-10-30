@@ -163,7 +163,7 @@ test("Ctrl+K jumps anywhere, and jobs move between stages by drag or menu", asyn
   await page.getByLabel("Interview", { exact: true }).fill(soon);
   await expect.poll(async () => (await query((sql) => sql`select interview_on::text as d from jobs where id = ${jobId}`))[0].d).toBe(soon);
   await page.goto("/app");
-  await expect(page.getByRole("region", { name: /Interview in a few days|Interview tomorrow/ })).toBeVisible();
+  await expect(page.getByRole("region", { name: /Interview in 2 days/ })).toBeVisible();
   await page.goto("/app/interviews");
   await expect(page.getByRole("region", { name: "Booked" })).toContainText("Customer Success Lead");
 

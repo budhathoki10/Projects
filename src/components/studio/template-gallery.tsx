@@ -52,11 +52,11 @@ function Card({ t, onOpen, isDefault }: { t: BuiltinTemplate; onOpen: () => void
           </span>
         </div>
         <div className="mt-2 flex items-start justify-between gap-2">
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-1">
             <p className="truncate text-sm font-medium">{t.name}</p>
+            <AtsBadge level={ats} />
             <p className="truncate text-[12px] text-muted">{t.categories.map((c) => CATEGORIES[c]).join(" · ")}</p>
           </div>
-          <AtsBadge level={ats} />
         </div>
       </button>
     </li>
@@ -151,7 +151,7 @@ function Preview({ t, cv, photoUrl, mode, onClose }: { t: BuiltinTemplate; cv: P
           {mode.kind === "app" ? (
             <AppActions t={t} mode={mode} />
           ) : (
-            <Link href={`/signup?template=${t.id}`} className="flex h-11 items-center justify-center rounded-lg bg-ink text-sm font-medium text-on-ink hover:bg-ink-hover">
+            <Link href="/signup" className="flex h-11 items-center justify-center rounded-lg bg-ink text-sm font-medium text-on-ink hover:bg-ink-hover">
               Use this template, free
             </Link>
           )}

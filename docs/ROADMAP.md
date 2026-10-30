@@ -23,7 +23,7 @@ This is the build plan. Tick a box only when its code is merged locally **and** 
 - [x] Progress page
 - [x] Passes: Paddle one-time (USD), Khalti (NPR), stacking, plan limits
 - [x] Terms, Privacy and Refund pages
-- [x] Tests: 49 unit, 14 integration, 11 browser
+- [x] Tests: 49 unit, 14 integration, 11 browser (v1)
 
 ## v2: CV Studio and the new app
 
@@ -34,41 +34,48 @@ This is the build plan. Tick a box only when its code is merged locally **and** 
   - security headers and CSP
 
 ### 2. Template engine
-- [ ] `spec.ts`: zod schema, defaults, `parseSpec`
-- [ ] `fonts.ts`: the 15-family allowlist via `next/font`
-- [ ] `checks.ts`: `atsReport`, `contrastIssues`, `atsTwin`, `photoAdvice`
-- [ ] `fit.ts`: `fitSteps`
-- [ ] `CvDocument` renderer with the 10 engines, used for preview, print and thumbnails
-- [ ] Move the existing CV preview onto it (the current look becomes `sl-001 Classic`)
+- [x] `spec.ts`: zod schema, defaults, `parseSpec`
+- [x] `fonts.ts`: the 15-family allowlist via `next/font`
+- [x] `checks.ts`: `atsReport`, `contrastIssues`, `atsTwin`, `photoAdvice`
+- [x] `fit.ts`: `fitSteps`
+- [x] `CvDocument` renderer with the 10 engines, used for preview, print and thumbnails
+- [x] Move the existing CV preview onto it (the current look becomes `sl-001 Classic`)
 
 ### 3. The 100 built-ins
-- [ ] 10 families, `sl-001`…`sl-100`, names, categories, colour families
-- [ ] `registry.ts`: lookup, filters, `recommendTemplates(profile, job?)`
-- [ ] Thumbnail script (`npm run templates:thumbs`) and committed WebP images
-- [ ] Public gallery `/templates` and `/templates/[id]` with a sample CV, for marketing
+- [x] 10 families, `sl-001`…`sl-100`, names, categories, colour families
+- [x] `registry.ts`: lookup, filters, `recommendTemplates(profile, job?)`
+- [x] Thumbnail script (`npm run templates:thumbs`) and committed WebP images
+- [x] Public gallery `/templates` with a sample CV, for marketing
 
 ### 4. CV Studio
-- [ ] Database: `cv_templates`, `profile_photos`, `profiles.default_template_id`, `jobs.cv_style`, `jobs.interview_on`, `users.weekly_goal`
-- [ ] Services and actions: save, duplicate, rename, delete, set default, choose for a job, fit for a job
-- [ ] Studio home, gallery (filters, search, recommended), live preview with your own CV
-- [ ] Editor: controls, live page with page breaks, zoom, fit, undo and redo, checks, "What an ATS reads"
-- [ ] Profile photo: upload, re-encode, serve to the owner only, include in export, delete with the account
-- [ ] Per-job template and fit. Print and Word follow it. The cover letter print page matches
-- [ ] Word export follows the spec
+- [x] Database: `cv_templates`, `profile_photos`, `profiles.default_template_id`, `jobs.cv_style`, `jobs.interview_on`, `users.weekly_goal`
+- [x] Services and actions: save, duplicate, rename, delete, set default, choose for a job, fit for a job
+- [x] Studio home, gallery (filters, search, recommended), live preview with your own CV
+- [x] Editor: controls, live page with page breaks, zoom, fit, undo and redo, checks, "What an ATS reads"
+- [x] Profile photo: upload, re-encode, serve to the owner only, include in export, delete with the account
+- [x] Per-job template and fit. Print and Word follow it. The cover letter print page matches
+- [x] Word export follows the spec
 
 ### 5. App shell and dashboard
-- [ ] Sidebar, top bar, mobile tab bar, floating "Add job" button
-- [ ] ⌘K command bar
-- [ ] Today: next best action, KPIs with sparklines, follow-ups, interviews, weekly goal ring, mini pipeline, strength meter
-- [ ] Jobs: board and table toggle, drag between stages, interview date
-- [ ] CV strength meter (`src/lib/cv/strength.ts`)
-- [ ] Template try-on strip on the Tailored CV tab
+- [x] Sidebar, top bar, mobile tab bar, floating "Add job" button
+- [x] ⌘K command bar
+- [x] Today: next best action, KPIs with sparklines, follow-ups, interviews, weekly goal ring, mini pipeline, strength meter
+- [x] Jobs: board and table toggle, drag between stages, interview date
+- [x] CV strength meter (`src/lib/cv/strength.ts`)
+- [x] Template try-on strip on the Tailored CV tab
+
+### Found and fixed along the way
+- CV uploads over 1 MB failed, because server actions accept 1 MB by default. The limit is now 6 MB.
+- Two template saves arriving at once could pass the 50-template limit. Creation now takes a per-user lock.
+- The red badge and faint text were below 4.5:1 contrast. Both tokens are darker now.
+- The job tabs overflowed phones by 4px.
+- An IPv4-mapped IPv6 address written in hex (`[::ffff:7f00:1]`, which the URL parser produces from `[::ffff:127.0.0.1]`) passed the private-address check. It's blocked now, with tests.
 
 ### 6. Finish
-- [ ] All new tests (see TESTING.md), with `npm run test:all` green
-- [ ] axe checks on the main pages
-- [ ] Screenshots: Studio, gallery, editor, 12 templates, Today in light and dark
-- [ ] README updated
+- [x] All new tests (see TESTING.md), with `npm run test:all` green: 126 unit, 23 integration, 16 browser
+- [x] axe checks on the main pages
+- [x] Screenshots: Studio, gallery, editor, 12 templates, Today in light and dark
+- [x] README updated
 - [ ] Push to the `budhathoki10/shortlist` private repo (waiting on the repo being created and the Claude GitHub App getting access)
 
 ## Launch blockers (owner: you)
@@ -85,6 +92,8 @@ See LAUNCH.md for the steps.
 
 ## Later (not in v2)
 - Sharing templates by link (needs moderation)
+- A page for each template (`/templates/[id]`) for search engines
+- Keeping a chosen template through sign-up (`/signup?template=…`)
 - Languages other than English
 - LinkedIn profile import (their terms don't allow scraping, so this means a file export only)
 - A browser extension that saves job posts in one click

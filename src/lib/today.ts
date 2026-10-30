@@ -43,7 +43,8 @@ export function nextBestAction(input: {
   }
   const soon = upcomingInterviews(jobs, day, 10).find((j) => j.interviewOn! <= addDays(day, 3));
   if (soon) {
-    const when = soon.interviewOn === day ? "today" : soon.interviewOn === addDays(day, 1) ? "tomorrow" : "in a few days";
+    const days = Math.round((Date.parse(soon.interviewOn!) - Date.parse(day)) / 86_400_000);
+    const when = days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
     return {
       kind: "interview",
       title: `Interview ${when}: ${label(soon)}`,

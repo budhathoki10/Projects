@@ -17,11 +17,15 @@
 src/
   app/
     (public)  page.tsx, templates/, login, signup, terms, privacy, refund ...
-    app/      the signed-in app: Today, jobs, studio, profile, progress, settings, billing,
-              print/ (PDF pages), download/ (Word), photo (profile photo)
+    templates/  public gallery of the 100 templates
+    render/     bare template pages for the thumbnail script
+    app/      the signed-in app: Today, jobs, interviews, studio (home, templates, edit/[id]),
+              profile, progress, settings, billing, print/cv and print/letter (PDF pages),
+              download/cv (Word), photo (profile photo)
     actions/  server actions: auth, profile, jobs, tailor, templates, billing
     api/      webhooks/paddle, billing/khalti/callback, cron-job/[job]
-  components/ UI pieces, plus cv/ (the CV renderer) and studio/ (gallery and editor)
+  components/ UI pieces, app-shell (sidebar, top bar, phone tabs), command-bar (Ctrl+K),
+              cv/ (renderer, live sheet, mini preview, letter) and studio/ (gallery, editor, photo)
   db/         schema.ts, index.ts
   lib/
     ai.ts           Claude calls: structured(), quoted(), fallbacks
@@ -34,6 +38,7 @@ src/
     export/         Word
     services/       every database read and write, always scoped by user id
     billing/        Paddle and Khalti clients
+    today.ts        next best step, weekly trend and upcoming interviews (plain code)
     plans.ts        limits per plan
 ```
 
@@ -83,6 +88,7 @@ Every user-owned table has `ON DELETE CASCADE` from `users`, so deleting an acco
 
 ### Templates
 - **Built-ins** live in code (`registry.ts`).
+- **Creating** a template takes a per-user advisory lock, so parallel saves can't pass the 50 limit.
 - **Users' own templates** are in `cv_templates`.
 - A template id is either `sl-NNN` (built-in) or a uuid (custom).
 - `getTemplate(userId, id)` returns a built-in, or a custom template only if `user_id` matches.

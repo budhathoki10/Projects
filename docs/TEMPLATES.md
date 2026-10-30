@@ -12,7 +12,11 @@ Code:
 | `src/lib/templates/fit.ts` | Density steps for "fit to N pages" |
 | `src/lib/templates/builtin/` | The 100 built-in templates, by family |
 | `src/lib/templates/registry.ts` | Lookup by id, categories, filters and recommendations |
-| `src/components/cv/cv-document.tsx` | The renderer |
+| `src/lib/templates/style.ts` | A job's look (`{ templateId, fit }`) and its validation |
+| `src/components/cv/cv-document.tsx` | The renderer, and `printPageCss` for the PDF page |
+| `src/components/cv/cv.css` | All CV styling, driven by `--cv-*` variables and `data-*` attributes |
+| `src/components/cv/cv-sheet.tsx` | The scaled live page with page-break lines, and `measureFit` |
+| `src/components/cv/letter-document.tsx` | A cover letter in the same look |
 | `src/lib/export/docx.ts` | The spec mapped onto Word |
 
 ## The spec
@@ -85,7 +89,7 @@ Photos are optional and off by default. If a template has a photo slot and the u
 `fitSteps(spec)` returns a list of progressively tighter densities: a smaller font size (down to 9.5pt), then less space between sections, then a smaller line height, then smaller margins (down to 12mm). The browser measures each step and picks the first that fits. Content is never cut. If nothing fits, it says so, so the user can shorten the content instead.
 
 ## Fonts
-There are 15 families, self-hosted at build time with `next/font/google`, so no font requests go to Google from the browser. Each family is downloaded only when a CV uses it.
+There are 18 families, self-hosted at build time with `next/font/google` (`src/components/cv/cv-fonts.ts`), so no font requests go to Google from the browser. Each family is downloaded only when a CV uses it.
 
 - **Sans:**
   - Inter
@@ -96,13 +100,17 @@ There are 15 families, self-hosted at build time with `next/font/google`, so no 
   - DM Sans
   - Lato
   - Nunito Sans
+  - Roboto
+  - Space Grotesk
 - **Serif:**
   - Source Serif 4
   - Merriweather
   - Lora
   - EB Garamond
   - Libre Baskerville
-  - Playfair Display (headings only)
+- **Display (headings only):**
+  - Playfair Display
+  - Fraunces
 - **Mono:** IBM Plex Mono (headings only)
 
 Word downloads name the same font. If it isn't installed, Word uses the closest one it has.
@@ -136,6 +144,15 @@ Word downloads name the same font. If it isn't installed, Word uses the closest 
 - They're private. Every read and write checks the owner.
 - The limit is 50 per person.
 - A user's default template is `profiles.default_template_id`. Each job can use a different one through `jobs.cv_style`.
+
+## Where templates show up
+- **`/templates`:** the public gallery, with a sample CV.
+- **`/app/studio`:** the user's default look, photo, CV strength, their own templates and picks for them.
+- **`/app/studio/templates`:** the gallery, previewed with the user's own CV.
+- **`/app/studio/edit/[id]`:** the editor. For a built-in template, saving makes a copy of the user's own.
+- **A job's Tailored CV tab:** the live CV in the job's look, a "try another look" strip and fit to pages.
+- **`/app/print/cv/[id]`, `/app/print/letter/[id]` and `/app/download/cv/[id]`:** the PDF pages and the Word file, which all follow the job's look.
+- **`/render/template/[id]`:** a bare page that `npm run templates:thumbs` photographs. It isn't indexed by search engines.
 
 ## Word export
 The Word file follows the spec as closely as Word allows:
