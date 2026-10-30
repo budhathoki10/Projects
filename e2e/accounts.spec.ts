@@ -32,8 +32,17 @@ test("people can never open each other's jobs or downloads", async ({ page, brow
 test("confirming email, resetting a password and exporting data work", async ({ page }) => {
   const address = `reset-${stamp}@example.com`;
   await signUp(page, address);
+  // The reminder bar: resend answers with a toast, and hiding it lasts for the session.
+  await expect(page.getByText("Confirm your email")).toBeVisible();
+  await page.getByRole("button", { name: "Resend link" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /Sent to|We sent one a minute ago/ })).toBeVisible();
+  await page.getByRole("button", { name: "Hide until later" }).click();
+  await page.reload();
+  await expect(page.getByText("Confirm your email")).toHaveCount(0);
+
   await page.goto(latestEmailLink(address, "Confirm"));
-  await expect(page.getByText("Email confirmed.")).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Email confirmed." })).toBeVisible();
+  await expect(page).not.toHaveURL(/verified=/); // the one-off flag is removed, so a reload doesn't repeat it
 
   const exported = await page.request.get("/app/settings/export");
   const data = await exported.json();
@@ -49,7 +58,8 @@ test("confirming email, resetting a password and exporting data work", async ({ 
   await page.getByLabel("New password", { exact: true }).fill("a-brand-new-password");
   await page.getByLabel("Type it again").fill("a-brand-new-password");
   await page.getByRole("button", { name: "Save new password" }).click();
-  await expect(page).toHaveURL(/\/app\?reset=1/);
+  await expect(page.getByRole("status").filter({ hasText: "Password changed. You're logged in." })).toBeVisible();
+  await expect(page).toHaveURL(/\/app$/);
 });
 
 test("a signed Paddle payment adds exactly the days of the price paid, once", async ({ page, request }) => {

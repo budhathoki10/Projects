@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { KhaltiButton, PaddleCheckout } from "@/components/billing-buttons";
+import { FlashToast } from "@/components/toast";
 import { FormMessage } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { hasPass, LIMITS, PASSES } from "@/lib/plans";
@@ -33,7 +34,8 @@ export default async function BillingPage({ searchParams }: PageProps<"/app/bill
       />
       <div className="mt-6 space-y-3">
         {reason === "docx" && !active && <FormMessage error="Word downloads come with a pass. PDF downloads are free." />}
-        <FormMessage error={message?.error} success={message?.success} />
+        <FlashToast message={status === "success" ? message?.success : null} clear={["status"]} />
+        {status !== "success" && <FormMessage error={message?.error} success={message?.success} />}
       </div>
 
       <dl className="mt-6 grid grid-cols-2 border-y border-border py-5">

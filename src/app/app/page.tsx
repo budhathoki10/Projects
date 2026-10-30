@@ -4,6 +4,7 @@ import { PageHeader, SectionHeading } from "@/components/page-header";
 import { SearchSummary } from "@/components/today/search-summary";
 import { StepList } from "@/components/today/step-list";
 import { WeekGoal } from "@/components/today/week-goal";
+import { FlashToast } from "@/components/toast";
 import { FormMessage } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { cvStrength } from "@/lib/cv/strength";
@@ -48,10 +49,8 @@ export default async function Today({ searchParams }: PageProps<"/app">) {
 
   return (
     <div className="mx-auto max-w-[760px] space-y-10">
-      <FormMessage
-        success={verified === "1" ? "Email confirmed." : reset === "1" ? "Password changed. You're logged in." : null}
-        error={verified === "0" ? "That confirmation link has expired or was already used. Use “Send it again” above for a fresh one." : null}
-      />
+      <FlashToast message={verified === "1" ? "Email confirmed. Thanks." : reset === "1" ? "Password changed. You're logged in." : null} clear={["verified", "reset"]} />
+      <FormMessage error={verified === "0" ? "That confirmation link has expired or was already used. Use “Resend link” at the top for a fresh one." : null} />
       <PageHeader title="Today" subtitle={longDate(day)} actions={ready ? <WeekGoal done={stats.appliedThisWeek} goal={user.weeklyGoal} /> : undefined} />
 
       <section aria-labelledby="up-next">

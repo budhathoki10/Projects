@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   deleteAccount,
   login,
@@ -10,6 +10,9 @@ import {
   resetPassword,
   signup,
 } from "@/app/actions/auth";
+import { VERIFY_BAR_COOKIE } from "@/lib/ui-cookies";
+import { Icon } from "./icons";
+import { toast } from "./toast";
 import { Button, Field, FormMessage, inputClass } from "./ui";
 import { keepInputOnSubmit } from "./use-keep-input";
 
@@ -146,21 +149,43 @@ export function DeleteAccountForm() {
   );
 }
 
+/**
+ * A slim reminder under the top bar until the email is confirmed. "Resend" answers with a toast,
+ * and the close button hides the bar until the browser is closed.
+ */
 export function VerifyEmailBanner({ email }: { email: string }) {
   const [state, action, pending] = useActionState(resendVerification, undefined);
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    if (state?.success) toast(state.success);
+    else if (state?.error) toast(state.error, "error");
+  }, [state]);
+
+  if (hidden) return null;
+  const later = () => {
+    document.cookie = `${VERIFY_BAR_COOKIE}=1; path=/; SameSite=Lax`;
+    setHidden(true);
+  };
+
   return (
-    <div className="border-b border-notice-border bg-notice-soft text-notice-strong">
-      <form action={action} className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-[13px] md:px-8">
-        <span>Confirm your email address. We sent a link to {email}.</span>
-        <button type="submit" disabled={pending} className="font-medium underline underline-offset-4 disabled:opacity-50">
-          {pending ? "Sending…" : "Send it again"}
+    <div className="border-b border-border bg-surface">
+      <form action={action} className="mx-auto flex h-11 max-w-[1200px] items-center gap-3 pl-4 pr-2 text-[13px] md:pl-8 md:pr-6">
+        <Icon name="mail" size={16} className="shrink-0 text-muted" />
+        <p className="min-w-0 flex-1 truncate">
+          <span className="font-medium">Confirm your email</span>
+          <span className="hidden text-muted sm:inline"> · We sent a link to {email}</span>
+        </p>
+        <button
+          type="submit"
+          disabled={pending}
+          className="h-7 shrink-0 rounded-md border border-strong-border bg-surface px-2.5 font-medium shadow-1 hover:border-hover-border hover:bg-panel disabled:opacity-50"
+        >
+          {pending ? "Sending…" : "Resend link"}
         </button>
-        {state?.error && (
-          <span role="alert" className="text-pen">
-            {state.error}
-          </span>
-        )}
-        {state?.success && <span role="status">{state.success}</span>}
+        <button type="button" onClick={later} aria-label="Hide until later" className="shrink-0 rounded-md p-1.5 text-muted hover:bg-subtle hover:text-foreground">
+          <Icon name="close" size={16} />
+        </button>
       </form>
     </div>
   );

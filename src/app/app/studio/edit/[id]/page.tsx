@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FlashToast } from "@/components/toast";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TemplateEditor } from "@/components/studio/template-editor";
@@ -26,11 +27,7 @@ export default async function EditTemplate({ params, searchParams }: PageProps<"
         </Link>{" "}
         / {template.builtin ? <Link href="/app/studio/templates" className="hover:text-foreground">Templates</Link> : "My templates"} / {template.name}
       </nav>
-      {saved === "1" && (
-        <p role="status" className="rounded-lg border border-brand-border/60 bg-money-soft px-3 py-2 text-sm text-money-strong">
-          Saved to My templates.
-        </p>
-      )}
+      <FlashToast message={saved === "1" ? "Saved to My templates." : null} clear={["saved"]} />
       <TemplateEditor
         key={`${template.id}-${startFromTwin}`}
         initial={startFromTwin ? atsTwin(template.spec) : template.spec}

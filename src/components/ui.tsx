@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icon } from "./icons";
 import { cloneElement, useId, type ComponentProps, type ReactElement, type ReactNode } from "react";
 
 type Variant = "primary" | "secondary" | "ghost";
@@ -98,17 +99,23 @@ export function ScoreMeter({ score }: { score: number }) {
   );
 }
 
+/**
+ * The result of a form, shown next to it. Errors get a quiet callout because they need reading;
+ * success is one line of text with a tick. One-off confirmations after a redirect use a toast.
+ */
 export function FormMessage({ error, success }: { error?: string | null; success?: string | null }) {
   if (error)
     return (
-      <p role="alert" className="rounded-lg border border-pen-border/60 bg-pen-soft px-3 py-2 text-sm text-pen-strong">
-        {error}
+      <p role="alert" className="flex items-start gap-2 rounded-lg border border-pen-border/60 bg-pen-soft px-3 py-2.5 text-sm leading-snug text-pen-strong">
+        <Icon name="alert" size={16} className="mt-px shrink-0" />
+        <span className="min-w-0">{error}</span>
       </p>
     );
   if (success)
     return (
-      <p role="status" className="rounded-lg border border-brand-border/60 bg-money-soft px-3 py-2 text-sm text-money-strong">
-        {success}
+      <p role="status" className="flex items-start gap-1.5 text-[13px] leading-snug text-money-strong">
+        <Icon name="check" size={16} className="shrink-0" />
+        <span className="min-w-0">{success}</span>
       </p>
     );
   return null;

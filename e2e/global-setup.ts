@@ -31,7 +31,8 @@ export default async function globalSetup() {
 
   execFileSync("npx", ["tsx", "scripts/migrate.mts"], { env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL }, stdio: "inherit" });
   const sql = postgres(TEST_DATABASE_URL, { max: 1, onnotice: () => {} });
-  await sql`truncate users, sessions, auth_tokens, payments, profiles, jobs, documents, interviews, usage cascade`;
+  // login_failures too: every run logs in from the same address, so back-to-back runs would trip the per-IP limit.
+  await sql`truncate users, sessions, auth_tokens, payments, profiles, jobs, documents, interviews, usage, login_failures cascade`;
   await sql.end();
   rmSync(EMAIL_OUTBOX, { force: true });
   await makeCvPdf();

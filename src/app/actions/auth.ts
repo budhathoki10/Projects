@@ -141,7 +141,7 @@ export async function resendVerification(_: AuthState): Promise<AuthState> {
   const user = await requireUser();
   if (user.emailVerifiedAt) return { success: "Your email is already confirmed." };
   if ((await tokensSentRecently(user.id, "verify_email", VERIFY_RESEND_COOLDOWN_MS)) > 0) {
-    return { error: "We sent one a minute ago. Give it a couple of minutes and check your spam folder." };
+    return { success: "We sent one a minute ago. It can take a few minutes, so check your spam folder too." };
   }
   try {
     await sendVerificationEmail(user);
