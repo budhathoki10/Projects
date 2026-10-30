@@ -22,7 +22,7 @@ export default async function JobLayout({ children, params }: LayoutProps<"/app/
             <h1 className="font-serif text-4xl font-medium tracking-tight">{job.post.title || "Untitled job"}</h1>
             {facts.length > 0 && <p className="mt-1 text-sm text-muted">{facts.join(" · ")}</p>}
           </div>
-          <StatusControl key={job.status} jobId={job.id} status={isStatus(job.status) ? job.status : "saved"} />
+          <StatusControl key={`${job.status}-${job.interviewOn}`} jobId={job.id} status={isStatus(job.status) ? job.status : "saved"} interviewOn={job.interviewOn} />
         </div>
       </div>
       <JobTabs jobId={job.id} />

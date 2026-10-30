@@ -14,7 +14,7 @@ export function JobTabs({ jobId }: { jobId: string }) {
   const pathname = usePathname();
   const base = `/app/jobs/${jobId}`;
   return (
-    <nav aria-label="This job" className="-mx-5 overflow-x-auto border-b border-border px-5 print:hidden">
+    <nav aria-label="This job" className="-mx-4 overflow-x-auto border-b border-border px-4 md:-mx-8 md:px-8 print:hidden">
       <div className="flex gap-6 text-sm">
         {TABS.map((t) => {
           const href = t.slug ? `${base}/${t.slug}` : base;

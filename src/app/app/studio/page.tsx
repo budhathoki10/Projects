@@ -114,7 +114,7 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
               if (!spec) return null;
               return (
                 <li key={t.id} className="space-y-2">
-                  <Link href={`/app/studio/edit/${t.id}`} className="block overflow-hidden rounded-md ring-1 ring-border transition hover:-translate-y-0.5 hover:ring-ink">
+                  <Link href={`/app/studio/edit/${t.id}`} aria-label={`Edit ${t.name}`} className="block overflow-hidden rounded-md ring-1 ring-border transition hover:-translate-y-0.5 hover:ring-ink">
                     <CvMini spec={spec} cv={cv} photoUrl={shownPhoto} />
                   </Link>
                   <div className="flex items-start justify-between gap-2">

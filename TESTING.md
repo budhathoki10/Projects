@@ -69,42 +69,67 @@ npm run test:e2e     # Playwright: builds the app, starts it and a fake-sites se
 
 | Control | Test |
 |---|---|
-| Cross-account access | integration "keeps everyone's jobs and documents private", e2e "people can never open each other's jobs or downloads", v2 template and photo ownership tests |
-| SSRF | integration "reading job links" uses `FETCH_ALLOW_PRIVATE_HOSTS` only for the fixture host. Unit tests for `isPrivateAddress` |
+| Cross-account access | integration "keeps everyone's jobs and documents private" and "keeps each person's templates private…", e2e "people can never open each other's jobs or downloads" and the photo test |
+| SSRF | unit `safe-fetch.test.ts` (private IPv4 and IPv6 ranges, hex-written mapped addresses, schemes, ports, credentials). Integration "reading job links" uses `FETCH_ALLOW_PRIVATE_HOSTS` only for the fixture host |
 | Payment integrity | unit "takes the days from the price paid", integration "completes once", e2e Paddle webhook |
 | Cron secret | e2e "the daily reminder job needs its secret" |
 | No invented facts | the unit no-invention suite and the e2e journey |
-| Template spec validation | v2 unit spec tests |
-| Photo re-encoding | v2 integration photo tests |
+| Template spec validation | unit "template spec" and "never put user text into styles", integration "refuses a stored spec that isn't valid" |
+| Limits under load | integration "can't be overspent…" and "stops at the limit, even with saves arriving at once" |
+| Accessibility | e2e "the main pages pass automated accessibility checks" |
+| Photo re-encoding and privacy | integration "profile photos", e2e "a photo shows on photo templates…" |
 
-## v2 tests (CV Studio and the new app)
-These are added as each ROADMAP item lands:
+### CV Studio and the new app
+**Unit:**
+- `templates.test.ts`:
+  - The spec schema rejects CSS in colours, bad hex, unknown fonts and layouts, display fonts for body text, numbers out of range, and missing or duplicated sections.
+  - **All 100 built-ins** validate, have unique permanent ids and names, and fill all 12 categories.
+  - Only truly ATS-safe templates are labelled ATS-safe, and every template passes the contrast check.
+  - Every template renders a real CV, a long CV and a first-job CV with every fact readable, in reading order.
+  - Empty and hidden sections are left out, the photo only shows where there's a slot, and no user text reaches styles.
+  - ATS labels, the ATS-safe twin, WCAG contrast and photo advice by country.
+  - Fit-to-pages steps only tighten and stay in range.
+  - Gallery filters and recommendations.
+  - The Word file for every layout engine contains every fact, and uses the template's fonts, colours and paper.
+- `today-and-strength.test.ts`:
+  - The next best step's order of priority.
+  - The 8-week trend and upcoming interviews.
+  - Days left on a pass.
+  - The CV strength checks, including fair treatment of first-job CVs.
 
-- **Unit:**
-  - The spec schema rejects bad colours, unknown fonts and layouts, and numbers out of range.
-  - All 100 built-ins validate, render with 3 profiles (short, long, no experience), and contain every profile fact in reading order.
-  - ATS-safe templates pass the contrast check.
-  - `atsTwin` and `atsReport`.
-  - `fitSteps` never drops content.
-  - Word export for every engine.
-  - The strength meter.
-  - Recommendations.
-  - The next best action.
-- **Integration:**
-  - Template CRUD is owner-only, including the case where a job points at another user's template.
-  - The 50-template cap.
-  - Photos are re-encoded with no EXIF, deleted with the account and included in the export.
-  - A job's template choice is used by downloads.
-  - The weekly goal.
-- **Browser:**
-  - Gallery filters, preview with your own CV, customise, save, use for a job, and print and Word follow it.
-  - Photo upload: it shows on photo templates and not on ATS-safe ones.
-  - ⌘K, the mobile tab bar, and dragging between stages.
-  - axe on Today, Jobs, Studio and the editor.
-  - No horizontal scroll, including Studio on a phone.
+**Integration:**
+- Templates are private everywhere an id can be used:
+  - reading, saving over, renaming, deleting
+  - setting as default or using for a job
+  - an id planted on someone else's job resolves to their default
+- A job's look resolves to the job's choice, then the default, then Classic, with the fit applied.
+- Deleting a template sends its jobs back to the default.
+- The 50-template limit holds with saves arriving at once.
+- A tampered spec in the database is refused.
+- Photos:
+  - They're re-encoded to a 600px WebP and the EXIF GPS data is gone.
+  - Non-images and files over 3 MB are refused.
+  - The URL changes when the photo does.
+  - They're deleted with the account.
+- The weekly goal stays between 1 and 30.
+
+**Browser (`e2e/studio.spec.ts`):**
+- Filter the gallery, preview a template with your own CV, and make it your default.
+- Customise it (font, colour, section order, undo and redo), save it as your own, and check "What an ATS reads".
+- Use another look for a job from the try-on strip. Print and Word follow the job's look, and the cover letter PDF matches.
+- A photo shows on photo templates, never on ATS-safe ones. It's served only to its owner, as `image/webp` with `nosniff`.
+- Ctrl+K jumps to a job.
+- Jobs move between stages by drag and drop, by the card menu and by the table.
+- An interview date shows on Today and Interviews.
+- axe finds no serious WCAG 2 AA problems on Today, Jobs, Studio, the gallery, the editor, a job, its Tailored CV tab and the public gallery.
+- Phones get the bottom tabs and the "More" sheet, and Studio, the gallery, the editor and Interviews fit the screen.
+
+**Current totals:** 126 unit, 23 integration and 16 browser tests, plus the screenshot run.
 
 ## Screenshots
-`SCREENSHOTS=1 npx playwright test e2e/screenshots.spec.ts` seeds an example account and saves the images to `docs/screenshots/`.
+`SCREENSHOTS=1 npx playwright test e2e/screenshots.spec.ts` seeds an example account and saves the images to `docs/screenshots/`. This includes Studio, the gallery, a preview, the editor, Today in dark mode and Today on a phone.
+
+Template thumbnails come from `npm run templates:thumbs`, run with the dev server on. After changing any template or `cv.css`, run it and commit `public/template-thumbs/`.
 
 ## Manual checks before launch
 These need real services or human eyes, so they aren't automated:

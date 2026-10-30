@@ -60,3 +60,10 @@ export async function query<T extends Record<string, unknown>>(run: (sql: postgr
     await sql.end();
   }
 }
+
+/** Log out through the account menu in the top bar. */
+export async function logOut(page: Page) {
+  await page.getByLabel("Account menu").click();
+  await page.getByRole("button", { name: "Log out" }).click();
+  await page.waitForURL((u) => !u.pathname.startsWith("/app"));
+}

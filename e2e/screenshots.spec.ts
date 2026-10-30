@@ -15,6 +15,10 @@ test("screenshots", async ({ page, browser }) => {
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await phone.goto("/");
   await phone.screenshot(shot("mobile-home", false));
+  await guest.goto("/templates");
+  await guest.evaluate(() => document.querySelectorAll("img[loading=lazy]").forEach((i) => i.setAttribute("loading", "eager")));
+  await guest.waitForLoadState("networkidle");
+  await guest.screenshot(shot("templates-public", false));
 
   await setUpJobSeeker(page, `shots-${Date.now()}@example.com`);
   await page.screenshot(shot("profile"));
@@ -95,8 +99,37 @@ test("screenshots", async ({ page, browser }) => {
     );
   }
   await query((sql) => sql`update jobs set status = 'applied', applied_on = current_date - 8, follow_up_on = current_date where id = ${jobId}`);
+  await query((sql) => sql`update jobs set interview_on = current_date + 2 where post->>'company' = 'Daraz' and user_id = (select user_id from jobs where id = ${jobId})`);
   await page.goto("/app/jobs");
   await page.screenshot(shot("jobs"));
   await page.goto("/app");
   await page.screenshot(shot("today"));
+
+  // CV Studio: home, the gallery, a preview with the user's CV, and the editor.
+  await page.goto("/app/studio");
+  await page.screenshot(shot("studio"));
+  await page.goto("/app/studio/templates");
+  await page.evaluate(() => document.querySelectorAll("img[loading=lazy]").forEach((i) => i.setAttribute("loading", "eager")));
+  await page.waitForLoadState("networkidle");
+  await page.screenshot(shot("templates", false));
+  await page.getByLabel("Search templates").fill("saffron");
+  await page.getByRole("button", { name: /^Saffron\./ }).click();
+  await expect(page.getByRole("dialog", { name: "Saffron preview" }).getByLabel("CV preview")).toContainText("Asha Gurung");
+  await page.waitForTimeout(500);
+  await page.screenshot(shot("template-preview", false));
+  await page.goto("/app/studio/edit/sl-086");
+  await expect(page.getByLabel("CV preview")).toBeVisible();
+  await page.waitForTimeout(500);
+  await page.screenshot(shot("editor", false));
+
+  // Dark mode.
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/app");
+  await page.screenshot(shot("today-dark", false));
+  await page.emulateMedia({ colorScheme: "light" });
+
+  // Phone: Today with the tab bar.
+  const phoneApp = await browser.newPage({ viewport: { width: 390, height: 844 }, storageState: await page.context().storageState() });
+  await phoneApp.goto("/app");
+  await phoneApp.screenshot(shot("mobile-today", false));
 });

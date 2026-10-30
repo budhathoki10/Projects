@@ -19,11 +19,11 @@ All colours are CSS variables on `:root` in `src/app/globals.css`, with a dark s
 | `surface` | `#fffefb` | Cards, inputs, sidebar |
 | `foreground` | `#1b1a17` | Text |
 | `muted` | `#6e695f` | Secondary text |
-| `faint` | `#a29d92` | Placeholders, disabled |
+| `faint` | `#726e68` | Placeholders, minor notes (still 4.5:1 on the page) |
 | `border` / `strong-border` | `#e3dfd5` / `#c9c3b6` | Lines |
 | `ink` / `ink-hover` / `on-ink` | `#1d2740` / `#2f3d60` / `#fffefb` | Primary buttons, active nav |
 | `highlight` | `#e6f4a0` | "You have this", the logo check, the active marker |
-| `pen` / `pen-soft` | `#c23a22` / `#f8e6e1` | Gaps, errors, destructive actions |
+| `pen` / `pen-soft` | `#b0321c` / `#f8e6e1` | Gaps, errors, destructive actions |
 | `money` / `money-soft` | `#2d6a3e` / `#e3efe5` | Success, offers, a good match |
 
 The CV page is **always white with its own colours**, in dark mode too. It's a document, not app chrome.

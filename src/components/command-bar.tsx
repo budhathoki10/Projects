@@ -121,7 +121,7 @@ export function CommandBar({ open, onClose, jobs }: { open: boolean; onClose: ()
               <Icon name={c.icon} size={16} className="text-muted" />
               <span className="truncate">{c.label}</span>
               {c.hint && <span className="truncate text-muted">{c.hint}</span>}
-              <span className="ml-auto text-[11px] text-faint">{c.group}</span>
+              <span className="ml-auto text-[11px] text-muted">{c.group}</span>
             </li>
           ))}
         </ul>

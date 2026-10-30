@@ -47,3 +47,15 @@ export async function saveInterview(userId: string, jobId: string, questions: In
     .values({ userId, jobId, questions })
     .onConflictDoUpdate({ target: schema.interviews.jobId, set: { questions, updatedAt: new Date() } });
 }
+
+/** Ids of this user's jobs that have a tailored CV, and those with interview practice started. */
+export async function preparedJobIds(userId: string) {
+  const [cvs, practice] = await Promise.all([
+    db.select({ jobId: schema.documents.jobId }).from(schema.documents).where(and(eq(schema.documents.userId, userId), eq(schema.documents.kind, "cv"))),
+    db.select({ jobId: schema.interviews.jobId, questions: schema.interviews.questions }).from(schema.interviews).where(eq(schema.interviews.userId, userId)),
+  ]);
+  return {
+    tailored: new Set(cvs.map((r) => r.jobId)),
+    practised: new Set(practice.filter((r) => r.questions.some((q) => q.answer.trim())).map((r) => r.jobId)),
+  };
+}

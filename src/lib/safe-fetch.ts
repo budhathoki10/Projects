@@ -40,6 +40,12 @@ export function isPrivateAddress(ip: string): boolean {
     const lower = ip.toLowerCase();
     const mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
     if (mapped) return isPrivateAddress(mapped[1]);
+    // The same IPv4-mapped address written in hex, e.g. ::ffff:7f00:1 for 127.0.0.1.
+    const hex = lower.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+    if (hex) {
+      const [hi, lo] = [parseInt(hex[1], 16), parseInt(hex[2], 16)];
+      return isPrivateAddress(`${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`);
+    }
     return (
       lower === "::" ||
       lower === "::1" ||
@@ -79,20 +85,20 @@ export function normalizeUrl(input: string): URL {
   const trimmed = input.trim();
   const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed);
   if (hasScheme && !/^https?:\/\//i.test(trimmed)) {
-    throw new FetchBlockedError("Only http and https URLs can be audited");
+    throw new FetchBlockedError("Only http and https URLs can be read");
   }
   const withScheme = hasScheme ? trimmed : `https://${trimmed}`;
   const url = new URL(withScheme);
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new FetchBlockedError("Only http and https URLs can be audited");
+    throw new FetchBlockedError("Only http and https URLs can be read");
   }
   if (url.username || url.password) throw new FetchBlockedError("URLs with credentials are not allowed");
   if (!allowPrivate()) {
     const host = url.hostname.replace(/^\[|\]$/g, "");
     if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".internal")) {
-      throw new FetchBlockedError("Local addresses cannot be audited");
+      throw new FetchBlockedError("Local addresses cannot be read");
     }
-    if (net.isIP(host) && isPrivateAddress(host)) throw new FetchBlockedError("Private addresses cannot be audited");
+    if (net.isIP(host) && isPrivateAddress(host)) throw new FetchBlockedError("Private addresses cannot be read");
   }
   if (url.port && !["80", "443", ""].includes(url.port) && !allowPrivate()) {
     throw new FetchBlockedError("Only standard web ports can be read");

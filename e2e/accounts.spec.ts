@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { FIXTURE_BASE, PADDLE_SECRET } from "../playwright.config";
-import { addFixtureJob, latestEmailLink, logIn, PASSWORD, query, setUpJobSeeker, signUp } from "./helpers";
+import { addFixtureJob, latestEmailLink, logIn, PASSWORD, query, setUpJobSeeker, signUp, logOut } from "./helpers";
 
 const stamp = Date.now();
 
@@ -40,7 +40,7 @@ test("confirming email, resetting a password and exporting data work", async ({ 
   expect(data.account.email).toBe(address);
   expect(exported.headers()["content-disposition"]).toContain("shortlist-data.json");
 
-  await page.getByRole("button", { name: "Log out" }).click();
+  await logOut(page);
   await page.goto("/forgot-password");
   await page.getByLabel("Email").fill(address);
   await page.getByRole("button", { name: /reset link/i }).click();

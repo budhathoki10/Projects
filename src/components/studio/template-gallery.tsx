@@ -52,11 +52,11 @@ function Card({ t, onOpen, isDefault }: { t: BuiltinTemplate; onOpen: () => void
           </span>
         </div>
         <div className="mt-2 flex items-start justify-between gap-2">
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-1">
             <p className="truncate text-sm font-medium">{t.name}</p>
+            <AtsBadge level={ats} />
             <p className="truncate text-[12px] text-muted">{t.categories.map((c) => CATEGORIES[c]).join(" · ")}</p>
           </div>
-          <AtsBadge level={ats} />
         </div>
       </button>
     </li>
@@ -151,11 +151,11 @@ function Preview({ t, cv, photoUrl, mode, onClose }: { t: BuiltinTemplate; cv: P
           {mode.kind === "app" ? (
             <AppActions t={t} mode={mode} />
           ) : (
-            <Link href={`/signup?template=${t.id}`} className="flex h-11 items-center justify-center rounded-lg bg-ink text-sm font-medium text-on-ink hover:bg-ink-hover">
+            <Link href="/signup" className="flex h-11 items-center justify-center rounded-lg bg-ink text-sm font-medium text-on-ink hover:bg-ink-hover">
               Use this template, free
             </Link>
           )}
-          <p className="text-[12px] text-faint">
+          <p className="text-[12px] text-muted">
             {mode.kind === "app" ? "This is your own CV in this template." : "Shown with a sample CV. Sign up to see yours."}
           </p>
         </aside>
@@ -185,7 +185,7 @@ export function TemplateGallery({ cv, photoUrl, mode, initialCategory }: { cv: P
               onClick={() => setF((cur) => ({ ...cur, category: "" }))}
               className={`flex w-full justify-between rounded-lg px-3 py-1.5 text-left ${!f.category ? "bg-surface font-medium shadow-[0_1px_2px_rgb(0_0_0/0.05)]" : "text-muted hover:text-foreground"}`}
             >
-              All templates <span className="font-mono text-[12px] text-faint">{all.length}</span>
+              All templates <span className="font-mono text-[12px] text-muted">{all.length}</span>
             </button>
           </li>
           {CATEGORY_IDS.map((c) => (
@@ -198,7 +198,7 @@ export function TemplateGallery({ cv, photoUrl, mode, initialCategory }: { cv: P
                   f.category === c ? "bg-surface font-medium shadow-[0_1px_2px_rgb(0_0_0/0.05)]" : "text-muted hover:text-foreground"
                 }`}
               >
-                {CATEGORIES[c]} <span className="font-mono text-[12px] text-faint">{all.filter((t) => t.categories.includes(c)).length}</span>
+                {CATEGORIES[c]} <span className="font-mono text-[12px] text-muted">{all.filter((t) => t.categories.includes(c)).length}</span>
               </button>
             </li>
           ))}
