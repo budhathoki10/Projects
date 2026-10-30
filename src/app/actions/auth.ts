@@ -1,12 +1,15 @@
 "use server";
 
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db, schema } from "@/db";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { createSession, destroySession, requireUser } from "@/lib/auth/session";
+import { clearLoginFailures, loginThrottled, recordLoginFailure } from "@/lib/auth/throttle";
 import { consumeAuthToken, tokensSentRecently } from "@/lib/auth/tokens";
+import { clientIp } from "@/lib/util";
 import {
   deleteAllSessions,
   deleteUser,
@@ -70,10 +73,17 @@ export async function signup(_: AuthState, formData: FormData): Promise<AuthStat
 export async function login(_: AuthState, formData: FormData): Promise<AuthState> {
   const parsed = LoginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const [user] = await db.select().from(schema.users).where(eq(schema.users.email, parsed.data.email));
+  const { email } = parsed.data;
+  const ip = clientIp(await headers());
+  if (await loginThrottled(email, ip)) {
+    return { error: "Too many wrong passwords. Wait 15 minutes, or reset your password." };
+  }
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.email, email));
   if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
+    await recordLoginFailure(email, ip);
     return { error: "Wrong email or password." };
   }
+  await clearLoginFailures(email);
   await createSession(user.id);
   redirect(safeNext(formData.get("next"), "/app"));
 }

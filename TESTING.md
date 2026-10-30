@@ -72,6 +72,7 @@ npm run test:e2e     # Playwright: builds the app, starts it and a fake-sites se
 | Cross-account access | integration "keeps everyone's jobs and documents private" and "keeps each person's templates private…", e2e "people can never open each other's jobs or downloads" and the photo test |
 | SSRF | unit `safe-fetch.test.ts` (private IPv4 and IPv6 ranges, hex-written mapped addresses, schemes, ports, credentials). Integration "reading job links" uses `FETCH_ALLOW_PRIVATE_HOSTS` only for the fixture host |
 | Payment integrity | unit "takes the days from the price paid", integration "completes once", e2e Paddle webhook |
+| Password guessing | integration "login throttling", e2e "logins pause after too many wrong passwords" |
 | Cron secret | e2e "the daily reminder job needs its secret" |
 | No invented facts | the unit no-invention suite and the e2e journey |
 | Template spec validation | unit "template spec" and "never put user text into styles", integration "refuses a stored spec that isn't valid" |
@@ -128,7 +129,7 @@ npm run test:e2e     # Playwright: builds the app, starts it and a fake-sites se
 - axe finds no serious WCAG 2 AA problems on Today, Jobs, Studio, the gallery, the editor, a job, its Tailored CV tab and the public gallery.
 - Phones get the bottom tabs and the "More" sheet, and Studio, the gallery, the editor and Interviews fit the screen.
 
-**Current totals:** 167 unit, 23 integration and 16 browser tests, plus the screenshot run.
+**Current totals:** 167 unit, 26 integration and 17 browser tests, plus the screenshot run.
 
 ## Screenshots
 `SCREENSHOTS=1 npx playwright test e2e/screenshots.spec.ts` seeds an example account and saves the images to `docs/screenshots/`. This includes Studio, the gallery, a preview, the editor, Today in dark mode and Today on a phone.

@@ -27,6 +27,20 @@ export const sessions = pgTable("sessions", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 });
 
+/**
+ * Failed logins, for throttling password guessing. `key` is a hash of the email or the IP
+ * address (never the raw value). Rows older than a day are deleted as new ones arrive.
+ */
+export const loginFailures = pgTable(
+  "login_failures",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    key: text("key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("login_failures_key_idx").on(t.key, t.createdAt)],
+);
+
 /** One-time tokens sent by email (password reset, email verification). */
 export const authTokens = pgTable(
   "auth_tokens",

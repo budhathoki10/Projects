@@ -148,3 +148,11 @@ textarea {
   text-decoration-thickness: 1.5px;
   text-underline-offset: 4px;
 }
+
+/* Printing a CV or letter: the page itself is white paper, whatever the app background is. */
+@media print {
+  html,
+  body {
+    background: var(--paper) !important;
+  }
+}

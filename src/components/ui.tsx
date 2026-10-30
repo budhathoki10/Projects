@@ -79,12 +79,12 @@ export function scoreTone(score: number): keyof typeof BADGES {
   return score >= 80 ? "good" : score >= 50 ? "neutral" : "bad";
 }
 
-/** Website score as a number with a thin 20-step meter. */
+/** A 0–100 score as a number with a thin 20-step meter. */
 export function ScoreMeter({ score }: { score: number }) {
   const filled = Math.round(score / 5);
   const color = score >= 80 ? "bg-brand" : score >= 50 ? "bg-ink" : "bg-pen";
   return (
-    <div className="w-40" role="img" aria-label={`Website score ${score} out of 100`}>
+    <div className="w-40" role="img" aria-label={`Match score ${score} out of 100`}>
       <p className="font-mono text-4xl font-medium tabular-nums tracking-tight">
         {score}
         <span className="text-base text-muted">/100</span>

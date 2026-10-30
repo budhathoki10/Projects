@@ -79,6 +79,19 @@ test("the daily reminder job needs its secret", async ({ request }) => {
   expect(await res.json()).toMatchObject({ job: "daily", result: { sent: expect.any(Number) } });
 });
 
+test("logins pause after too many wrong passwords", async ({ page }) => {
+  const address = `throttle-${stamp}@example.com`;
+  await signUp(page, address);
+  await logOut(page);
+  for (let i = 0; i < 8; i++) {
+    await logIn(page, address, `wrong-password-${i}`);
+    await expect(page.getByText("Wrong email or password.")).toBeVisible();
+  }
+  await logIn(page, address);
+  await expect(page.getByText("Too many wrong passwords. Wait 15 minutes, or reset your password.")).toBeVisible();
+  await expect(page).toHaveURL(/\/login/);
+});
+
 test("deleting the account removes everything", async ({ page }) => {
   const address = `delete-${stamp}@example.com`;
   await setUpJobSeeker(page, address);

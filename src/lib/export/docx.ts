@@ -5,6 +5,7 @@ import {
   Document,
   ImageRun,
   LevelFormat,
+  LineRuleType,
   Packer,
   Paragraph,
   ShadingType,
@@ -149,7 +150,8 @@ function section(ctx: Ctx, id: SectionId, cv: Profile, index: number): Paragraph
       case "languages":
         return words(ctx, cv.languages, "inline");
       case "certifications":
-        return cv.certifications.map((c) => bullet(ctx, c));
+        // Bullets are drawn in the accent colour, which would vanish on a coloured side panel.
+        return ctx.onPanel ? words(ctx, cv.certifications, "lines") : cv.certifications.map((c) => bullet(ctx, c));
     }
   })();
   return [heading(ctx, id, index), ...body];
@@ -164,26 +166,51 @@ function photoRun(photo: Buffer | null, spec: TemplateSpec, mm: number) {
   return new ImageRun({ type: "png", data: photo, transformation: { width: px, height: px } });
 }
 
-function header(ctx: Ctx, cv: Profile, photo: Buffer | null, withContact: boolean) {
+const NO_BORDER = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+const NO_BORDERS = { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER, insideHorizontal: NO_BORDER, insideVertical: NO_BORDER };
+
+function header(ctx: Ctx, cv: Profile, photo: Buffer | null, withContact: boolean): (Paragraph | Table)[] {
   const s = ctx.spec;
   const align = s.header.align === "center" ? AlignmentType.CENTER : AlignmentType.LEFT;
   const banner = s.layout === "banner";
-  const shading = banner ? { type: ShadingType.CLEAR, fill: hex(s.palette.panel), color: "auto" } : undefined;
   const c: Ctx = banner ? { ...ctx, onPanel: true } : ctx;
   const out: Paragraph[] = [];
   const img = photoRun(photo, s, 24);
-  if (img) out.push(new Paragraph({ alignment: align, shading, spacing: { after: 80 }, children: [img] }));
+  if (img) out.push(new Paragraph({ alignment: align, spacing: { after: 80 }, children: [img] }));
   out.push(
     new Paragraph({
       alignment: align,
-      shading,
       children: [run(c, cv.name || "Your name", { bold: true, size: Math.round(s.header.nameSize * 2), heading: true, caps: s.header.nameCase === "upper" })],
     }),
   );
-  if (cv.headline) out.push(new Paragraph({ alignment: align, shading, children: [run(c, cv.headline, { size: Math.round(ctx.size * 1.2), color: ctx.accent })] }));
+  if (cv.headline) out.push(new Paragraph({ alignment: align, children: [run(c, cv.headline, { size: Math.round(ctx.size * 1.2), color: ctx.accent })] }));
   if (withContact) {
     const contact = [cv.email, cv.phone, cv.location, ...cv.links].filter(Boolean).join("  ·  ");
-    if (contact) out.push(new Paragraph({ alignment: align, shading, spacing: { after: 120 }, children: [run(c, contact, { size: Math.round(ctx.size * 0.92), color: ctx.muted })] }));
+    if (contact) out.push(new Paragraph({ alignment: align, spacing: { after: banner ? 0 : 120 }, children: [run(c, contact, { size: Math.round(ctx.size * 0.92), color: ctx.muted })] }));
+  }
+  if (banner) {
+    // A one-cell shaded table, so the band has inner padding like the on-screen banner.
+    return [
+      new Table({
+        layout: TableLayoutType.FIXED,
+        width: { size: ctx.width, type: WidthType.DXA },
+        columnWidths: [ctx.width],
+        borders: NO_BORDERS,
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                width: { size: ctx.width, type: WidthType.DXA },
+                shading: { type: ShadingType.CLEAR, fill: hex(s.palette.panel), color: "auto" },
+                margins: { top: 360, bottom: 360, left: 400, right: 400 },
+                children: out,
+              }),
+            ],
+          }),
+        ],
+      }),
+      new Paragraph({ spacing: { after: 80 }, children: [] }),
+    ];
   }
   if (s.layout === "split-header" || s.layout === "executive" || s.layout === "academic") {
     out.push(
@@ -229,7 +256,6 @@ export function cvDocument(cv: Profile, spec: TemplateSpec = DEFAULT_SPEC, photo
     shown.filter((s) => s.column === "side").forEach((s, i) => sideParas.push(...section(side, s.id, cv, i + 1)));
     const mainParas = header(main, cv, null, false);
     shown.filter((s) => s.column === "main").forEach((s, i) => mainParas.push(...section(main, s.id, cv, i)));
-    const none = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
     const sideCell = new TableCell({
       width: { size: sideW, type: WidthType.DXA },
       shading: { type: ShadingType.CLEAR, fill: hex(spec.palette.panel), color: "auto" },
@@ -243,7 +269,7 @@ export function cvDocument(cv: Profile, spec: TemplateSpec = DEFAULT_SPEC, photo
         layout: TableLayoutType.FIXED,
         width: { size: usable, type: WidthType.DXA },
         columnWidths: spec.layout === "sidebar-left" ? [sideW, mainW] : [mainW, sideW],
-        borders: { top: none, bottom: none, left: none, right: none, insideHorizontal: none, insideVertical: none },
+        borders: NO_BORDERS,
         rows: [new TableRow({ children: spec.layout === "sidebar-left" ? [sideCell, mainCell] : [mainCell, sideCell] })],
       }),
     );
@@ -259,7 +285,8 @@ export function cvDocument(cv: Profile, spec: TemplateSpec = DEFAULT_SPEC, photo
       default: {
         document: {
           run: { font: FONTS[spec.fonts.body].word, size: ctx.size, color: ctx.ink },
-          paragraph: { spacing: { line: Math.round(spec.density.lineHeight * 240) } },
+          // "auto" makes the line height a multiple, so taller content (the photo) isn't clipped.
+          paragraph: { spacing: { line: Math.round(spec.density.lineHeight * 240), lineRule: LineRuleType.AUTO } },
         },
       },
     },
