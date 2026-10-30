@@ -5,7 +5,7 @@ import { addJob } from "@/app/actions/jobs";
 import { Button, FormMessage, inputClass } from "./ui";
 import { keepInputOnSubmit } from "./use-keep-input";
 
-export function AddJobForm() {
+export function AddJobForm({ autoFocus = false }: { autoFocus?: boolean }) {
   const [state, action, pending] = useActionState(addJob, undefined);
   const [paste, setPaste] = useState(false);
   const showText = paste || state?.needText;
@@ -22,6 +22,7 @@ export function AddJobForm() {
           inputMode="url"
           defaultValue={state?.url}
           placeholder="https://"
+          autoFocus={autoFocus}
           className={inputClass}
         />
         {!showText && (

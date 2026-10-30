@@ -41,6 +41,9 @@ export function CoverLetterEditor({ jobId, initial, flags }: { jobId: string; in
           <button type="button" onClick={copy} className="text-[13px] text-muted underline-offset-4 hover:text-foreground hover:underline">
             {copied ? "Copied" : "Copy text"}
           </button>
+          <a href={`/app/print/letter/${jobId}`} target="_blank" className="text-[13px] text-muted underline-offset-4 hover:text-foreground hover:underline">
+            PDF in your CV&apos;s style
+          </a>
           <span className={`text-xs ${words > 300 ? "text-pen" : "text-muted"}`}>{words} words{words > 300 ? ": aim for under 300" : ""}</span>
         </div>
         <FormMessage error={saved?.error} success={saved?.success} />

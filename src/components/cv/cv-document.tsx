@@ -162,12 +162,15 @@ export function CvDocument({
   photoUrl,
   className = "",
   label = "CV preview",
+  children,
 }: {
   spec: TemplateSpec;
   cv: Profile;
   photoUrl?: string | null;
   className?: string;
   label?: string;
+  /** Extra content after the header in the main column (a cover letter's body). */
+  children?: ReactNode;
 }) {
   const sidebar = hasSidebar(spec.layout);
   const shown = spec.sections.filter((s) => s.visible && hasContent(cv, s.id));
@@ -200,6 +203,7 @@ export function CvDocument({
         {!sidebar && <Contact cv={cv} />}
       </header>
       <div className="cv-main">
+        {children}
         {main.map((s) => (
           <Section key={s.id} id={s.id} cv={cv} spec={spec} />
         ))}

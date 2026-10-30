@@ -71,6 +71,20 @@ export async function setFollowUp(userId: string, jobId: string, day: string | n
     .where(and(eq(schema.jobs.id, jobId), eq(schema.jobs.userId, userId)));
 }
 
+export async function setInterviewDate(userId: string, jobId: string, day: string | null) {
+  await db
+    .update(schema.jobs)
+    .set({ interviewOn: day, updatedAt: new Date() })
+    .where(and(eq(schema.jobs.id, jobId), eq(schema.jobs.userId, userId)));
+}
+
+/** Applications they aim to send each week, 1 to 30. */
+export async function setWeeklyGoal(userId: string, goal: number) {
+  const clamped = Math.min(30, Math.max(1, Math.round(goal)));
+  await db.update(schema.users).set({ weeklyGoal: clamped }).where(eq(schema.users.id, userId));
+  return clamped;
+}
+
 export async function setNotes(userId: string, jobId: string, notes: string) {
   await db
     .update(schema.jobs)

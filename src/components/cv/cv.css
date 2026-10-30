@@ -480,3 +480,13 @@
     padding-bottom: 0;
   }
 }
+
+/* ---------- Cover letter in the CV's style ---------- */
+.cv-letter-body p + p {
+  margin-top: 0.9em;
+}
+.cv-letter-body {
+  font-size: 1.05em;
+  line-height: calc(var(--cv-lh) + 0.1);
+  max-width: 165mm;
+}

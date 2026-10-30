@@ -8,7 +8,7 @@ import { extractJob } from "@/lib/jobs/extract";
 import { fetchJobPost } from "@/lib/jobs/fetch-post";
 import { scoreMatch } from "@/lib/match/score";
 import { today } from "@/lib/plans";
-import { createJob, deleteJob, isStatus, ownedJob, setFollowUp, setNotes, setStatus } from "@/lib/services/jobs";
+import { createJob, deleteJob, isStatus, ownedJob, setFollowUp, setInterviewDate, setNotes, setStatus, setWeeklyGoal } from "@/lib/services/jobs";
 import { getProfile, profileReady } from "@/lib/services/profile";
 import { cleanText } from "@/lib/text";
 
@@ -83,4 +83,19 @@ export async function removeJob(formData: FormData) {
   await deleteJob(user.id, job.id);
   revalidatePath("/app", "layout");
   redirect("/app/jobs");
+}
+
+export async function interviewDateAction(formData: FormData) {
+  const user = await requireUser();
+  const jobId = String(formData.get("jobId") ?? "");
+  const day = String(formData.get("day") ?? "");
+  await setInterviewDate(user.id, jobId, /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : null);
+  revalidatePath("/app", "layout");
+}
+
+export async function weeklyGoalAction(formData: FormData) {
+  const user = await requireUser();
+  const goal = Number(formData.get("goal"));
+  if (Number.isFinite(goal)) await setWeeklyGoal(user.id, goal);
+  revalidatePath("/app");
 }
