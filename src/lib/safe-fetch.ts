@@ -95,7 +95,7 @@ export function normalizeUrl(input: string): URL {
     if (net.isIP(host) && isPrivateAddress(host)) throw new FetchBlockedError("Private addresses cannot be audited");
   }
   if (url.port && !["80", "443", ""].includes(url.port) && !allowPrivate()) {
-    throw new FetchBlockedError("Only standard web ports can be audited");
+    throw new FetchBlockedError("Only standard web ports can be read");
   }
   url.hash = "";
   return url;

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Sample portrait">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9e4da"/><stop offset="1" stop-color="#cfd8e3"/></linearGradient>
+  </defs>
+  <rect width="240" height="240" fill="url(#bg)"/>
+  <path d="M30 240c6-52 44-80 90-80s84 28 90 80z" fill="#3b4a66"/>
+  <path d="M96 150h48v22c0 12-10 20-24 20s-24-8-24-20z" fill="#c99a7b"/>
+  <ellipse cx="120" cy="106" rx="42" ry="48" fill="#d8a888"/>
+  <path d="M76 104c-4-40 18-62 46-62 30 0 50 20 46 60-6-18-16-28-30-32-18 8-40 12-62 34z" fill="#2a211c"/>
+  <path d="M164 102c2 22-2 44-8 56 10-6 20-26 16-52z" fill="#2a211c"/>
+</svg>
