@@ -74,7 +74,7 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
 type ControlProps = { id?: string; "aria-describedby"?: string };
 
 export const inputClass =
-  "w-full rounded-lg border border-strong-border bg-surface px-3 py-2 text-sm shadow-1 outline-none placeholder:text-faint hover:border-hover-border focus:border-brand focus:ring-2 focus:ring-brand/25";
+  "w-full rounded-lg border border-strong-border bg-surface px-3 py-2 text-sm shadow-1 outline-none placeholder:text-faint hover:border-hover-border focus:border-brand focus:ring-2 focus:ring-brand/25 disabled:bg-panel disabled:text-muted disabled:shadow-none";
 
 export function scoreTone(score: number): keyof typeof BADGES {
   return score >= 80 ? "good" : score >= 50 ? "neutral" : "bad";

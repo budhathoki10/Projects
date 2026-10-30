@@ -129,10 +129,28 @@ npm run test:e2e     # Playwright: builds the app, starts it and a fake-sites se
 - axe finds no serious WCAG 2 AA problems on Today, Jobs, Studio, the gallery, the editor, a job, its Tailored CV tab and the public gallery.
 - Phones get the bottom tabs and the "More" sheet, and Studio, the gallery, the editor and Interviews fit the screen.
 
-**Current totals:** 169 unit, 26 integration and 17 browser tests, plus the screenshot run.
+### The guided CV builder
+**Unit (`cv-builder.test.ts`):**
+- The plain notes-to-bullets drops "I", "we" and "my job was to", capitalises, removes repeats and scraps, keeps at most five bullets of 30 words, and **never adds a word that isn't in the notes**.
+- The plain summary uses only the profile's facts (the fact check finds nothing), including for a first job hunt with only studies.
+- The fact check names an invented employer or number in a suggested bullet.
+- Skill chips start with skills the person's own words mention, and never offer one they already have.
+- Coming back resumes at the first empty step, and the preview drops empty rows like saving does.
+
+**Integration (`builder.test.ts`, the real server actions with sign-in and the AI faked):**
+- Without AI, the plain version runs and the allowance isn't touched.
+- With AI, a bullet naming an employer the notes never mention is flagged, and help stops at the free allowance of 20.
+- A failed AI call gives the allowance back.
+- The summary needs something to summarise first, and both versions come back checked.
+
+**Browser (`builder.spec.ts`):**
+- A new user picks "Build one with help", is stopped without a headline, turns notes into bullets and leaves one out, sees them in the preview, leaves after step 2 and comes back at step 3, adds skills by typing and by tapping a suggestion, gets a summary drafted, picks the second of four looks and finishes. The saved profile, the default template and Today's Up next all match.
+- On a phone, every step fits the screen, Preview is one tap away, and axe finds no serious problems.
+
+**Current totals:** 178 unit, 30 integration and 19 browser tests, plus the screenshot run.
 
 ## Screenshots
-`SCREENSHOTS=1 npx playwright test e2e/screenshots.spec.ts` seeds an example account and saves the images to `docs/screenshots/`. This includes Studio, the gallery, a preview, the editor, Today in dark mode and Today on a phone.
+`SCREENSHOTS=1 npx playwright test e2e/screenshots.spec.ts` seeds an example account and saves the images to `docs/screenshots/`. This includes Studio, the gallery, a preview, the editor, Today in dark mode, Today on a phone, and the CV builder (`builder`, `builder-mobile`).
 
 Template thumbnails come from `npm run templates:thumbs`, run with the dev server on. After changing any template or `cv.css`, run it and commit `public/template-thumbs/`.
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ProfileImport } from "@/components/profile-import";
-import { FormMessage } from "@/components/ui";
+import { ButtonLink, FormMessage } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { EMPTY_PROFILE } from "@/lib/model/types";
 import { getProfileRow, profileReady } from "@/lib/services/profile";
@@ -20,6 +20,13 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
       <div>
         <PageHeader
           title={profile ? "Your CV" : "Start with your CV"}
+          actions={
+            profile && !ready ? (
+              <ButtonLink href="/app/profile/build" variant="secondary">
+                Continue with the guided builder
+              </ButtonLink>
+            ) : undefined
+          }
           subtitle={
             <>
               {welcome === "1" && <span className="font-medium text-foreground">Step 1 of 2 · </span>}
@@ -53,11 +60,26 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
           </div>
         </details>
       ) : (
-        <div className="rounded-xl border border-border bg-surface shadow-1 p-6">
-          <ProfileImport replacing={false} />
-          <p className="mt-6 border-t border-border pt-4 text-sm text-muted">
-            No CV yet? Fill in the form below instead. Even a first job hunt has something to put here: school, projects, volunteering, part-time work.
-          </p>
+        <div className="grid gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-2">
+          <section aria-labelledby="have-cv" className="bg-surface p-6">
+            <h2 id="have-cv" className="text-base font-semibold">
+              I have a CV
+            </h2>
+            <p className="mb-5 mt-1 text-sm text-muted">Upload it or paste it, and we&apos;ll read it into the sections below.</p>
+            <ProfileImport replacing={false} />
+          </section>
+          <section aria-labelledby="no-cv" className="flex flex-col bg-surface p-6">
+            <h2 id="no-cv" className="text-base font-semibold">
+              I don&apos;t have one yet
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Six short steps with a live preview. Write roughly what you did and we&apos;ll turn it into bullet points, using only your words. School,
+              projects, volunteering and part-time work all count.
+            </p>
+            <div className="mt-5">
+              <ButtonLink href="/app/profile/build">Build one with help</ButtonLink>
+            </div>
+          </section>
         </div>
       )}
 

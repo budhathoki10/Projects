@@ -155,6 +155,14 @@ The Tailored CV tab has:
 - the live CV in the chosen template on the right, with a "Change look" button
 - a "try-on" strip showing three recommended templates
 
+### Build your CV (`/app/profile/build`)
+- A header with "Step 2 of 6", the step title, "Save and come back later" and, on phones, a Preview toggle. Under it, six thin progress segments with step names (names hidden on phones). Each segment is a button that saves and jumps.
+- One short screen per step: a sentence saying what it's for, then the fields with an example in each placeholder. Back and Continue sit at the bottom, divided by a hairline. Continue reads "Skip for now" on an optional step left empty.
+- Rough notes sit in a `panel` box under each job, with "Turn into bullet points" as a secondary button. Suggestions are a ticked list; a flagged one is unticked and says which words to check, in `notice-strong`.
+- Skills are removable chips in `subtle`, and suggestions are dashed chips with a plus.
+- The live preview is a sticky right column on large screens and a toggle on phones.
+- The profile page offers the two ways in side by side, with equal weight: "I have a CV" (upload or paste) and "I don't have one yet" (Build one with help).
+
 ### CV Studio
 - **Studio home:** your CV's strength meter, your default template, My templates, and recommended templates.
 - **Gallery:**

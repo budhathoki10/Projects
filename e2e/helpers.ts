@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page } from "@playwright/test";
 import postgres from "postgres";
 import { EMAIL_OUTBOX, TEST_DATABASE_URL } from "../playwright.config";
@@ -66,4 +67,12 @@ export async function logOut(page: Page) {
   await page.getByLabel("Account menu").click();
   await page.getByRole("button", { name: "Log out" }).click();
   await page.waitForURL((u) => !u.pathname.startsWith("/app"));
+}
+
+/** Fails on any serious or critical WCAG 2 A/AA problem axe finds on the page. */
+export async function expectNoSeriousA11yIssues(page: Page, what: string) {
+  const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).exclude("nextjs-portal").analyze();
+  const serious = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+  const describe = (v: (typeof serious)[number]) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => `${n.html.slice(0, 120)} (${n.failureSummary?.split("\n").at(-1)?.trim()})`).join(" | ")}`;
+  expect(serious.map(describe), `${what} has accessibility problems`).toEqual([]);
 }
