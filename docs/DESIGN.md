@@ -104,32 +104,42 @@ Components only use these, through Tailwind (`bg-surface`, `text-muted`, `border
 └───────────┴──────────────────────────────────────────────────────┘
    240px
 ```
-- **Sidebar** (240px, `surface`):
+- **Sidebar** (240px, `panel`):
   - Logo, then the main nav: Today, Jobs, CV Studio, Interview prep and Progress.
-  - The active item is a white raised row with a jade bar on the left. Today shows a red count badge when follow-ups are due.
-  - At the bottom: a pass card ("Free plan · 2 of 3 CVs left · Get a pass", or "Pass · 12 days left"), then Settings and the account.
-- **Top bar:** breadcrumb or page title, the search button (opens ⌘K), the primary "Add job" button and the account menu (email, Billing, Settings, Log out).
+  - The active item is a quiet `subtle` fill with medium-weight text. Today shows a plain count when follow-ups are due.
+  - At the bottom: a plain plan note ("Free plan · 2 of 3 CVs left", then "Upgrade", or "Job-hunt pass · 12 days left"), then Settings. There's no box and no progress bar.
+- **Top bar:** the search button (opens ⌘K), the primary "Add job" button and the account menu (email, Billing, Settings, Log out). On desktop the page title isn't repeated here; it only shows on phones.
 - **Below 1024px:** the sidebar collapses to icons only (72px).
 - **Below 768px:** there's no sidebar. A bottom tab bar has Today, Jobs, Studio and More, and a round "Add job" button floats above it on the right. The top bar shows only the title and search.
 - The email-confirmation banner sits at the top of the content area, not above the whole shell.
 
 ## Page anatomy
-Every app page has an eyebrow (small caps, muted), a serif title, a one-line explanation in muted text, and then the content. One primary action per page, top right. Empty states always say what to do next and show the button for it.
+Every app page starts with `PageHeader` (`src/components/page-header.tsx`): a plain semibold title (26px), an optional muted line under it, and the page's actions on the right. Sections use `SectionHeading`, a 15px semibold heading in sentence case.
+
+- **No uppercase eyebrows.** `Eyebrow` is now a quiet 13px label.
+- **One typeface in the app.** Geist only, with tabular numbers instead of monospace. The serif is kept for the logo, the marketing and legal pages, and CV templates.
+- **Lists and dividers before cards.** A box is only used when it holds a form, a preview or a list.
+- **One primary action per page.** Empty states always say what to do next and show the button for it.
 
 ### Today
-1. Greeting and date.
-2. **Next best action:** one large card with one sentence and one button. It picks the most useful thing in this order:
-   1. add your CV
-   2. practise for an interview in the next 3 days
-   3. a follow-up that's due
-   4. tailor a saved job
-   5. add jobs to reach the weekly goal
-   6. "You're on track"
-3. **KPI row:** applied this week, waiting to hear, interviews and response rate. Each has an 8-week sparkline.
-4. A two-column grid:
-   - **Left:** follow-ups due, then upcoming interviews.
-   - **Right:** the weekly goal ring, the mini pipeline (a count per stage, each linking to the filtered board), then the CV strength meter.
-5. On a phone, the same blocks stack in that order.
+A to-do list first, numbers second, in one column about 760px wide.
+1. **Header:**
+   - "Today" and the date on the left.
+   - On the right, "This week ■■□□□ 2 of 5" with "Change goal".
+2. **Up next:** up to 5 real next steps from `nextSteps()` in `src/lib/today.ts`, in this order:
+   1. add a CV
+   2. interviews in the next 3 days
+   3. follow-ups that are due
+   4. saved jobs to tailor
+   5. CV fixes, when the strength is under 85
+   6. the weekly goal
+
+   Each row has an open circle, a title, a muted detail and one action. Only the first row's button is solid. If there's nothing to do, it says "You're all caught up."
+3. **Your search:** clickable counts per stage, one segmented bar, the response rate, how many are waiting, and a tiny 8-week bar row.
+4. **Coming up:** booked interviews by date. Shown only when there are some.
+5. **Recent jobs:** a plain list showing title, company, stage and match.
+
+Not on Today: KPI tiles, donut rings, sparkline cards, greetings, usage counters (those are in the sidebar and on Billing) or icon chips.
 
 ### Jobs
 Add a job (a link, or paste the text) at the top, then a toggle between Board and Table.

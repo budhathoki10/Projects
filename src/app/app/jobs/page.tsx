@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/page-header";
 import { AddJobForm } from "@/components/add-job-form";
 import { JobsBoard } from "@/components/jobs-board";
-import { Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { preparedJobIds } from "@/lib/services/documents";
 import { isStatus, listJobs } from "@/lib/services/jobs";
@@ -14,10 +14,7 @@ export default async function JobsPage({ searchParams }: PageProps<"/app/jobs">)
 
   return (
     <div className="space-y-8">
-      <header>
-        <Eyebrow>Your applications</Eyebrow>
-        <h1 className="mt-1 font-serif text-4xl tracking-tight">Jobs</h1>
-      </header>
+      <PageHeader title="Jobs" subtitle="Every job you're considering, from saved to offer." />
 
       <section id="add" className="max-w-2xl scroll-mt-24 rounded-xl border border-border bg-surface p-5">
         <h2 className="mb-3 font-medium">Add a job</h2>

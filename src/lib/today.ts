@@ -20,13 +20,31 @@ export function upcomingInterviews<J extends JobLike>(jobs: J[], day: string, li
     .slice(0, limit);
 }
 
-export type NextAction = { title: string; body: string; href: string; cta: string; kind: "cv" | "interview" | "follow-up" | "tailor" | "add" | "on-track" };
+export type StepKind = "cv" | "interview" | "follow-up" | "tailor" | "cv-fix" | "goal";
+
+export type Step = {
+  kind: StepKind;
+  title: string;
+  detail: string;
+  href: string;
+  cta: string;
+  /** A second, quieter action (e.g. "Build one with help"). */
+  alt?: { href: string; label: string };
+  /** For follow-ups: the job, so the row can offer "Done". */
+  jobId?: string;
+};
+
+export const MAX_STEPS = 5;
+
+const daysUntil = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
+const at = (j: JobLike) => [j.post.title || "Untitled job", j.post.company].filter(Boolean).join(" · ");
 
 /**
- * The single most useful thing to do now: add a CV, practise for an interview in the next 3 days,
- * send a follow-up that's due, tailor a saved job, add jobs to reach the weekly goal, or nothing.
+ * Today's to-do list, most useful first: add a CV; practise for interviews in the next 3 days;
+ * send follow-ups that are due; tailor saved jobs; fix a weak CV; reach the weekly goal.
+ * At most MAX_STEPS. An empty list means the user is all caught up.
  */
-export function nextBestAction(input: {
+export function nextSteps(input: {
   profileReady: boolean;
   jobs: JobLike[];
   dueFollowUps: JobLike[];
@@ -35,53 +53,67 @@ export function nextBestAction(input: {
   appliedThisWeek: number;
   weeklyGoal: number;
   day: string;
-}): NextAction {
+  /** CV strength, when there's a CV: the score and the labels of the checks that fail. */
+  cv?: { score: number; failing: string[] } | null;
+}): Step[] {
   const { jobs, day } = input;
-  const label = (j: JobLike) => `${j.post.title || "this job"}${j.post.company ? ` at ${j.post.company}` : ""}`;
   if (!input.profileReady) {
-    return { kind: "cv", title: "Add your CV", body: "Upload it once. Every tailored CV, letter and interview question is built from it and nothing else.", href: "/app/profile", cta: "Add your CV" };
+    return [
+      {
+        kind: "cv",
+        title: "Add your CV",
+        detail: "Every tailored CV, letter and interview question is built from it, and nothing else.",
+        href: "/app/profile",
+        cta: "Upload my CV",
+        alt: { href: "/app/profile/build", label: "No CV? Build one with help" },
+      },
+    ];
   }
-  const soon = upcomingInterviews(jobs, day, 10).find((j) => j.interviewOn! <= addDays(day, 3));
-  if (soon) {
-    const days = Math.round((Date.parse(soon.interviewOn!) - Date.parse(day)) / 86_400_000);
-    const when = days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
-    return {
+
+  const steps: Step[] = [];
+  for (const j of upcomingInterviews(jobs, day, 10).filter((j) => daysUntil(day, j.interviewOn!) <= 3)) {
+    const d = daysUntil(day, j.interviewOn!);
+    const when = d === 0 ? "today's" : d === 1 ? "tomorrow's" : `your interview in ${d} days`;
+    steps.push({
       kind: "interview",
-      title: `Interview ${when}: ${label(soon)}`,
-      body: input.practised.has(soon.id) ? "You've started practising. Go through the questions you skipped and say your answers out loud." : "Practise the likely questions now, including the ones about your gaps.",
-      href: `/app/jobs/${soon.id}/interview`,
-      cta: "Practise answers",
-    };
+      title: d <= 1 ? `Practise for ${when} interview` : `Practise for ${when}`,
+      detail: `${at(j)}${input.practised.has(j.id) ? " · started" : ""}`,
+      href: `/app/jobs/${j.id}/interview`,
+      cta: input.practised.has(j.id) ? "Keep practising" : "Practise",
+    });
   }
-  const due = input.dueFollowUps[0];
-  if (due) {
-    return {
+  for (const j of input.dueFollowUps) {
+    steps.push({
       kind: "follow-up",
-      title: `Follow up with ${due.post.company || "the employer"}`,
-      body: `You applied for ${due.post.title || "this job"} a week ago with no answer. A short, polite note is ready to send.`,
-      href: `/app/jobs/${due.id}`,
+      title: `Follow up with ${j.post.company || "the employer"}`,
+      detail: `${j.post.title || "Untitled job"}${j.appliedOn ? ` · applied ${new Date(`${j.appliedOn}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}` : ""} · no reply yet`,
+      href: `/app/jobs/${j.id}`,
       cta: "See the message",
-    };
+      jobId: j.id,
+    });
   }
-  const untailored = jobs.find((j) => j.status === "saved" && !input.tailored.has(j.id));
-  if (untailored) {
-    return {
-      kind: "tailor",
-      title: `Tailor your CV for ${label(untailored)}`,
-      body: "It takes a minute. Your most relevant work moves up, in the words this employer uses.",
-      href: `/app/jobs/${untailored.id}/cv`,
-      cta: "Tailor my CV",
-    };
+  for (const j of jobs.filter((j) => j.status === "saved" && !input.tailored.has(j.id))) {
+    steps.push({ kind: "tailor", title: `Tailor your CV for ${j.post.title || "this job"}`, detail: at(j), href: `/app/jobs/${j.id}/cv`, cta: "Tailor" });
+  }
+  if (input.cv && input.cv.score < 85 && input.cv.failing.length) {
+    const n = input.cv.failing.length;
+    steps.push({
+      kind: "cv-fix",
+      title: `Fix ${n} ${n === 1 ? "thing" : "things"} in your CV`,
+      detail: input.cv.failing.slice(0, 3).join(", "),
+      href: "/app/studio",
+      cta: "Fix",
+    });
   }
   if (input.appliedThisWeek < input.weeklyGoal) {
     const left = input.weeklyGoal - input.appliedThisWeek;
-    return {
-      kind: "add",
-      title: jobs.length ? `${left} more ${left === 1 ? "application" : "applications"} to reach this week's goal` : "Add a job you want",
-      body: jobs.length ? "Paste a job post you like. You'll see how well you fit before you spend time on it." : "Paste a link or the description of any job, and see how well your CV fits it before you apply.",
+    steps.push({
+      kind: "goal",
+      title: jobs.length ? `Add ${left} more ${left === 1 ? "application" : "applications"} this week` : "Add a job you'd like",
+      detail: jobs.length ? "Paste a job you like and see how well you fit before you spend time on it." : "Paste a link or the description, and see how well your CV fits before you apply.",
       href: "/app/jobs?add=1",
       cta: "Add a job",
-    };
+    });
   }
-  return { kind: "on-track", title: "You're on track this week", body: "Goal reached. Take a breath, or get ahead with one more strong application.", href: "/app/jobs?add=1", cta: "Add another job" };
+  return steps.slice(0, MAX_STEPS);
 }

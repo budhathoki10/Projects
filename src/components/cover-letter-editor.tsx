@@ -32,7 +32,7 @@ export function CoverLetterEditor({ jobId, initial, flags }: { jobId: string; in
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={Math.max(14, text.split("\n").length + 2)}
-          className={`${inputClass} font-serif text-[16px] leading-relaxed`}
+          className={`${inputClass} text-[15px] leading-relaxed`}
         />
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="secondary" disabled={saving}>

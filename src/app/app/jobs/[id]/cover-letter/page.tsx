@@ -28,7 +28,7 @@ export default async function CoverTab({ params }: PageProps<"/app/jobs/[id]/cov
   if (!doc?.text) {
     return (
       <div className="max-w-2xl space-y-4 rounded-xl border border-border bg-surface shadow-1 p-6">
-        <h2 className="font-serif text-2xl font-medium">A cover letter for this job</h2>
+        <h2 className="text-lg font-semibold">A cover letter for this job</h2>
         <p className="text-sm text-muted">
           Short, specific and in plain words: why this job, and two or three things you&apos;ve actually done that it needs. Nothing invented. Edit it
           until it sounds like you.

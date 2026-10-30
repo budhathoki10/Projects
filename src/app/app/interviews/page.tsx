@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { formatDay } from "@/lib/dates";
 import { today } from "@/lib/plans";
@@ -27,8 +27,8 @@ export default async function Interviews() {
         <div className={`flex w-14 flex-col items-center rounded-lg py-1.5 ${j.interviewOn && !past ? "bg-brand-soft text-brand-strong" : "bg-subtle text-muted"}`}>
           {j.interviewOn ? (
             <>
-              <span className="text-[10px] font-medium uppercase">{new Date(`${j.interviewOn}T12:00:00Z`).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}</span>
-              <span className="font-mono text-xl leading-none">{Number(j.interviewOn.slice(8))}</span>
+              <span className="text-[11px] font-medium">{new Date(`${j.interviewOn}T12:00:00Z`).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}</span>
+              <span className="text-xl font-semibold leading-none tabular-nums">{Number(j.interviewOn.slice(8))}</span>
             </>
           ) : (
             <Icon name="calendar" size={20} />
@@ -51,13 +51,9 @@ export default async function Interviews() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <Eyebrow>Interview prep</Eyebrow>
-        <h1 className="mt-1 font-serif text-4xl tracking-tight">Interviews</h1>
-        <p className="mt-2 max-w-xl text-muted">Questions built from each job and your CV, including the hard ones about gaps. Type your answer and get honest feedback.</p>
-      </header>
+      <PageHeader title="Interviews" subtitle="Questions built from each job and your CV, including the hard ones about gaps." />
       <section aria-labelledby="booked" className="space-y-3">
-        <h2 id="booked" className="font-serif text-2xl">
+        <h2 id="booked" className="text-base font-semibold">
           Booked
         </h2>
         {booked.length ? (
@@ -74,7 +70,7 @@ export default async function Interviews() {
       </section>
       {others.length > 0 && (
         <section aria-labelledby="ahead" className="space-y-3">
-          <h2 id="ahead" className="font-serif text-2xl">
+          <h2 id="ahead" className="text-base font-semibold">
             Get ahead
           </h2>
           <p className="text-sm text-muted">Practising before you hear back makes the call less stressful.</p>

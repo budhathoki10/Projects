@@ -26,7 +26,7 @@ export function StrengthMeter({ profile, compact = false }: { profile: Profile; 
             strokeDasharray={`${(score / 100) * circ} ${circ}`}
             transform="rotate(-90 34 34)"
           />
-          <text x="34" y="39" textAnchor="middle" className="fill-foreground font-mono text-[15px] font-medium">
+          <text x="34" y="39" textAnchor="middle" className="fill-foreground text-[15px] font-semibold tabular-nums">
             {score}
           </text>
         </svg>

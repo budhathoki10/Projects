@@ -29,7 +29,7 @@ export function PracticeAnswer({ jobId, questionId, answer, feedback }: { jobId:
       {feedback && (
         <div className="space-y-3 rounded-lg border border-border bg-panel p-4 text-sm">
           <p className="font-medium">
-            <span className="font-mono">{feedback.score}/5</span>
+            <span className="tabular-nums">{feedback.score}/5</span>
             <span className="ml-2 text-muted">
               {feedback.score >= 4 ? "Strong answer" : feedback.score === 3 ? "Good, with room to sharpen" : "Needs a concrete example"}
             </span>

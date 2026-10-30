@@ -77,7 +77,7 @@ export function JobCvLook({
         <span className="text-[13px] text-muted">Look:</span>
         <span className="text-sm font-medium">{current.name}</span>
         <AtsBadge level={atsReport(spec).level} />
-        <span className="ml-auto font-mono text-[12px] text-muted">
+        <span className="ml-auto text-[12px] tabular-nums text-muted">
           {pages} {pages === 1 ? "page" : "pages"}
           {fitted ? " · fitted" : ""}
         </span>
