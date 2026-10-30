@@ -22,6 +22,12 @@ export function hasPass(user: Pick<User, "passUntil">, now = new Date()): boolea
   return !!user.passUntil && user.passUntil > now;
 }
 
+/** Whole days left on the pass (at least 1 while it's active), or null without one. */
+export function passDaysLeft(user: Pick<User, "passUntil">, now = new Date()): number | null {
+  if (!user.passUntil || !hasPass(user, now)) return null;
+  return Math.max(1, Math.ceil((user.passUntil.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
+}
+
 export function limitsFor(user: Pick<User, "passUntil">) {
   return hasPass(user) ? LIMITS.pass : LIMITS.free;
 }
