@@ -124,9 +124,9 @@ test("the free allowance runs out, and a Khalti pass lifts it and unlocks Word d
   await page.goto("/app/billing");
   await expect(page.getByTestId("current-plan")).toHaveText("Free");
   await page.getByRole("button", { name: "NPR 1,500 for 30 days" }).click();
-  await expect(page).toHaveURL(/\/app\/billing\?status=success/);
+  await expect(page.getByRole("status").filter({ hasText: "Payment received. Your pass is active." })).toBeVisible();
+  await expect(page).toHaveURL(/\/app\/billing$/);
   await expect(page.getByTestId("current-plan")).toHaveText("Job-hunt pass");
-  await expect(page.getByText("Your pass is active.")).toBeVisible();
 
   await page.goto("/app/jobs");
   await page.getByRole("link", { name: /Customer Success Lead/ }).click();

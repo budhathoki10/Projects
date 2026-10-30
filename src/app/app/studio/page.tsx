@@ -7,6 +7,7 @@ import { Icon } from "@/components/icons";
 import { StrengthMeter } from "@/components/strength-meter";
 import { PhotoUpload } from "@/components/studio/photo-upload";
 import { AtsBadge, TemplateThumb } from "@/components/studio/template-bits";
+import { FlashToast } from "@/components/toast";
 import { FormMessage } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { photoUrl } from "@/lib/services/photos";
@@ -44,7 +45,7 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
           </Link>
         }
       />
-      {deleted === "1" && <FormMessage success="Template deleted. Jobs that used it now use your default." />}
+      <FlashToast message={deleted === "1" ? "Template deleted. Jobs that used it now use your default." : null} clear={["deleted"]} />
       {full === "1" && <FormMessage error={`You can keep up to ${MAX_TEMPLATES} templates. Delete one to make room.`} />}
       {!ready && (
         <p className="rounded-lg border border-border bg-panel px-4 py-3 text-sm">

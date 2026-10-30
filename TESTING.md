@@ -59,7 +59,7 @@ npm run test:e2e     # Playwright: builds the app, starts it and a fake-sites se
 - **Access:**
   - Signed-out visitors are sent to log in.
   - People can't open each other's jobs or downloads.
-- **Account emails:** confirming an email, resetting a password and exporting data.
+- **Account emails:** the confirm-email bar (resend answers with a toast, closing it lasts for the session), confirming an email (a toast, and the `?verified=1` flag leaves the address), resetting a password and exporting data.
 - **Paddle:** a signed webhook adds exactly the days paid for, once.
 - **Cron:** the cron route needs its secret.
 - **Deletion:** deleting an account removes everything.

@@ -1,6 +1,7 @@
+import { FlashToast } from "@/components/toast";
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import { ButtonLink, Eyebrow, FormMessage } from "@/components/ui";
+import { ButtonLink, Eyebrow } from "@/components/ui";
 import { TemplateThumb } from "@/components/studio/template-bits";
 import { LIMITS, PASSES } from "@/lib/plans";
 
@@ -88,11 +89,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     <>
       <SiteHeader />
       <main className="flex-1">
-        {deleted === "1" && (
-          <div className="mx-auto max-w-5xl px-5 pt-6">
-            <FormMessage success="Your account and everything in it has been deleted." />
-          </div>
-        )}
+        <FlashToast message={deleted === "1" ? "Your account and everything in it has been deleted." : null} clear={["deleted"]} />
         <section className="mx-auto grid max-w-5xl gap-12 px-5 pb-20 pt-14 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
           <div>
             <Eyebrow>For anyone applying for jobs</Eyebrow>

@@ -54,8 +54,8 @@ test("browse the gallery with your own CV, make a template your own and use it f
   await page.getByRole("button", { name: "Redo" }).click();
   await page.getByLabel("Template name").fill("Asha's teal");
   await page.getByRole("button", { name: "Save as my template" }).click();
-  await expect(page).toHaveURL(/\/app\/studio\/edit\/[0-9a-f-]{36}\?saved=1$/);
-  await expect(page.getByText("Saved to My templates.")).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Saved to My templates." })).toBeVisible();
+  await expect(page).toHaveURL(/\/app\/studio\/edit\/[0-9a-f-]{36}$/);
   const rows = await query((sql) => sql`select t.id, t.name, t.spec, t.based_on from cv_templates t join users u on u.id = t.user_id where u.email = ${email}`);
   expect(rows[0]).toMatchObject({ name: "Asha's teal", based_on: "sl-033" });
   const spec = rows[0].spec as { fonts: { body: string }; palette: { accent: string }; sections: { id: string }[] };

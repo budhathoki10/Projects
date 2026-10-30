@@ -49,7 +49,7 @@ Components only use these, through Tailwind (`bg-surface`, `text-muted`, `border
 | `highlight` | jade-4 | jade-5 | "You have this" marker, text selection |
 | `money` / `money-soft` / `money-strong` | jade-11 / 3 / 12 | same | Success: a good match, an offer, "saved" |
 | `pen` / `pen-soft` / `pen-border` / `pen-strong` | tomato-11 / 3 / 7 / 12 | same | Real gaps, errors, delete |
-| `notice` / `notice-soft` / `notice-border` / `notice-strong` | amber-11 / 2 / 6 / 12 | same | The confirm-email banner, warnings, "harder for some ATS" |
+| `notice` / `notice-soft` / `notice-border` / `notice-strong` | amber-11 / 2 / 6 / 12 | same | Warnings, "harder for some ATS", fact-check flags |
 | `paper` / `paper-ink` | white / sand-12 | same | CV pages: always white with dark ink |
 | `scrim` | sand-12 at 40% | black at 60% | Behind dialogs |
 
@@ -111,7 +111,7 @@ Components only use these, through Tailwind (`bg-surface`, `text-muted`, `border
 - **Top bar:** the search button (opens ⌘K), the primary "Add job" button and the account menu (email, Billing, Settings, Log out). On desktop the page title isn't repeated here; it only shows on phones.
 - **Below 1024px:** the sidebar collapses to icons only (72px).
 - **Below 768px:** there's no sidebar. A bottom tab bar has Today, Jobs, Studio and More, and a round "Add job" button floats above it on the right. The top bar shows only the title and search.
-- The email-confirmation banner sits at the top of the content area, not above the whole shell.
+- Until the email is confirmed, a slim one-line bar sits under the top bar: a mail icon, "Confirm your email", the address (hidden on phones), a small "Resend link" button and a close button. It uses the surface colour, not a coloured fill. Closing it hides it until the browser is closed.
 
 ## Page anatomy
 Every app page starts with `PageHeader` (`src/components/page-header.tsx`): a plain semibold title (26px), an optional muted line under it, and the page's actions on the right. Sections use `SectionHeading`, a 15px semibold heading in sentence case.
@@ -170,6 +170,13 @@ The Tailored CV tab has:
   - The toolbar has the name, undo, redo, "Fit to 1 page", "What an ATS reads" and Save.
 
 ## Components
+
+### Messages and toasts
+Each kind of message has one home:
+- **Toast**, for a confirmation of something that already happened ("Email confirmed", "Template deleted", "Payment received"). It's an ink-coloured pill under the top bar on phones and at the bottom right on larger screens. It leaves after 5 seconds, pauses while hovered or focused, and has a close button. A toast never carries an action or something the person must read twice. Pages that land with a one-off flag (`?verified=1`) use `FlashToast`, which shows the toast once and removes the flag from the address.
+- **Form result** (`FormMessage`), for the answer to a form, right next to it. Success is one line of green text with a tick and no box. An error is a quiet red callout with an icon, because it needs reading.
+- **Bar**, for a standing state the person should fix (the unconfirmed email). It's one line, neutral, and can be dismissed.
+- Never a coloured full-width block for a passing confirmation.
 `src/components/ui.tsx` holds Button (primary, secondary, ghost, danger), Card, Field, Input, Textarea, Select, Badge, Notice (info, success, warning, error), EmptyState, Logo and Eyebrow. Use these before writing new markup.
 
 ## Accessibility

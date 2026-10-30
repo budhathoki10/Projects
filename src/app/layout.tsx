@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { cvFontVariables } from "@/components/cv/cv-fonts";
+import { Toaster } from "@/components/toast";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -16,7 +17,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} ${cvFontVariables} h-full antialiased`}>
-      <body className="flex min-h-full flex-col font-sans text-[15px] leading-relaxed">{children}</body>
+      <body className="flex min-h-full flex-col font-sans text-[15px] leading-relaxed">
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }
