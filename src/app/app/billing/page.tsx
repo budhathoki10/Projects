@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/page-header";
 import { KhaltiButton, PaddleCheckout } from "@/components/billing-buttons";
 import { FormMessage } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
@@ -26,10 +27,10 @@ export default async function BillingPage({ searchParams }: PageProps<"/app/bill
 
   return (
     <div className="max-w-3xl">
-      <h1 className="font-serif text-4xl font-medium tracking-tight">Job-hunt pass</h1>
-      <p className="mt-1.5 text-sm text-muted">
-        One payment, no subscription. It never renews on its own: when the time runs out, you&apos;re back on the free plan with everything kept.
-      </p>
+      <PageHeader
+        title="Job-hunt pass"
+        subtitle="One payment, no subscription. It never renews on its own: when the time runs out, you're back on the free plan with everything kept."
+      />
       <div className="mt-6 space-y-3">
         {reason === "docx" && !active && <FormMessage error="Word downloads come with a pass. PDF downloads are free." />}
         <FormMessage error={message?.error} success={message?.success} />
@@ -53,7 +54,7 @@ export default async function BillingPage({ searchParams }: PageProps<"/app/bill
       </dl>
 
       <section className="mt-12">
-        <h2 className="font-serif text-2xl font-medium">{active ? "Add more time" : "What the pass adds"}</h2>
+        <h2 className="text-lg font-semibold">{active ? "Add more time" : "What the pass adds"}</h2>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
           <li>Tailor your CV for as many jobs as you apply to</li>
           <li>Cover letters and interview practice for every one of them</li>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { deleteTemplateAction, duplicateTemplateAction } from "@/app/actions/templates";
 import { CvMini } from "@/components/cv/cv-mini";
@@ -6,7 +7,7 @@ import { Icon } from "@/components/icons";
 import { StrengthMeter } from "@/components/strength-meter";
 import { PhotoUpload } from "@/components/studio/photo-upload";
 import { AtsBadge, TemplateThumb } from "@/components/studio/template-bits";
-import { Card, Eyebrow, FormMessage } from "@/components/ui";
+import { FormMessage } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { photoUrl } from "@/lib/services/photos";
 import { getProfile, profileReady } from "@/lib/services/profile";
@@ -34,16 +35,15 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
 
   return (
     <div className="space-y-10">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <Eyebrow>CV Studio</Eyebrow>
-          <h1 className="mt-1 font-serif text-4xl">Make it look right</h1>
-          <p className="mt-2 max-w-xl text-muted">Choose from 100 templates or design your own. Every job can use a different look, and the facts always come from your CV.</p>
-        </div>
-        <Link href="/app/studio/templates" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-ink px-4 text-sm font-medium text-on-ink hover:bg-ink-hover">
-          <Icon name="studio" size={16} /> Browse 100 templates
-        </Link>
-      </header>
+      <PageHeader
+        title="CV Studio"
+        subtitle="Choose from 100 templates or design your own. The facts always come from your CV."
+        actions={
+          <Link href="/app/studio/templates" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-ink px-3.5 text-sm font-medium text-on-ink hover:bg-ink-hover">
+            <Icon name="studio" size={16} /> Browse templates
+          </Link>
+        }
+      />
       {deleted === "1" && <FormMessage success="Template deleted. Jobs that used it now use your default." />}
       {full === "1" && <FormMessage error={`You can keep up to ${MAX_TEMPLATES} templates. Delete one to make room.`} />}
       {!ready && (
@@ -56,15 +56,15 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
         </p>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <Card className="grid gap-6 p-6 sm:grid-cols-[220px_1fr]">
+      <div className="grid gap-10 border-y border-border py-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:divide-x lg:divide-border">
+        <div className="grid gap-6 sm:grid-cols-[200px_1fr]">
           <Link href={`/app/studio/edit/${style.template.id}`} className="block w-full max-w-[200px] self-start overflow-hidden rounded-md ring-1 ring-border transition hover:ring-hover-border sm:max-w-none" aria-label={`Edit ${style.template.name}`}>
             <CvMini spec={style.spec} cv={cv} photoUrl={shownPhoto} />
           </Link>
           <div className="space-y-4">
             <div>
-              <Eyebrow>Your default look</Eyebrow>
-              <h2 className="mt-1 font-serif text-2xl">{style.template.name}</h2>
+              <p className="text-[13px] text-muted">Your default look</p>
+              <h2 className="mt-0.5 text-xl font-semibold tracking-tight">{style.template.name}</h2>
               <div className="mt-2">
                 <AtsBadge level={atsReport(style.spec).level} />
               </div>
@@ -83,19 +83,19 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
               <PhotoUpload photoUrl={photo} />
             </div>
           </div>
-        </Card>
-        <Card className="p-6">
-          <Eyebrow className="mb-4">CV strength</Eyebrow>
+        </div>
+        <div className="lg:pl-10">
+          <h2 className="mb-4 text-base font-semibold">CV strength</h2>
           {ready ? <StrengthMeter profile={profile} compact /> : <p className="text-sm text-muted">Add your CV to see how it scores.</p>}
-        </Card>
+        </div>
       </div>
 
       <section aria-labelledby="mine" className="space-y-4">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 id="mine" className="font-serif text-2xl">
+          <h2 id="mine" className="text-base font-semibold">
             My templates
           </h2>
-          <span className="font-mono text-[12px] text-muted">
+          <span className="text-[13px] tabular-nums text-muted">
             {mine.length} of {MAX_TEMPLATES}
           </span>
         </div>
@@ -146,7 +146,7 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
 
       <section aria-labelledby="rec" className="space-y-4">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 id="rec" className="font-serif text-2xl">
+          <h2 id="rec" className="text-base font-semibold">
             Picked for you
           </h2>
           <Link href="/app/studio/templates" className="text-[13px] underline underline-offset-4">

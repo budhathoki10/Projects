@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Eyebrow } from "@/components/ui";
+import { PageHeader } from "@/components/page-header";
 import { requireUser } from "@/lib/auth/session";
 import { progress } from "@/lib/services/jobs";
 
@@ -17,11 +17,7 @@ export default async function ProgressPage() {
   ];
   return (
     <div className="max-w-3xl space-y-10">
-      <div>
-        <Eyebrow>Your job hunt</Eyebrow>
-        <h1 className="mt-2 font-serif text-4xl font-medium tracking-tight">Progress</h1>
-        <p className="mt-1.5 text-sm text-muted">Job hunting is mostly waiting. This is the part you control.</p>
-      </div>
+      <PageHeader title="Progress" subtitle="Job hunting is mostly waiting. This is the part you control." />
       <dl className="divide-y divide-border border-y border-border">
         {rows.map((r) => (
           <div key={r.label} className="flex items-baseline justify-between gap-4 py-4">
@@ -29,7 +25,7 @@ export default async function ProgressPage() {
               <p className="font-medium">{r.label}</p>
               {r.note && <p className="text-[13px] text-muted">{r.note}</p>}
             </dt>
-            <dd className="font-mono text-3xl tabular-nums">{r.value}</dd>
+            <dd className="text-3xl font-semibold tabular-nums tracking-tight">{r.value}</dd>
           </div>
         ))}
       </dl>

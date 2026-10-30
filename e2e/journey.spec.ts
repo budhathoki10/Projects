@@ -94,8 +94,8 @@ test("a job seeker goes from CV to application to follow-up, without anything in
 
   await page.goto("/app");
   await expect(page.getByLabel("1 to follow up")).toBeVisible();
-  const due = page.getByRole("region", { name: "Worth a follow-up" });
-  await expect(due.getByRole("link", { name: "Customer Success Lead" })).toBeVisible();
+  const upNext = page.getByRole("region", { name: "Up next" });
+  await expect(upNext.getByRole("listitem").filter({ hasText: "Follow up with Northwind Software" })).toContainText("Customer Success Lead");
   await page.goto(jobUrl);
   await expect(page.getByLabel("Follow-up message")).toHaveValue(/I applied for Customer Success Lead at Northwind Software/);
   await page.getByRole("button", { name: "I followed up" }).click();

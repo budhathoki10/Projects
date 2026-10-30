@@ -124,7 +124,7 @@ export default async function CvTab({ params }: PageProps<"/app/jobs/[id]/cv">) 
   if (!doc) {
     return (
       <div className="max-w-2xl space-y-4 rounded-xl border border-border bg-surface shadow-1 p-6">
-        <h2 className="font-serif text-2xl font-medium">Tailor your CV for this job</h2>
+        <h2 className="text-lg font-semibold">Tailor your CV for this job</h2>
         <p className="text-sm text-muted">
           We&apos;ll suggest rewording and reordering so your most relevant experience comes first, in the words this employer uses. You check each
           change. Anything that isn&apos;t already in your CV is blocked, so nothing made up can slip through.
@@ -141,7 +141,7 @@ export default async function CvTab({ params }: PageProps<"/app/jobs/[id]/cv">) 
     <div className="grid gap-8 xl:grid-cols-[minmax(0,26rem)_1fr]">
       <section className="space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-serif text-2xl font-medium">Suggested changes</h2>
+          <h2 className="text-base font-semibold">Suggested changes</h2>
           <p className="text-[13px] text-muted">
             Using {using} of {changes.length}
           </p>

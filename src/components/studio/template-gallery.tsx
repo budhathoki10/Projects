@@ -127,8 +127,8 @@ function Preview({ t, cv, photoUrl, mode, onClose }: { t: BuiltinTemplate; cv: P
         <aside className="order-1 w-full shrink-0 space-y-5 border-b border-border bg-surface p-5 md:order-2 md:w-80 md:border-b-0 md:border-l md:overflow-y-auto">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted">{t.id.replace("sl-", "No. ")}</p>
-              <h2 className="font-serif text-2xl">{t.name}</h2>
+              <p className="text-[13px] text-muted">{t.id.replace("sl-", "No. ")}</p>
+              <h2 className="text-xl font-semibold tracking-tight">{t.name}</h2>
             </div>
             <button type="button" onClick={onClose} className="rounded-lg p-2 text-muted hover:bg-subtle hover:text-foreground" aria-label="Close preview" autoFocus>
               <Icon name="close" />
@@ -185,7 +185,7 @@ export function TemplateGallery({ cv, photoUrl, mode, initialCategory }: { cv: P
               onClick={() => setF((cur) => ({ ...cur, category: "" }))}
               className={`flex w-full justify-between rounded-lg px-3 py-1.5 text-left ${!f.category ? "bg-surface font-medium shadow-1" : "text-muted hover:text-foreground"}`}
             >
-              All templates <span className="font-mono text-[12px] text-muted">{all.length}</span>
+              All templates <span className="text-[12px] tabular-nums text-muted">{all.length}</span>
             </button>
           </li>
           {CATEGORY_IDS.map((c) => (
@@ -198,7 +198,7 @@ export function TemplateGallery({ cv, photoUrl, mode, initialCategory }: { cv: P
                   f.category === c ? "bg-surface font-medium shadow-1" : "text-muted hover:text-foreground"
                 }`}
               >
-                {CATEGORIES[c]} <span className="font-mono text-[12px] text-muted">{all.filter((t) => t.categories.includes(c)).length}</span>
+                {CATEGORIES[c]} <span className="text-[12px] tabular-nums text-muted">{all.filter((t) => t.categories.includes(c)).length}</span>
               </button>
             </li>
           ))}

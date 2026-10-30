@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/page-header";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ProfileImport } from "@/components/profile-import";
-import { Eyebrow, FormMessage } from "@/components/ui";
+import { FormMessage } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { EMPTY_PROFILE } from "@/lib/model/types";
 import { getProfileRow, profileReady } from "@/lib/services/profile";
@@ -17,12 +18,15 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
   return (
     <div className="max-w-3xl space-y-10">
       <div>
-        <Eyebrow>{welcome === "1" ? "Step 1 of 2" : "Your profile"}</Eyebrow>
-        <h1 className="mt-2 font-serif text-4xl font-medium tracking-tight">{profile ? "Your CV" : "Start with your CV"}</h1>
-        <p className="mt-1.5 text-sm text-muted">
-          Everything Shortlist writes for you comes from here and nowhere else. If it isn&apos;t in your profile, it won&apos;t appear in a tailored CV
-          or cover letter.
-        </p>
+        <PageHeader
+          title={profile ? "Your CV" : "Start with your CV"}
+          subtitle={
+            <>
+              {welcome === "1" && <span className="font-medium text-foreground">Step 1 of 2 · </span>}
+              Everything Shortlist writes for you comes from here and nowhere else.
+            </>
+          }
+        />
         {imported && (
           <div className="mt-4">
             <FormMessage

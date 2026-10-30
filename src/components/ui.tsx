@@ -27,9 +27,9 @@ export function Card({ className = "", children }: { className?: string; childre
   return <div className={`rounded-xl border border-border bg-surface p-5 shadow-1 ${className}`}>{children}</div>;
 }
 
-/** Small uppercase label used above sections and table columns. */
+/** A small, quiet label above a block (sentence case: no uppercase eyebrows). */
 export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <p className={`text-[11px] font-medium uppercase tracking-[0.08em] text-muted ${className}`}>{children}</p>;
+  return <p className={`text-[13px] font-medium text-muted ${className}`}>{children}</p>;
 }
 
 // Text on a tint uses the scale's darkest step, so small badge text stays readable.
@@ -85,7 +85,7 @@ export function ScoreMeter({ score }: { score: number }) {
   const color = score >= 80 ? "bg-brand" : score >= 50 ? "bg-ink" : "bg-pen";
   return (
     <div className="w-40" role="img" aria-label={`Match score ${score} out of 100`}>
-      <p className="font-mono text-4xl font-medium tabular-nums tracking-tight">
+      <p className="text-4xl font-semibold tabular-nums tracking-tight">
         {score}
         <span className="text-base text-muted">/100</span>
       </p>

@@ -36,29 +36,25 @@ const TITLES: [RegExp, string][] = [
 
 export type ShellUser = { name: string; email: string; pass: { daysLeft: number } | null; allowance: { used: number; limit: number } };
 
-function PassCard({ user }: { user: ShellUser }) {
+function PlanNote({ user }: { user: ShellUser }) {
   if (user.pass) {
     return (
-      <Link href="/app/billing" className="block rounded-lg border border-border bg-surface p-3 text-[13px] shadow-1 hover:border-hover-border">
-        <p className="font-medium">Job-hunt pass</p>
-        <p className="mt-0.5 text-muted">
-          {user.pass.daysLeft} {user.pass.daysLeft === 1 ? "day" : "days"} left
-        </p>
-      </Link>
+      <p className="px-3 text-[13px] text-muted">
+        <Link href="/app/billing" className="hover:text-foreground">
+          Job-hunt pass · {user.pass.daysLeft} {user.pass.daysLeft === 1 ? "day" : "days"} left
+        </Link>
+      </p>
     );
   }
   const { used, limit } = user.allowance;
   return (
-    <Link href="/app/billing" className="block rounded-lg border border-border bg-surface p-3 text-[13px] shadow-1 hover:border-hover-border">
-      <p className="font-medium">Free plan</p>
-      <p className="mt-0.5 text-muted">
-        {Math.max(0, limit - used)} of {limit} tailored CVs left this month
-      </p>
-      <div className="mt-2 h-1 overflow-hidden rounded-full bg-subtle" aria-hidden>
-        <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (used / limit) * 100)}%` }} />
-      </div>
-      <p className="mt-2 font-medium text-foreground underline underline-offset-4">Get a pass</p>
-    </Link>
+    <p className="px-3 text-[13px] leading-relaxed text-muted">
+      Free plan · {Math.max(0, limit - used)} of {limit} CVs left
+      <br />
+      <Link href="/app/billing" className="font-medium text-foreground underline-offset-4 hover:underline">
+        Upgrade
+      </Link>
+    </p>
   );
 }
 
@@ -136,7 +132,7 @@ export function AppShell({
 
   const badge = (href: string) =>
     href === "/app" && followUps > 0 ? (
-      <span className="ml-auto rounded-full bg-pen-soft px-1.5 py-px font-mono text-[11px] font-medium text-pen-strong lg:ml-auto" aria-label={`${followUps} to follow up`}>
+      <span className="ml-auto text-[12px] font-medium tabular-nums text-muted" aria-label={`${followUps} to follow up`}>
         {followUps}
       </span>
     ) : null;
@@ -168,10 +164,9 @@ export function AppShell({
                 aria-current={active ? "page" : undefined}
                 title={n.label}
                 className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-                  active ? "bg-surface font-medium text-foreground shadow-1 ring-1 ring-border" : "text-muted hover:bg-subtle hover:text-foreground"
+                  active ? "bg-subtle font-medium text-foreground" : "text-muted hover:bg-subtle hover:text-foreground"
                 }`}
               >
-                {active && <span className="absolute -left-3 top-1.5 bottom-1.5 w-[3px] rounded-r bg-brand" aria-hidden />}
                 <Icon name={n.icon} />
                 <span className="hidden lg:inline">{n.label}</span>
                 <span className="hidden lg:contents">{badge(n.href)}</span>
@@ -182,7 +177,7 @@ export function AppShell({
         </nav>
         <div className="space-y-2 p-3">
           <div className="hidden lg:block">
-            <PassCard user={user} />
+            <PlanNote user={user} />
           </div>
           <Link
             href="/app/settings"
@@ -204,7 +199,7 @@ export function AppShell({
               <path d="M5 9.5l2.6 2.6L13 6.5" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
-          <p className="truncate text-sm font-medium" aria-hidden>
+          <p className="truncate text-sm font-medium md:hidden" aria-hidden>
             {title}
           </p>
           <button
@@ -283,7 +278,7 @@ export function AppShell({
               ))}
             </div>
             <div className="mt-3">
-              <PassCard user={user} />
+              <PlanNote user={user} />
             </div>
           </div>
         </div>

@@ -101,7 +101,7 @@ export function JobsBoard({ jobs }: { jobs: BoardJob[] }) {
                 >
                   <h2 id={`col-${s}`} className="mb-2 flex items-baseline justify-between px-1 text-[13px] font-medium">
                     {STATUS_LABELS[s]}
-                    <span className="font-mono text-muted">{col.length}</span>
+                    <span className="tabular-nums text-muted">{col.length}</span>
                   </h2>
                   <ul className="min-h-24 space-y-2">
                     {col.map((j) => (

@@ -92,7 +92,7 @@ function Slider({ label, value, min, max, step, unit, onChange }: { label: strin
         <label htmlFor={id} className="text-muted">
           {label}
         </label>
-        <span className="font-mono tabular-nums">
+        <span className="tabular-nums">
           {value}
           {unit}
         </span>
@@ -487,7 +487,7 @@ export function TemplateEditor({
           value={name}
           maxLength={60}
           onChange={(e) => setName(e.target.value)}
-          className="h-10 min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 font-serif text-2xl hover:border-border focus:border-brand focus:bg-surface focus:outline-none sm:max-w-sm"
+          className="h-10 min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 text-xl font-semibold tracking-tight hover:border-border focus:border-brand focus:bg-surface focus:outline-none sm:max-w-sm"
         />
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={undo} disabled={!canUndo} className={toolbarButton} aria-label="Undo">
@@ -553,7 +553,7 @@ export function TemplateEditor({
             <button type="button" className={toolbarButton} onClick={() => setAtsText((t) => (t === null ? (article.current?.innerText ?? "") : null))} aria-pressed={atsText !== null}>
               <Icon name="eye" size={15} /> What an ATS reads
             </button>
-            <span className="ml-auto font-mono text-[12px] text-muted">
+            <span className="ml-auto text-[12px] tabular-nums text-muted">
               {pages} {pages === 1 ? "page" : "pages"} · {spec.page.size}
             </span>
           </div>

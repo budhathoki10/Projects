@@ -129,7 +129,7 @@ npm run test:e2e     # Playwright: builds the app, starts it and a fake-sites se
 - axe finds no serious WCAG 2 AA problems on Today, Jobs, Studio, the gallery, the editor, a job, its Tailored CV tab and the public gallery.
 - Phones get the bottom tabs and the "More" sheet, and Studio, the gallery, the editor and Interviews fit the screen.
 
-**Current totals:** 167 unit, 26 integration and 17 browser tests, plus the screenshot run.
+**Current totals:** 169 unit, 26 integration and 17 browser tests, plus the screenshot run.
 
 ## Screenshots
 `SCREENSHOTS=1 npx playwright test e2e/screenshots.spec.ts` seeds an example account and saves the images to `docs/screenshots/`. This includes Studio, the gallery, a preview, the editor, Today in dark mode and Today on a phone.

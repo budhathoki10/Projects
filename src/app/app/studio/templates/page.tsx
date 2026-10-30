@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/page-header";
 import { TemplateGallery } from "@/components/studio/template-gallery";
-import { Eyebrow } from "@/components/ui";
+import Link from "next/link";
 import { requireUser } from "@/lib/auth/session";
 import { listJobs } from "@/lib/services/jobs";
 import { photoUrl } from "@/lib/services/photos";
@@ -16,15 +17,11 @@ export default async function TemplatesPage() {
   const ready = profileReady(profile);
   return (
     <div className="space-y-8">
-      <header>
-        <Eyebrow>CV Studio</Eyebrow>
-        <h1 className="mt-1 font-serif text-4xl">100 templates</h1>
-        <p className="mt-2 max-w-2xl text-muted">
-          {ready
-            ? "Every preview shows your own CV. Pick one as your default, use it for one job, or customise it into your own."
-            : "Previews use a sample CV until you add yours."}
-        </p>
-      </header>
+      <PageHeader
+        back={<Link href="/app/studio" className="hover:text-foreground">CV Studio</Link>}
+        title="Templates"
+        subtitle={ready ? "Every preview shows your own CV. Use one as your default, for one job, or customise it." : "Previews use a sample CV until you add yours."}
+      />
       <TemplateGallery
         cv={ready ? profile : SAMPLE_PROFILE}
         photoUrl={ready ? photo : "/sample-photo.svg"}

@@ -45,7 +45,7 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
           <>
             <section className="flex flex-wrap items-end gap-x-10 gap-y-4 border-b border-border pb-8">
               <div>
-                <p className="font-mono text-5xl font-medium tabular-nums tracking-tight" data-testid="match-score">
+                <p className="text-5xl font-semibold tabular-nums tracking-tight" data-testid="match-score">
                   {match.score}
                   <span className="text-lg text-muted">%</span>
                 </p>
@@ -56,7 +56,7 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
                 </div>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-serif text-2xl font-medium leading-tight">{scoreLabel(match.score)}</p>
+                <p className="text-xl font-semibold leading-tight">{scoreLabel(match.score)}</p>
                 <p className="mt-1 text-sm text-muted">
                   {missing > 0 ? `${missing} must-have${missing === 1 ? "" : "s"} not in your CV. ` : "Nothing essential is missing. "}
                   {listed > 0 ? `${listed} only appear${listed === 1 ? "s" : ""} in your skills list, which is weaker than showing where you used ${listed === 1 ? "it" : "them"}.` : ""}
@@ -66,7 +66,7 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
             </section>
 
             <section>
-              <h2 className="mb-3 font-serif text-2xl font-medium">What they ask for</h2>
+              <h2 className="mb-3 text-base font-semibold">What they ask for</h2>
               {match.requirements.length === 0 ? (
                 <p className="text-sm text-muted">We couldn&apos;t find a clear list of requirements in this post. The keywords below are what we matched on.</p>
               ) : (
@@ -88,7 +88,7 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
             </section>
 
             <section>
-              <h2 className="mb-1 font-serif text-2xl font-medium">The post</h2>
+              <h2 className="mb-1 text-base font-semibold">The post</h2>
               <p className="mb-4 text-[13px] text-muted">
                 <span className="marker">Highlighted</span>: you show it. <span className="underline decoration-dotted underline-offset-4">Dotted</span>: only in your skills
                 list. <span className="pen-mark">Red</span>: not in your CV.
