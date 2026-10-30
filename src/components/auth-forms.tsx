@@ -150,7 +150,7 @@ export function VerifyEmailBanner({ email }: { email: string }) {
   const [state, action, pending] = useActionState(resendVerification, undefined);
   return (
     <div className="border-b border-border bg-highlight/60">
-      <form action={action} className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1 px-5 py-2 text-[13px]">
+      <form action={action} className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-[13px] md:px-8">
         <span>Confirm your email address. We sent a link to {email}.</span>
         <button type="submit" disabled={pending} className="font-medium underline underline-offset-4 disabled:opacity-50">
           {pending ? "Sending…" : "Send it again"}

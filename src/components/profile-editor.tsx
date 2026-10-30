@@ -51,7 +51,7 @@ function Area({ label, value, onChange, rows = 4, hint, placeholder }: { label: 
 
 function Section({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <section className="space-y-4 border-t border-border pt-6">
+    <section id={title.toLowerCase()} className="scroll-mt-20 space-y-4 border-t border-border pt-6">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-serif text-xl font-medium">{title}</h2>
         {action}
@@ -86,7 +86,7 @@ export function ProfileEditor({ initial }: { initial: Profile }) {
     <form onSubmit={keepInputOnSubmit(action)} className="space-y-8">
       <input type="hidden" name="profile" value={JSON.stringify(p)} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div id="contact" className="grid scroll-mt-20 gap-4 sm:grid-cols-2">
         <Text label="Full name" value={p.name} onChange={(v) => set("name", v)} />
         <Text label="Headline" value={p.headline} onChange={(v) => set("headline", v)} placeholder="e.g. Staff Nurse, Frontend Developer" />
         <Text label="Email" value={p.email} onChange={(v) => set("email", v)} />

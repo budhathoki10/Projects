@@ -36,6 +36,10 @@ const nextConfig: NextConfig = {
     },
   },
   poweredByHeader: false,
+  experimental: {
+    // CV uploads go up to 5 MB and photos to 3 MB; leave room for the form's own overhead.
+    serverActions: { bodySizeLimit: "6mb" },
+  },
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },
