@@ -49,7 +49,7 @@ export function CoverLetterEditor({ jobId, initial, flags }: { jobId: string; in
         <FormMessage error={saved?.error} success={saved?.success} />
       </form>
       {flags.length > 0 && (
-        <p role="alert" className="border-l-2 border-pen bg-pen-soft px-3 py-2 text-sm text-pen">
+        <p role="alert" className="rounded-lg border border-pen-border/60 bg-pen-soft px-3 py-2 text-sm text-pen-strong">
           Check these before sending. They&apos;re not in your CV or the job post: <strong>{flags.join(", ")}</strong>
         </p>
       )}

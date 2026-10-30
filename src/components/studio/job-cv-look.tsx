@@ -98,7 +98,7 @@ export function JobCvLook({
       {message && <FormMessage error={message} />}
       <FormMessage error={state?.error} />
 
-      <div className="rounded-xl bg-[#e9e6df] p-3 sm:p-5 dark:bg-[#2a2925]">
+      <div className="rounded-xl bg-subtle p-3 sm:p-5">
         <CvSheet spec={spec} cv={cv} photoUrl={photoUrl} onPages={setPages} articleRef={article} />
       </div>
 
@@ -121,7 +121,7 @@ export function JobCvLook({
                 className="group block w-full text-left disabled:opacity-60"
                 aria-label={`Use the ${o.name} look for this job`}
               >
-                <div className="overflow-hidden rounded-md ring-1 ring-border transition group-hover:-translate-y-0.5 group-hover:ring-ink">
+                <div className="overflow-hidden rounded-md ring-1 ring-border transition group-hover:-translate-y-0.5 group-hover:ring-hover-border">
                   <CvMini spec={o.spec} cv={cv} photoUrl={photoUrl} />
                 </div>
                 <p className="mt-1.5 truncate text-[12px] font-medium">{o.name}</p>

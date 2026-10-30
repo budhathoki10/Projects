@@ -24,7 +24,7 @@ export default async function Interviews() {
     const past = j.interviewOn && j.interviewOn < day;
     return (
       <li className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-surface px-5 py-4">
-        <div className={`flex w-14 flex-col items-center rounded-lg py-1.5 ${j.interviewOn && !past ? "bg-highlight text-ink" : "bg-background text-muted"}`}>
+        <div className={`flex w-14 flex-col items-center rounded-lg py-1.5 ${j.interviewOn && !past ? "bg-brand-soft text-brand-strong" : "bg-subtle text-muted"}`}>
           {j.interviewOn ? (
             <>
               <span className="text-[10px] font-medium uppercase">{new Date(`${j.interviewOn}T12:00:00Z`).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}</span>

@@ -12,7 +12,7 @@ export default async function RenderTemplate({ params }: PageProps<"/render/temp
   const template = getBuiltin(id);
   if (!template) notFound();
   return (
-    <div className="bg-white">
+    <div className="bg-paper">
       <CvDocument spec={template.spec} cv={SAMPLE_PROFILE} photoUrl="/sample-photo.svg" label={`${template.name} template`} />
     </div>
   );

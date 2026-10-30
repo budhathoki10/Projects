@@ -1,9 +1,9 @@
 import { ATS_LABELS, type AtsLevel } from "@/lib/templates/checks";
 
 const TONES: Record<AtsLevel, string> = {
-  safe: "bg-money-soft text-money",
-  mostly: "bg-background text-foreground border border-border",
-  caution: "bg-pen-soft text-pen",
+  safe: "bg-money-soft text-money-strong",
+  mostly: "bg-subtle text-foreground",
+  caution: "bg-notice-soft text-notice-strong ring-1 ring-inset ring-notice-border",
 };
 
 export function AtsBadge({ level }: { level: AtsLevel }) {
@@ -21,7 +21,7 @@ export function TemplateThumb({ id, name, className = "" }: { id: string; name: 
       decoding="async"
       width={480}
       height={679}
-      className={`aspect-[210/297] w-full bg-white object-cover object-top ${className}`}
+      className={`aspect-[210/297] w-full bg-paper object-cover object-top ${className}`}
     />
   );
 }

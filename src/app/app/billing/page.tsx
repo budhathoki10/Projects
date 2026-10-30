@@ -79,7 +79,7 @@ export default async function BillingPage({ searchParams }: PageProps<"/app/bill
                 successUrl={appUrl("/app/billing?status=pending")}
               />
             ) : (
-              <p className="text-sm text-faint">Not set up yet</p>
+              <p className="text-sm text-muted">Not set up yet</p>
             )}
           </div>
           <div className="grid gap-4 py-6 sm:grid-cols-[1fr_auto] sm:items-center">

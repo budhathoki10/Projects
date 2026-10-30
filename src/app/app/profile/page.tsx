@@ -35,21 +35,21 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
           </div>
         )}
         {needed === "1" && !ready && (
-          <p role="alert" className="mt-4 border-l-2 border-pen bg-pen-soft px-3 py-2 text-sm text-pen">
+          <p role="alert" className="mt-4 rounded-lg border border-pen-border/60 bg-pen-soft px-3 py-2 text-sm text-pen-strong">
             Add your CV first, with at least one job, project or qualification, so there&apos;s something to tailor.
           </p>
         )}
       </div>
 
       {profile ? (
-        <details className="rounded-md border border-border bg-surface p-5">
+        <details className="rounded-xl border border-border bg-surface shadow-1 p-5">
           <summary className="cursor-pointer text-sm font-medium">Replace from a new CV file</summary>
           <div className="mt-4">
             <ProfileImport replacing />
           </div>
         </details>
       ) : (
-        <div className="rounded-md border border-border bg-surface p-6">
+        <div className="rounded-xl border border-border bg-surface shadow-1 p-6">
           <ProfileImport replacing={false} />
           <p className="mt-6 border-t border-border pt-4 text-sm text-muted">
             No CV yet? Fill in the form below instead. Even a first job hunt has something to put here: school, projects, volunteering, part-time work.

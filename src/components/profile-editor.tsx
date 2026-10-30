@@ -110,7 +110,7 @@ export function ProfileEditor({ initial }: { initial: Profile }) {
       >
         {p.experience.length === 0 && <p className="text-sm text-muted">No roles yet. Add one, including part-time work, internships and volunteering.</p>}
         {p.experience.map((e, i) => (
-          <fieldset key={e.id} className="grid gap-3 rounded-md border border-border bg-surface p-4 sm:grid-cols-2">
+          <fieldset key={e.id} className="grid gap-3 rounded-xl border border-border bg-surface shadow-1 p-4 sm:grid-cols-2">
             <legend className="sr-only">{e.title || `Role ${i + 1}`}</legend>
             <Text label="Job title" value={e.title} onChange={(v) => setItem("experience", e.id, { title: v })} />
             <Text label="Employer" value={e.company} onChange={(v) => setItem("experience", e.id, { company: v })} />
@@ -150,7 +150,7 @@ export function ProfileEditor({ initial }: { initial: Profile }) {
         }
       >
         {p.education.map((e) => (
-          <fieldset key={e.id} className="grid gap-3 rounded-md border border-border bg-surface p-4 sm:grid-cols-2">
+          <fieldset key={e.id} className="grid gap-3 rounded-xl border border-border bg-surface shadow-1 p-4 sm:grid-cols-2">
             <Text label="Qualification" value={e.degree} onChange={(v) => setItem("education", e.id, { degree: v })} placeholder="e.g. BSc Computer Science, +2 Science" />
             <Text label="School or college" value={e.school} onChange={(v) => setItem("education", e.id, { school: v })} />
             <Text label="From" value={e.start} onChange={(v) => setItem("education", e.id, { start: v })} />
@@ -187,7 +187,7 @@ export function ProfileEditor({ initial }: { initial: Profile }) {
       >
         {p.projects.length === 0 && <p className="text-sm text-muted">Optional. Useful for students and career changers.</p>}
         {p.projects.map((x) => (
-          <fieldset key={x.id} className="grid gap-3 rounded-md border border-border bg-surface p-4 sm:grid-cols-2">
+          <fieldset key={x.id} className="grid gap-3 rounded-xl border border-border bg-surface shadow-1 p-4 sm:grid-cols-2">
             <Text label="Project" value={x.name} onChange={(v) => setItem("projects", x.id, { name: v })} />
             <Text label="Link" value={x.link} onChange={(v) => setItem("projects", x.id, { link: v })} />
             <Area label="What you did" value={join(x.bullets)} onChange={(v) => setItem("projects", x.id, { bullets: lines(v) })} rows={2} />

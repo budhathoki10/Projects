@@ -47,7 +47,7 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
       {deleted === "1" && <FormMessage success="Template deleted. Jobs that used it now use your default." />}
       {full === "1" && <FormMessage error={`You can keep up to ${MAX_TEMPLATES} templates. Delete one to make room.`} />}
       {!ready && (
-        <p className="rounded-lg bg-highlight/50 px-4 py-3 text-sm">
+        <p className="rounded-lg border border-border bg-panel px-4 py-3 text-sm">
           Previews use a sample CV for now.{" "}
           <Link href="/app/profile" className="font-medium underline underline-offset-4">
             Add your CV
@@ -58,7 +58,7 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card className="grid gap-6 p-6 sm:grid-cols-[220px_1fr]">
-          <Link href={`/app/studio/edit/${style.template.id}`} className="block w-full max-w-[200px] self-start overflow-hidden rounded-md ring-1 ring-border transition hover:ring-ink sm:max-w-none" aria-label={`Edit ${style.template.name}`}>
+          <Link href={`/app/studio/edit/${style.template.id}`} className="block w-full max-w-[200px] self-start overflow-hidden rounded-md ring-1 ring-border transition hover:ring-hover-border sm:max-w-none" aria-label={`Edit ${style.template.name}`}>
             <CvMini spec={style.spec} cv={cv} photoUrl={shownPhoto} />
           </Link>
           <div className="space-y-4">
@@ -71,10 +71,10 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
             </div>
             <p className="text-sm text-muted">New jobs use this look. You can change it for any single job on its Tailored CV tab.</p>
             <div className="flex flex-wrap gap-2">
-              <Link href="/app/studio/templates" className="inline-flex h-9 items-center rounded-lg border border-strong-border px-3 text-[13px] font-medium hover:border-ink">
+              <Link href="/app/studio/templates" className="inline-flex h-9 items-center rounded-lg border border-strong-border px-3 text-[13px] font-medium hover:border-hover-border">
                 Change
               </Link>
-              <Link href={`/app/studio/edit/${style.template.id}`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-strong-border px-3 text-[13px] font-medium hover:border-ink">
+              <Link href={`/app/studio/edit/${style.template.id}`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-strong-border px-3 text-[13px] font-medium hover:border-hover-border">
                 <Icon name="sparkle" size={15} /> Customise
               </Link>
             </div>
@@ -114,7 +114,7 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
               if (!spec) return null;
               return (
                 <li key={t.id} className="space-y-2">
-                  <Link href={`/app/studio/edit/${t.id}`} aria-label={`Edit ${t.name}`} className="block overflow-hidden rounded-md ring-1 ring-border transition hover:-translate-y-0.5 hover:ring-ink">
+                  <Link href={`/app/studio/edit/${t.id}`} aria-label={`Edit ${t.name}`} className="block overflow-hidden rounded-md ring-1 ring-border transition hover:-translate-y-0.5 hover:ring-hover-border">
                     <CvMini spec={spec} cv={cv} photoUrl={shownPhoto} />
                   </Link>
                   <div className="flex items-start justify-between gap-2">
@@ -157,7 +157,7 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
           {recommended.map((t) => (
             <li key={t.id}>
               <Link href={`/app/studio/edit/${t.id}`} className="group block">
-                <div className="overflow-hidden rounded-md ring-1 ring-border transition group-hover:-translate-y-0.5 group-hover:ring-ink">
+                <div className="overflow-hidden rounded-md ring-1 ring-border transition group-hover:-translate-y-0.5 group-hover:ring-hover-border">
                   <TemplateThumb id={t.id} name={t.name} />
                 </div>
                 <p className="mt-2 text-sm font-medium">{t.name}</p>

@@ -127,7 +127,7 @@ function FontSelect({ label, value, options, onChange }: { label: string; value:
         value={value}
         onChange={(e) => onChange(e.target.value as FontId)}
         style={{ fontFamily: fontStack(value) }}
-        className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm"
+        className="h-9 w-full rounded-xl border border-border bg-surface shadow-1 px-2 text-sm"
       >
         {options.map((f) => (
           <option key={f} value={f} style={{ fontFamily: fontStack(f) }}>
@@ -150,7 +150,7 @@ function LayoutIcon({ layout }: { layout: Layout }) {
     </div>
   );
   return (
-    <div className="flex h-14 w-11 flex-col gap-1 overflow-hidden rounded-sm border border-current/30 bg-white p-1 text-ink">
+    <div className="flex h-14 w-11 flex-col gap-1 overflow-hidden rounded-sm border border-current/30 bg-paper p-1 text-paper-ink">
       {layout === "banner" && <div className="-m-1 mb-0 h-3 bg-current" />}
       {layout.startsWith("sidebar") ? (
         <div className={`flex h-full gap-1 ${layout === "sidebar-right" ? "flex-row-reverse" : ""}`}>
@@ -283,7 +283,7 @@ export function TemplateEditor({
               onClick={() => change("layout", changeLayout(spec, l))}
               aria-pressed={spec.layout === l}
               title={LAYOUT_LABELS[l]}
-              className={`flex flex-col items-center gap-1 rounded-md p-1 text-[10px] leading-tight ${spec.layout === l ? "bg-highlight ring-2 ring-ink" : "hover:bg-background"}`}
+              className={`flex flex-col items-center gap-1 rounded-md p-1 text-[10px] leading-tight ${spec.layout === l ? "bg-brand-soft ring-2 ring-brand" : "hover:bg-subtle"}`}
             >
               <LayoutIcon layout={l} />
               <span className="sr-only">{LAYOUT_LABELS[l]}</span>
@@ -377,7 +377,7 @@ export function TemplateEditor({
                 change("sections", { ...spec, sections });
                 setDragging(null);
               }}
-              className={`flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1.5 text-[13px] ${dragging === i ? "opacity-50" : ""}`}
+              className={`flex items-center gap-1.5 rounded-xl border border-border bg-surface shadow-1 px-2 py-1.5 text-[13px] ${dragging === i ? "opacity-50" : ""}`}
             >
               <Icon name="grip" size={14} className="cursor-grab text-faint" />
               <label className="flex flex-1 items-center gap-2">
@@ -386,7 +386,7 @@ export function TemplateEditor({
                   checked={s.visible}
                   onChange={(e) => change("sections", { ...spec, sections: spec.sections.map((x) => (x.id === s.id ? { ...x, visible: e.target.checked } : x)) })}
                 />
-                <span className={s.visible ? "" : "text-faint line-through"}>{SECTION_LABELS[s.id]}</span>
+                <span className={s.visible ? "" : "text-muted line-through"}>{SECTION_LABELS[s.id]}</span>
               </label>
               {hasSidebar(spec.layout) && (
                 <select
@@ -401,7 +401,7 @@ export function TemplateEditor({
                   <option value="side">Side</option>
                 </select>
               )}
-              <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} aria-label={`Move ${SECTION_LABELS[s.id]} up`} className="rounded p-1 text-muted hover:bg-background disabled:opacity-30">
+              <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} aria-label={`Move ${SECTION_LABELS[s.id]} up`} className="rounded p-1 text-muted hover:bg-subtle disabled:opacity-30">
                 ↑
               </button>
               <button
@@ -409,7 +409,7 @@ export function TemplateEditor({
                 onClick={() => moveSection(i, 1)}
                 disabled={i === spec.sections.length - 1}
                 aria-label={`Move ${SECTION_LABELS[s.id]} down`}
-                className="rounded p-1 text-muted hover:bg-background disabled:opacity-30"
+                className="rounded p-1 text-muted hover:bg-subtle disabled:opacity-30"
               >
                 ↓
               </button>
@@ -487,7 +487,7 @@ export function TemplateEditor({
           value={name}
           maxLength={60}
           onChange={(e) => setName(e.target.value)}
-          className="h-10 min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 font-serif text-2xl hover:border-border focus:border-ink focus:bg-surface focus:outline-none sm:max-w-sm"
+          className="h-10 min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 font-serif text-2xl hover:border-border focus:border-brand focus:bg-surface focus:outline-none sm:max-w-sm"
         />
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={undo} disabled={!canUndo} className={toolbarButton} aria-label="Undo">
@@ -514,7 +514,7 @@ export function TemplateEditor({
       </form>
       <FormMessage error={state?.error} success={state?.success} />
       {usingSample && (
-        <p className="rounded-lg bg-highlight/50 px-3 py-2 text-[13px]">
+        <p className="rounded-lg border border-border bg-panel px-3 py-2 text-[13px]">
           You&apos;re seeing a sample CV.{" "}
           <Link href="/app/profile" className="font-medium underline underline-offset-4">
             Add your CV
@@ -564,7 +564,7 @@ export function TemplateEditor({
               <pre className="max-h-72 overflow-auto whitespace-pre-wrap font-mono text-[12px] leading-relaxed">{atsText}</pre>
             </div>
           )}
-          <div className="rounded-xl bg-[#e9e6df] p-3 sm:p-6 dark:bg-[#2a2925]">
+          <div className="rounded-xl bg-subtle p-3 sm:p-6">
             <CvSheet spec={spec} cv={cv} photoUrl={photoUrl} onPages={setPages} articleRef={article} />
           </div>
         </section>

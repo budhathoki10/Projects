@@ -71,8 +71,14 @@ This is the build plan. Tick a box only when its code is merged locally **and** 
 - The job tabs overflowed phones by 4px.
 - An IPv4-mapped IPv6 address written in hex (`[::ffff:7f00:1]`, which the URL parser produces from `[::ffff:127.0.0.1]`) passed the private-address check. It's blocked now, with tests.
 
+### 5b. Colour system (Jade)
+- [x] Radix scales (sand, jade, tomato, amber) generated into `src/app/colors.css`, light and dark
+- [x] Semantic tokens: one meaning each. Removed the lime, the beige paper, the navy hero, the glow and the hard-coded hexes
+- [x] Consistent radii (8, 12, 16) and a 3-step elevation scale
+- [x] `tests/palette.test.ts`: every text pair passes 4.5:1 in both themes, and components use no raw colours
+
 ### 6. Finish
-- [x] All new tests (see TESTING.md), with `npm run test:all` green: 126 unit, 23 integration, 16 browser
+- [x] All new tests (see TESTING.md), with `npm run test:all` green: 167 unit, 23 integration, 16 browser
 - [x] axe checks on the main pages
 - [x] Screenshots: Studio, gallery, editor, 12 templates, Today in light and dark
 - [x] README updated

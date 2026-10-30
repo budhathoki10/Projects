@@ -27,7 +27,7 @@ export default async function EditTemplate({ params, searchParams }: PageProps<"
         / {template.builtin ? <Link href="/app/studio/templates" className="hover:text-foreground">Templates</Link> : "My templates"} / {template.name}
       </nav>
       {saved === "1" && (
-        <p role="status" className="border-l-2 border-money bg-money-soft px-3 py-2 text-sm text-money">
+        <p role="status" className="rounded-lg border border-brand-border/60 bg-money-soft px-3 py-2 text-sm text-money-strong">
           Saved to My templates.
         </p>
       )}
