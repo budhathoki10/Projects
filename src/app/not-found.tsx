@@ -10,7 +10,7 @@ export default function NotFound() {
       <p className="mt-16 font-mono text-sm text-muted">404</p>
       <h1 className="mt-2 font-serif text-3xl font-medium">Page not found</h1>
       <p className="mt-2 text-muted">
-        The link may be mistyped, or the report it pointed to no longer exists.{" "}
+        The link may be mistyped, or the page it pointed to no longer exists.{" "}
         <Link href="/" className="text-foreground underline underline-offset-4">
           Back to the home page
         </Link>

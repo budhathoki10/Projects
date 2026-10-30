@@ -10,7 +10,7 @@ Email the address in `SUPPORT_EMAIL` with "Security" in the subject. Please don'
 | Asset | Threat | Main controls |
 |---|---|---|
 | A user's CV, jobs, letters, photo | Another user reading them | Every query is scoped by user id, and tests try cross-account access |
-| Accounts | Password guessing, stolen sessions | Hashed passwords, httpOnly session cookies, reset limits |
+| Accounts | Password guessing, stolen sessions | Hashed passwords, login throttling per email and per IP, httpOnly session cookies, reset limits |
 | The server and internal network | SSRF through job links | `safeFetch` |
 | AI output | Prompt injection in job posts or CVs, invented facts | Quoted inputs, schema checks, the fact check, user review |
 | The app's pages | XSS, CSS injection through templates | React escaping, specs made only of enums, hex colours and bounded numbers |
@@ -24,6 +24,11 @@ Email the address in `SUPPORT_EMAIL` with "Security" in the subject. Please don'
 - Passwords are hashed with scrypt and a per-user salt (`password.ts`). The minimum length is 8.
 - A session id is 32 random bytes. The cookie is `HttpOnly`, `Secure` in production, and `SameSite=Lax`. The database stores only a SHA-256 hash of it.
 - Email-confirmation and reset tokens are single use, hashed in the database and expire. Resets are limited to 3 an hour.
+- **Login throttling** (`src/lib/auth/throttle.ts`):
+  - After 8 wrong passwords for one email in 15 minutes, logins for that email pause.
+  - After 30 wrong passwords from one IP address, logins from that address pause, which stops guessing across many accounts.
+  - Only hashes of the email and the IP are stored. Rows older than a day are deleted.
+  - A successful login clears that email's count.
 - A password reset logs out every session.
 - Login redirects only go to same-site paths (`safeNext`).
 - Server actions are protected by Next.js's built-in Origin check. All state changes go through POST.

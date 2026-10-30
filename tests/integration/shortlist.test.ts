@@ -14,6 +14,7 @@ import { deleteUser } from "@/lib/services/account";
 import { completePendingPayment, extendPass, recordPayment } from "@/lib/services/billing";
 import { getInterview, getTailoredCv, saveCoverLetter, saveInterview, saveTailoredCv } from "@/lib/services/documents";
 import { createJob, dueFollowUpCount, dueFollowUps, listJobs, ownedJob, progress, rescoreAll, setStatus, setWeeklyGoal } from "@/lib/services/jobs";
+import { clearLoginFailures, loginThrottled, MAX_FAILURES_PER_EMAIL, MAX_FAILURES_PER_IP, recordLoginFailure } from "@/lib/auth/throttle";
 import { getPhoto, normalisePhoto, PhotoError, photoUrl, savePhoto } from "@/lib/services/photos";
 import { getProfile, saveProfile } from "@/lib/services/profile";
 import {
@@ -361,5 +362,30 @@ describe("weekly goal", () => {
     expect(await setWeeklyGoal(user.id, 0)).toBe(1);
     expect(await setWeeklyGoal(user.id, 99)).toBe(30);
     expect(await setWeeklyGoal(user.id, 7.4)).toBe(7);
+  });
+});
+
+describe("login throttling", () => {
+  it("pauses an email after too many wrong passwords, from any address, and a success clears it", async () => {
+    for (let i = 0; i < MAX_FAILURES_PER_EMAIL - 1; i++) await recordLoginFailure("Asha@Example.com ", `10.0.0.${i}`);
+    expect(await loginThrottled("asha@example.com", "10.9.9.9")).toBe(false);
+    await recordLoginFailure("asha@example.com", "10.0.0.99");
+    expect(await loginThrottled("asha@example.com", "10.9.9.9")).toBe(true);
+    expect(await loginThrottled("someone@example.com", "10.9.9.9")).toBe(false);
+    await clearLoginFailures("asha@example.com");
+    expect(await loginThrottled("asha@example.com", "10.9.9.9")).toBe(false);
+  });
+
+  it("pauses an address that guesses across many accounts, and forgets after the window", async () => {
+    for (let i = 0; i < MAX_FAILURES_PER_IP; i++) await recordLoginFailure(`user${i}@example.com`, "203.0.113.7");
+    expect(await loginThrottled("fresh@example.com", "203.0.113.7")).toBe(true);
+    expect(await loginThrottled("fresh@example.com", "203.0.113.8")).toBe(false);
+    expect(await loginThrottled("fresh@example.com", "203.0.113.7", new Date(Date.now() + 16 * 60 * 1000))).toBe(false);
+  });
+
+  it("never stores the email or address itself", async () => {
+    await recordLoginFailure("asha@example.com", "203.0.113.7");
+    const rows = await db.select().from(schema.loginFailures);
+    expect(rows.every((r) => /^[0-9a-f]{32}$/.test(r.key))).toBe(true);
   });
 });

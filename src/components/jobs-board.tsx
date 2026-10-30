@@ -124,16 +124,17 @@ export function JobsBoard({ jobs }: { jobs: BoardJob[] }) {
                           {j.score !== null ? <Badge tone={scoreTone(j.score)}>{j.score}% match</Badge> : <span />}
                           {j.appliedOn ? <span>Applied {day(j.appliedOn)}</span> : j.tailored ? <span className="text-money">CV tailored</span> : null}
                         </div>
-                        <label className="absolute right-1.5 top-1.5 z-10">
+                        {/* A real <select> (keyboard and screen-reader friendly), invisible over a "more" icon. */}
+                        <label className="absolute right-1.5 top-1.5 z-10 flex size-7 items-center justify-center rounded-md text-muted hover:bg-subtle hover:text-foreground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand">
                           <span className="sr-only">Move {j.title} to</span>
+                          <Icon name="more" size={16} />
                           <select
                             value={j.status}
                             onChange={(e) => moveTo(j.id, e.target.value as Status)}
-                            className="size-7 cursor-pointer appearance-none rounded-md bg-transparent text-transparent opacity-60 hover:bg-subtle hover:opacity-100 focus:opacity-100"
-                            style={{ backgroundImage: "radial-gradient(circle, var(--muted) 1.4px, transparent 1.6px)", backgroundSize: "6px 6px", backgroundPosition: "center", backgroundRepeat: "repeat-x" }}
+                            className="absolute inset-0 cursor-pointer opacity-0"
                           >
                             {STATUSES.map((o) => (
-                              <option key={o} value={o} className="text-foreground">
+                              <option key={o} value={o}>
                                 {STATUS_LABELS[o]}
                               </option>
                             ))}

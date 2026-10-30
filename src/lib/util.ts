@@ -4,7 +4,7 @@ export { formatMoney } from "./money";
 
 const ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789";
 
-/** Short, unguessable, URL-friendly id (e.g. for public report links). */
+/** Short, unguessable, URL-friendly id (e.g. for payment order ids). */
 export function shortId(length = 10): string {
   const bytes = randomBytes(length);
   let out = "";
@@ -12,9 +12,9 @@ export function shortId(length = 10): string {
   return out;
 }
 
-/** Hash an IP for rate limiting, so raw IPs are never stored. */
-export function hashIp(ip: string): string {
-  return createHash("sha256").update(`pitchcraft:${ip}`).digest("hex").slice(0, 32);
+/** Hash a value (an IP address, an email) for rate limiting, so the raw value is never stored. */
+export function hashForLimit(kind: "ip" | "email", value: string): string {
+  return createHash("sha256").update(`shortlist:${kind}:${value.trim().toLowerCase()}`).digest("hex").slice(0, 32);
 }
 
 export function clientIp(headers: Headers): string {
