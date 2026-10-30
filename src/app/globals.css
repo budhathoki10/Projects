@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+/*
+ * Paper, navy ink and a highlighter. Lime highlight marks what in a job post you already
+ * have; red marks a real gap; green means something went well (a match, an offer).
+ */
+:root {
+  --background: #f6f4ef;
+  --surface: #fffefb;
+  --foreground: #1b1a17;
+  --muted: #6e695f;
+  --faint: #a29d92;
+  --border: #e3dfd5;
+  --strong-border: #c9c3b6;
+  --ink: #1d2740;
+  --ink-hover: #2f3d60;
+  --on-ink: #fffefb;
+  --pen: #c23a22;
+  --pen-soft: #f8e6e1;
+  --money: #2d6a3e;
+  --money-soft: #e3efe5;
+  --highlight: #e6f4a0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #161512;
+    --surface: #1d1c19;
+    --foreground: #ebe8e1;
+    --muted: #a39e93;
+    --faint: #6f6a61;
+    --border: #2e2c27;
+    --strong-border: #45423b;
+    --ink: #dfe6f5;
+    --ink-hover: #ffffff;
+    --on-ink: #161512;
+    --pen: #f07a62;
+    --pen-soft: #3a1e17;
+    --money: #7cc48f;
+    --money-soft: #1c2f21;
+    --highlight: #3d4719;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-border: var(--border);
+  --color-strong-border: var(--strong-border);
+  --color-ink: var(--ink);
+  --color-ink-hover: var(--ink-hover);
+  --color-on-ink: var(--on-ink);
+  --color-pen: var(--pen);
+  --color-pen-soft: var(--pen-soft);
+  --color-money: var(--money);
+  --color-money-soft: var(--money-soft);
+  --color-highlight: var(--highlight);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-newsreader);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "ss01", "cv11";
+}
+
+input,
+select,
+textarea {
+  color: var(--foreground);
+  background: var(--surface);
+}
+
+::selection {
+  background: var(--highlight);
+}
+
+/* Highlighter stroke for words in a job post the user already has. */
+.marker {
+  background: linear-gradient(transparent 12%, var(--highlight) 12%, var(--highlight) 88%, transparent 88%);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* A hand-drawn red underline for real gaps. */
+.pen-mark {
+  text-decoration: underline wavy var(--pen);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}
