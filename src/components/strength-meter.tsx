@@ -9,12 +9,12 @@ export function StrengthMeter({ profile, compact = false }: { profile: Profile; 
   const failing = checks.filter((c) => !c.ok);
   const r = 26;
   const circ = 2 * Math.PI * r;
-  const tone = score >= 85 ? "var(--money)" : score >= 60 ? "var(--ink)" : "var(--pen)";
+  const tone = score >= 85 ? "var(--brand)" : score >= 60 ? "var(--notice)" : "var(--pen)";
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
         <svg width="68" height="68" viewBox="0 0 68 68" role="img" aria-label={`CV strength ${score} out of 100`}>
-          <circle cx="34" cy="34" r={r} fill="none" stroke="var(--border)" strokeWidth="7" />
+          <circle cx="34" cy="34" r={r} fill="none" stroke="var(--subtle)" strokeWidth="7" />
           <circle
             cx="34"
             cy="34"
@@ -41,7 +41,7 @@ export function StrengthMeter({ profile, compact = false }: { profile: Profile; 
         <ul className="space-y-2">
           {(compact ? failing.slice(0, 3) : failing).map((c) => (
             <li key={c.id}>
-              <Link href={c.href} className="group flex gap-3 rounded-lg p-2 -mx-2 hover:bg-background">
+              <Link href={c.href} className="group flex gap-3 rounded-lg p-2 -mx-2 hover:bg-subtle">
                 <span className="mt-1.5 size-2 shrink-0 rounded-full bg-pen" aria-hidden />
                 <span className="min-w-0 text-[13px]">
                   <span className="font-medium">{c.label}</span>
@@ -59,7 +59,7 @@ export function StrengthMeter({ profile, compact = false }: { profile: Profile; 
             .filter((c) => c.ok)
             .map((c) => (
               <li key={c.id} className="flex items-center gap-2 text-[13px] text-muted">
-                <Icon name="check" size={14} className="text-money" /> {c.label}
+                <Icon name="check" size={14} className="text-brand" /> {c.label}
               </li>
             ))}
         </ul>

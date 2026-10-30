@@ -22,7 +22,7 @@ export function CvMini({ spec, cv, photoUrl }: { spec: TemplateSpec; cv: Profile
   }, []);
 
   return (
-    <div ref={box} className="relative w-full overflow-hidden bg-white" style={{ aspectRatio: `${page.w} / ${page.h}` }} aria-hidden>
+    <div ref={box} className="relative w-full overflow-hidden bg-paper" style={{ aspectRatio: `${page.w} / ${page.h}` }} aria-hidden>
       {width > 0 && (
         <div className="pointer-events-none absolute left-0 top-0 origin-top-left" style={{ width: naturalW, transform: `scale(${width / naturalW})` }}>
           <CvDocument spec={spec} cv={cv} photoUrl={photoUrl} label="CV thumbnail" />

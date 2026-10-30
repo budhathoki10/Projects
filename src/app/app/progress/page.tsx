@@ -33,7 +33,7 @@ export default async function ProgressPage() {
           </div>
         ))}
       </dl>
-      <section className="rounded-md border border-border bg-surface p-5">
+      <section className="rounded-xl border border-border bg-surface shadow-1 p-5">
         <h2 className="font-medium">Response rate: {s.responseRate === null ? "not yet" : `${s.responseRate}%`}</h2>
         <p className="mt-1 text-sm text-muted">
           {s.responseRate === null

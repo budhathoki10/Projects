@@ -1,44 +1,83 @@
 # Design
 
 ## The idea
-**Paper, navy ink and a highlighter.** Shortlist should feel like a calm, well-made notebook, not a noisy SaaS dashboard.
+**Quiet neutrals, one meaningful colour.** Shortlist is a tool people use while they're anxious about money and work, so the interface stays calm: warm greys do almost all the work, and the one brand colour, **jade**, means "shortlisted": you have this, it went well, this is where you are. The CVs are the colourful part, so the app around them stays out of the way.
 
-- Navy ink is for actions.
-- The lime highlighter marks what you already have.
-- Red pen marks a real gap.
-- Green means something went well.
+What we avoid, because it makes an app look generated rather than designed:
+- neon accents
+- gradients and glow blobs
+- tinted "paper" backgrounds
+- a colour for every card
+- raw hex values in components
 
-The CVs are the colourful part, so the app around them stays quiet.
+## Colour
 
-## Tokens
-All colours are CSS variables on `:root` in `src/app/globals.css`, with a dark set under `prefers-color-scheme: dark`. Tailwind reads them through `@theme inline`, so classes are `bg-surface`, `text-muted`, `border-border` and so on. Never use raw hex values in components.
+### Scales
+Four 12-step scales from Radix Colors (MIT) are generated into `src/app/colors.css` by `scripts/gen-colors.mts`. Each has a light and a dark version, and dark switches with `prefers-color-scheme`.
 
-| Token | Light | Use |
-|---|---|---|
-| `background` | `#f6f4ef` | Page |
-| `surface` | `#fffefb` | Cards, inputs, sidebar |
-| `foreground` | `#1b1a17` | Text |
-| `muted` | `#6e695f` | Secondary text |
-| `faint` | `#726e68` | Placeholders, minor notes (still 4.5:1 on the page) |
-| `border` / `strong-border` | `#e3dfd5` / `#c9c3b6` | Lines |
-| `ink` / `ink-hover` / `on-ink` | `#1d2740` / `#2f3d60` / `#fffefb` | Primary buttons, active nav |
-| `highlight` | `#e6f4a0` | "You have this", the logo check, the active marker |
-| `pen` / `pen-soft` | `#b0321c` / `#f8e6e1` | Gaps, errors, destructive actions |
-| `money` / `money-soft` | `#2d6a3e` / `#e3efe5` | Success, offers, a good match |
+| Scale | Role |
+|---|---|
+| `sand` | Neutrals: backgrounds, text, borders, the primary button |
+| `jade` | Brand and success |
+| `tomato` | Danger, real gaps, errors |
+| `amber` | Notices and warnings |
 
-The CV page is **always white with its own colours**, in dark mode too. It's a document, not app chrome.
+Every scale uses its steps the same way:
+- **1–2:** page and panel backgrounds
+- **3–5:** component fills
+- **6–8:** borders
+- **9–10:** solid colour
+- **11:** secondary text
+- **12:** high-contrast text
 
-- **Spacing:** a 4px base, with layouts on an 8px rhythm (8, 16, 24, 32, 48, 64).
+### Semantic tokens
+Components only use these, through Tailwind (`bg-surface`, `text-muted`, `border-border` and so on). They're defined in `src/app/globals.css`.
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `background` | sand-1 | sand-1 | Page |
+| `surface` | white | sand-2 | Cards, inputs, menus |
+| `panel` | sand-2 | sand-1 | Sidebar, table headers, quiet boxes |
+| `subtle` / `subtle-hover` | sand-3 / sand-4 | same | Hover fills, chips, preview backdrops |
+| `foreground` | sand-12 | sand-12 | Text |
+| `muted` | sand-11 | sand-11 | Secondary text |
+| `faint` | sand-10 | sand-10 | Icons and placeholders only, never body text |
+| `border` / `strong-border` / `hover-border` | sand-6 / 7 / 8 | same | Lines |
+| `ink` / `ink-hover` / `on-ink` | sand-12 / 11 / 1 | same | The primary button (near-black, or near-white in dark) |
+| `brand` | jade-10 | jade-9 | Logo, active-nav bar, focus ring, progress, rings, sparkline |
+| `brand-soft` / `brand-border` / `brand-strong` | jade-3 / 7 / 12 | same | Selected states and brand chips |
+| `highlight` | jade-4 | jade-5 | "You have this" marker, text selection |
+| `money` / `money-soft` / `money-strong` | jade-11 / 3 / 12 | same | Success: a good match, an offer, "saved" |
+| `pen` / `pen-soft` / `pen-border` / `pen-strong` | tomato-11 / 3 / 7 / 12 | same | Real gaps, errors, delete |
+| `notice` / `notice-soft` / `notice-border` / `notice-strong` | amber-11 / 2 / 6 / 12 | same | The confirm-email banner, warnings, "harder for some ATS" |
+| `paper` / `paper-ink` | white / sand-12 | same | CV pages: always white with dark ink |
+| `scrim` | sand-12 at 40% | black at 60% | Behind dialogs |
+
+### Rules
+1. **Neutrals first.** About 90% of any screen is sand.
+2. **Jade means something.** Use it for the brand mark, the current place (active nav, active tab), focus, progress and success. Never use it to decorate.
+3. **Status colours are only for status.** Tomato is a real problem and amber is "check this". Neither is used for emphasis.
+4. **One primary action per view.** It's the near-black `ink` button. Everything else is secondary (bordered) or a text link.
+5. **Text on a tint uses step 12** (`*-strong`), so small text stays above 4.5:1. Coloured text on white or the page uses step 11.
+6. **No raw colours in components.** `tests/palette.test.ts` fails if a hex value, `bg-white`, `bg-black` or `blur-` appears outside the CV renderer.
+7. **Contrast is tested, in both themes,** for every text pair (see `tests/palette.test.ts`), and axe checks the main pages in the browser tests.
+
+### Radius and elevation
 - **Radius:**
-  - 6px for inputs and buttons
-  - 10px for cards
-  - 14px for dialogs
-  - full for pills
+  - 6px for badges
+  - 8px (`rounded-lg`) for buttons and inputs
+  - 12px (`rounded-xl`) for cards
+  - 16px (`rounded-2xl`) for dialogs and sheets
+  - full for avatars and pills
 - **Elevation:**
-  - 0: border only, for most cards
-  - 1: `0 1px 2px rgb(0 0 0 / .05)`, for raised cards on hover
-  - 2: `0 8px 24px rgb(0 0 0 / .10)`, for popovers and the command bar
-  - 3: `0 24px 64px rgb(0 0 0 / .18)`, for dialogs
+  - `shadow-1` for resting cards and buttons
+  - `shadow-2` for popovers, menus and hovered cards
+  - `shadow-3` for dialogs and the floating button
+
+  All three are tinted with sand-12, never pure black, in light mode.
+
+### Spacing, type and motion
+- **Spacing:** a 4px base, with layouts on an 8px rhythm (8, 16, 24, 32, 48, 64).
 - **Type:**
   - Headings use Newsreader (serif).
   - Interface text uses Geist (sans), and numbers use Geist Mono.
@@ -67,7 +106,7 @@ The CV page is **always white with its own colours**, in dark mode too. It's a d
 ```
 - **Sidebar** (240px, `surface`):
   - Logo, then the main nav: Today, Jobs, CV Studio, Interview prep and Progress.
-  - The active item has an ink bar on the left and a soft highlight. Today shows a count badge when follow-ups are due.
+  - The active item is a white raised row with a jade bar on the left. Today shows a red count badge when follow-ups are due.
   - At the bottom: a pass card ("Free plan · 2 of 3 CVs left · Get a pass", or "Pass · 12 days left"), then Settings and the account.
 - **Top bar:** breadcrumb or page title, the search button (opens ⌘K), the primary "Add job" button and the account menu (email, Billing, Settings, Log out).
 - **Below 1024px:** the sidebar collapses to icons only (72px).
@@ -124,10 +163,10 @@ The Tailored CV tab has:
 `src/components/ui.tsx` holds Button (primary, secondary, ghost, danger), Card, Field, Input, Textarea, Select, Badge, Notice (info, success, warning, error), EmptyState, Logo and Eyebrow. Use these before writing new markup.
 
 ## Accessibility
-- Everything works with a keyboard, focus is visible (`outline: 2px solid var(--ink)`), and each page has one `h1`.
+- Everything works with a keyboard, focus is visible (a 2px jade `brand` outline), and each page has one `h1`.
 - Every input has a `<label>`. Hints are linked with `aria-describedby`.
 - Colour is never the only signal. Match states have text ("Shown in your work").
-- Contrast is AA or better in both themes. Template palettes are checked too.
+- Contrast is AA or better in both themes. It's tested for every token pair and for every template palette.
 - Dialogs trap focus and close with Escape. The command bar is a `role="dialog"` with a listbox.
 - The e2e suite runs axe on the main pages.
 

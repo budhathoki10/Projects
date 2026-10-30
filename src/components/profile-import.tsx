@@ -18,7 +18,7 @@ export function ProfileImport({ replacing }: { replacing: boolean }) {
             role="tab"
             aria-selected={mode === m}
             onClick={() => setMode(m)}
-            className={`border-b-2 pb-1 ${mode === m ? "border-ink text-foreground" : "border-transparent text-muted hover:text-foreground"}`}
+            className={`border-b-2 pb-1 ${mode === m ? "border-brand text-foreground" : "border-transparent text-muted hover:text-foreground"}`}
           >
             {m === "file" ? "Upload a file" : "Paste the text"}
           </button>
@@ -34,7 +34,7 @@ export function ProfileImport({ replacing }: { replacing: boolean }) {
             name="file"
             type="file"
             accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-            className="block w-full text-sm file:mr-3 file:rounded-[5px] file:border file:border-strong-border file:bg-surface file:px-3 file:py-1.5 file:text-sm"
+            className="block w-full text-sm file:mr-3 file:rounded-lg file:border file:border-strong-border file:bg-surface file:px-3 file:py-1.5 file:text-sm"
           />
           <p className="text-xs text-muted">PDF, Word (.docx) or text, up to 5 MB.</p>
         </div>

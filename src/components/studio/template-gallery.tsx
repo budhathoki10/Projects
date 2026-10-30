@@ -44,7 +44,7 @@ function Card({ t, onOpen, isDefault }: { t: BuiltinTemplate; onOpen: () => void
         className="group block w-full text-left focus-visible:outline-none"
         aria-label={`${t.name}. ${CATEGORIES[t.categories[0]]}. Preview`}
       >
-        <div className="relative overflow-hidden rounded-lg border border-border bg-white shadow-[0_1px_2px_rgb(0_0_0/0.05)] transition group-hover:-translate-y-0.5 group-hover:shadow-[0_8px_24px_rgb(0_0_0/0.10)] group-focus-visible:ring-2 group-focus-visible:ring-ink">
+        <div className="relative overflow-hidden rounded-lg border border-border bg-paper shadow-1 transition group-hover:-translate-y-0.5 group-hover:shadow-2 group-focus-visible:ring-2 group-focus-visible:ring-brand">
           <TemplateThumb id={t.id} name={t.name} />
           {isDefault && <span className="absolute left-2 top-2 rounded-full bg-ink px-2 py-0.5 text-[11px] font-medium text-on-ink">Your default</span>}
           <span className="absolute inset-x-0 bottom-0 flex translate-y-full items-center justify-center gap-1.5 bg-ink/90 py-2 text-[13px] font-medium text-on-ink transition group-hover:translate-y-0 group-focus-visible:translate-y-0">
@@ -79,7 +79,7 @@ function AppActions({ t, mode }: { t: BuiltinTemplate; mode: Extract<Mode, { kin
             <Icon name="check" size={16} /> {mode.defaultId === t.id ? "Your default" : "Use as my default"}
           </button>
         </form>
-        <Link href={`/app/studio/edit/${t.id}`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-strong-border bg-surface px-4 text-sm font-medium hover:border-ink">
+        <Link href={`/app/studio/edit/${t.id}`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-strong-border bg-surface px-4 text-sm font-medium hover:border-hover-border">
           <Icon name="sparkle" size={16} /> Customise
         </Link>
       </div>
@@ -98,7 +98,7 @@ function AppActions({ t, mode }: { t: BuiltinTemplate; mode: Extract<Mode, { kin
               </option>
             ))}
           </select>
-          <button type="submit" disabled={jobPending} className="h-10 rounded-lg border border-strong-border px-3 text-sm font-medium hover:border-ink disabled:opacity-60">
+          <button type="submit" disabled={jobPending} className="h-10 rounded-lg border border-strong-border px-3 text-sm font-medium hover:border-hover-border disabled:opacity-60">
             Use for this job
           </button>
           <div className="w-full">
@@ -119,8 +119,8 @@ function Preview({ t, cv, photoUrl, mode, onClose }: { t: BuiltinTemplate; cv: P
   }, [onClose]);
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={`${t.name} preview`}>
-      <button type="button" aria-label="Close preview" className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative flex h-full w-full max-w-[1000px] flex-col bg-background shadow-[0_24px_64px_rgb(0_0_0/0.18)] md:flex-row">
+      <button type="button" aria-label="Close preview" className="absolute inset-0 bg-scrim" onClick={onClose} />
+      <div className="relative flex h-full w-full max-w-[1000px] flex-col bg-background shadow-3 md:flex-row">
         <div className="order-2 min-h-0 flex-1 overflow-y-auto p-4 md:order-1 md:p-8">
           <CvSheet spec={t.spec} cv={cv} photoUrl={photoUrl} />
         </div>
@@ -130,7 +130,7 @@ function Preview({ t, cv, photoUrl, mode, onClose }: { t: BuiltinTemplate; cv: P
               <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted">{t.id.replace("sl-", "No. ")}</p>
               <h2 className="font-serif text-2xl">{t.name}</h2>
             </div>
-            <button type="button" onClick={onClose} className="rounded-lg p-2 text-muted hover:bg-background hover:text-foreground" aria-label="Close preview" autoFocus>
+            <button type="button" onClick={onClose} className="rounded-lg p-2 text-muted hover:bg-subtle hover:text-foreground" aria-label="Close preview" autoFocus>
               <Icon name="close" />
             </button>
           </div>
@@ -183,7 +183,7 @@ export function TemplateGallery({ cv, photoUrl, mode, initialCategory }: { cv: P
             <button
               type="button"
               onClick={() => setF((cur) => ({ ...cur, category: "" }))}
-              className={`flex w-full justify-between rounded-lg px-3 py-1.5 text-left ${!f.category ? "bg-surface font-medium shadow-[0_1px_2px_rgb(0_0_0/0.05)]" : "text-muted hover:text-foreground"}`}
+              className={`flex w-full justify-between rounded-lg px-3 py-1.5 text-left ${!f.category ? "bg-surface font-medium shadow-1" : "text-muted hover:text-foreground"}`}
             >
               All templates <span className="font-mono text-[12px] text-muted">{all.length}</span>
             </button>
@@ -195,7 +195,7 @@ export function TemplateGallery({ cv, photoUrl, mode, initialCategory }: { cv: P
                 aria-pressed={f.category === c}
                 onClick={() => set("category", c)}
                 className={`flex w-full justify-between gap-2 rounded-lg px-3 py-1.5 text-left ${
-                  f.category === c ? "bg-surface font-medium shadow-[0_1px_2px_rgb(0_0_0/0.05)]" : "text-muted hover:text-foreground"
+                  f.category === c ? "bg-surface font-medium shadow-1" : "text-muted hover:text-foreground"
                 }`}
               >
                 {CATEGORIES[c]} <span className="font-mono text-[12px] text-muted">{all.filter((t) => t.categories.includes(c)).length}</span>
@@ -215,7 +215,7 @@ export function TemplateGallery({ cv, photoUrl, mode, initialCategory }: { cv: P
               onChange={(e) => setF((cur) => ({ ...cur, q: e.target.value }))}
               placeholder="Search templates: name, colour, field"
               aria-label="Search templates"
-              className="h-11 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm outline-none focus:border-ink"
+              className="h-11 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm outline-none focus:border-brand"
             />
           </div>
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:hidden">

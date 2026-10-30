@@ -24,7 +24,7 @@ export function JobTabs({ jobId }: { jobId: string }) {
               key={t.slug}
               href={href}
               aria-current={active ? "page" : undefined}
-              className={`-mb-px shrink-0 border-b-2 py-2.5 ${active ? "border-ink text-foreground" : "border-transparent text-muted hover:text-foreground"}`}
+              className={`-mb-px shrink-0 border-b-2 py-2.5 ${active ? "border-brand text-foreground" : "border-transparent text-muted hover:text-foreground"}`}
             >
               {t.label}
             </Link>

@@ -39,7 +39,7 @@ function Diff({ before, after }: { before: string; after: string }) {
             {p.text}
           </ins>
         ) : (
-          <del key={i} className="text-faint">
+          <del key={i} className="text-muted">
             {p.text}
           </del>
         ),
@@ -52,7 +52,7 @@ function ChangeCard({ c, jobId, profile }: { c: Change; jobId: string; profile: 
   const blocked = c.flags.length > 0;
   const exp = "experienceId" in c ? profile.experience.find((e) => e.id === c.experienceId) : undefined;
   return (
-    <li className={`rounded-md border p-4 ${blocked ? "border-pen/40 bg-pen-soft/40" : c.accepted ? "border-strong-border bg-surface" : "border-border bg-background"}`}>
+    <li className={`rounded-md border p-4 ${blocked ? "border-pen-border/60 bg-pen-soft" : c.accepted ? "border-strong-border bg-surface" : "border-border bg-panel"}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[13px] font-medium">{where(c, profile)}</p>
         {blocked ? <Badge tone="bad">Blocked</Badge> : c.accepted ? <Badge tone="good">Using</Badge> : <Badge>Not using</Badge>}
@@ -72,7 +72,7 @@ function ChangeCard({ c, jobId, profile }: { c: Change; jobId: string; profile: 
         {c.kind === "skills-order" && <p className="text-sm">{c.order.slice(0, 12).join(", ")}{c.order.length > 12 ? "…" : ""}</p>}
       </div>
       {blocked ? (
-        <p className="mt-3 text-[13px] text-pen">
+        <p className="mt-3 text-[13px] text-pen-strong">
           This adds something that isn&apos;t in your CV: <strong>{c.flags.join(", ")}</strong>. If it&apos;s true,{" "}
           <Link href="/app/profile" className="underline underline-offset-4">
             add it to your profile
@@ -100,7 +100,7 @@ export default async function CvTab({ params }: PageProps<"/app/jobs/[id]/cv">) 
   if (!job) notFound();
   if (!profileReady(profile)) {
     return (
-      <div className="rounded-md border border-dashed border-strong-border px-6 py-8">
+      <div className="rounded-xl border border-dashed border-strong-border px-6 py-8">
         <p className="mb-4 text-muted">Add your CV first, so there&apos;s something to tailor.</p>
         <ButtonLink href="/app/profile">Add your CV</ButtonLink>
       </div>
@@ -123,7 +123,7 @@ export default async function CvTab({ params }: PageProps<"/app/jobs/[id]/cv">) 
 
   if (!doc) {
     return (
-      <div className="max-w-2xl space-y-4 rounded-md border border-border bg-surface p-6">
+      <div className="max-w-2xl space-y-4 rounded-xl border border-border bg-surface shadow-1 p-6">
         <h2 className="font-serif text-2xl font-medium">Tailor your CV for this job</h2>
         <p className="text-sm text-muted">
           We&apos;ll suggest rewording and reordering so your most relevant experience comes first, in the words this employer uses. You check each
@@ -169,7 +169,7 @@ export default async function CvTab({ params }: PageProps<"/app/jobs/[id]/cv">) 
               Download PDF
             </ButtonLink>
             {limits.docx ? (
-              <a href={`/app/download/cv/${job.id}`} className="inline-flex items-center rounded-[5px] border border-strong-border bg-surface px-3.5 py-1.5 text-sm font-medium hover:border-ink">
+              <a href={`/app/download/cv/${job.id}`} className="inline-flex items-center rounded-lg border border-strong-border bg-surface px-3.5 py-1.5 text-sm font-medium hover:border-hover-border">
                 Download Word
               </a>
             ) : (

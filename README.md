@@ -180,6 +180,6 @@ Where things live:
 
 ## Tests
 
-`npm run test:all` runs lint, typecheck, unit (126), integration with a real Postgres (23) and browser tests (16, including axe accessibility checks). See [TESTING.md](TESTING.md).
+`npm run test:all` runs lint, typecheck, unit (167), integration with a real Postgres (23) and browser tests (16, including axe accessibility checks). See [TESTING.md](TESTING.md).
 
 After changing a template or `src/components/cv/cv.css`, run `npm run templates:thumbs` with the dev server on and commit the new thumbnails.

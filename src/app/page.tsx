@@ -53,7 +53,7 @@ const FAQ = [
 function Sample() {
   return (
     <div className="relative space-y-3" aria-label="Example of Shortlist matching a job post and tailoring a CV">
-      <div className="rounded-md border border-border bg-surface p-5 text-sm leading-relaxed shadow-sm">
+      <div className="rounded-xl border border-border bg-surface shadow-1 p-5 text-sm leading-relaxed shadow-1">
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted">Job post · Customer Success Lead</p>
         <p className="mt-2">
           You&apos;ll own onboarding for new accounts, keep <mark className="marker bg-transparent text-inherit">churn</mark> low and work closely with
@@ -65,18 +65,18 @@ function Sample() {
           <span className="text-[13px] text-muted">Worth applying, with a tailored CV</span>
         </div>
       </div>
-      <div className="ml-6 rounded-md border border-strong-border bg-surface p-4 text-sm shadow-sm">
+      <div className="ml-6 rounded-xl border border-border bg-surface shadow-1 p-4 text-sm shadow-1">
         <p className="text-[13px] font-medium">Support Specialist, Brightdesk</p>
         <p className="mt-2 leading-relaxed">
-          <del className="text-faint">Answered customer tickets </del>
+          <del className="text-muted">Answered customer tickets </del>
           <ins className="marker no-underline">Onboarded 40 new business accounts and handled their support in Zendesk, </ins>
           keeping churn under 3%
         </p>
         <p className="mt-2 text-[13px] text-money">Using · every fact is in your CV</p>
       </div>
-      <div className="ml-12 rounded-md border border-pen/40 bg-pen-soft/40 p-4 text-sm">
+      <div className="ml-12 rounded-lg border border-pen-border/60 bg-pen-soft p-4 text-sm shadow-1">
         <p className="leading-relaxed">…managed renewals in <strong>Salesforce</strong></p>
-        <p className="mt-1 text-[13px] text-pen">Blocked · Salesforce isn&apos;t in your CV</p>
+        <p className="mt-1 text-[13px] text-pen-strong">Blocked · Salesforce isn&apos;t in your CV</p>
       </div>
     </div>
   );
@@ -117,7 +117,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             <ol className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2">
               {STEPS.map(([title, text], i) => (
                 <li key={title} className="border-t border-strong-border pt-4">
-                  <p className="font-mono text-xs text-faint">{String(i + 1).padStart(2, "0")}</p>
+                  <p className="font-mono text-xs text-muted">{String(i + 1).padStart(2, "0")}</p>
                   <h3 className="mt-1 font-medium">{title}</h3>
                   <p className="mt-1.5 text-sm text-muted">{text}</p>
                 </li>
@@ -147,7 +147,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             {SHOWCASE.map(([id, name], i) => (
               <li key={id} className={`w-44 shrink-0 sm:w-52 ${i % 2 ? "mt-8" : ""}`}>
                 <Link href="/templates" className="group block">
-                  <div className="overflow-hidden rounded-md shadow-[0_1px_3px_rgb(0_0_0/0.08),0_12px_32px_rgb(0_0_0/0.10)] ring-1 ring-border transition group-hover:-translate-y-1">
+                  <div className="overflow-hidden rounded-md shadow-2 ring-1 ring-border transition group-hover:-translate-y-1">
                     <TemplateThumb id={id} name={name} />
                   </div>
                   <p className="mt-2 text-sm font-medium">{name}</p>
@@ -179,7 +179,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             <p className="mt-3 text-muted">Pay once for your job hunt. No subscription to forget about.</p>
             <div className="mt-10 overflow-x-auto rounded-md border border-border">
               <table className="w-full text-sm">
-                <thead className="border-b border-border bg-background text-left">
+                <thead className="border-b border-border bg-panel text-left">
                   <tr>
                     <th className="px-4 py-4 sm:w-1/2" />
                     <th className="px-4 py-4">

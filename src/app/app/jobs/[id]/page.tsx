@@ -37,7 +37,7 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
     <div className="grid gap-10 lg:grid-cols-[1fr_20rem]">
       <div className="min-w-0 space-y-10">
         {!match ? (
-          <div className="rounded-md border border-dashed border-strong-border px-6 py-8">
+          <div className="rounded-xl border border-dashed border-strong-border px-6 py-8">
             <p className="mb-4 text-muted">Add your CV to see how well you match this job.</p>
             <ButtonLink href="/app/profile">Add your CV</ButtonLink>
           </div>
@@ -47,7 +47,7 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
               <div>
                 <p className="font-mono text-5xl font-medium tabular-nums tracking-tight" data-testid="match-score">
                   {match.score}
-                  <span className="text-lg text-faint">%</span>
+                  <span className="text-lg text-muted">%</span>
                 </p>
                 <div className="mt-2 flex w-40 gap-[3px]" aria-hidden="true">
                   {Array.from({ length: 20 }, (_, i) => (
@@ -93,7 +93,7 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
                 <span className="marker">Highlighted</span>: you show it. <span className="underline decoration-dotted underline-offset-4">Dotted</span>: only in your skills
                 list. <span className="pen-mark">Red</span>: not in your CV.
               </p>
-              <div className="max-h-[36rem] overflow-y-auto whitespace-pre-line rounded-md border border-border bg-surface p-5 text-sm leading-relaxed">
+              <div className="max-h-[36rem] overflow-y-auto whitespace-pre-line rounded-xl border border-border bg-surface shadow-1 p-5 text-sm leading-relaxed">
                 {highlight(job.postText, match.keywords).map((s, i) =>
                   s.mark === "shown" ? (
                     <mark key={i} className="marker bg-transparent text-inherit">
@@ -167,9 +167,9 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
           <button type="submit" className="text-[13px] text-muted hover:text-pen">
             Delete this job
           </button>
-          <p className="mt-1 text-xs text-faint">Removes its tailored CV, cover letter and interview notes too.</p>
+          <p className="mt-1 text-xs text-muted">Removes its tailored CV, cover letter and interview notes too.</p>
         </form>
-        <p className="text-xs text-faint">
+        <p className="text-xs text-muted">
           <Link href="/app/profile" className="underline underline-offset-4">
             Edit your CV
           </Link>{" "}

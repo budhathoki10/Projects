@@ -33,7 +33,7 @@ function Sparkline({ values, label }: { values: number[]; label: string }) {
   const points = ys.map((y, i) => `${(i * step).toFixed(1)},${y.toFixed(1)}`).join(" ");
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label} className="overflow-visible">
-      <polygon points={`0,${h} ${points} ${w},${h}`} fill="var(--highlight)" opacity="0.6" />
+      <polygon points={`0,${h} ${points} ${w},${h}`} fill="var(--brand)" opacity="0.6" />
       <polyline points={points} fill="none" stroke="var(--ink)" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
       <circle cx={w} cy={ys.at(-1)} r="2.5" fill="var(--ink)" />
     </svg>
@@ -46,13 +46,13 @@ function GoalRing({ done, goal }: { done: number; goal: number }) {
   const share = Math.min(1, done / goal);
   return (
     <svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label={`${done} of ${goal} applications this week`} className="shrink-0">
-      <circle cx="42" cy="42" r={r} fill="none" stroke="var(--border)" strokeWidth="8" />
+      <circle cx="42" cy="42" r={r} fill="none" stroke="var(--subtle)" strokeWidth="8" />
       <circle
         cx="42"
         cy="42"
         r={r}
         fill="none"
-        stroke={share >= 1 ? "var(--money)" : "var(--ink)"}
+        stroke="var(--brand)"
         strokeWidth="8"
         strokeLinecap="round"
         strokeDasharray={`${share * circ} ${circ}`}
@@ -122,18 +122,20 @@ export default async function Today({ searchParams }: PageProps<"/app">) {
         <h1 className="mt-1 font-serif text-4xl tracking-tight">Hi {firstName}</h1>
       </header>
 
-      <section aria-labelledby="next" className="relative overflow-hidden rounded-2xl bg-[#1d2740] p-6 text-white md:p-8">
-        <div className="pointer-events-none absolute -right-10 -top-16 size-56 rounded-full bg-[#e6f4a0] opacity-20 blur-2xl" aria-hidden />
-        <p className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.08em] text-white/70">
-          <Icon name={ACTION_ICONS[action.kind]} size={14} /> Next best step
-        </p>
-        <h2 id="next" className="mt-2 max-w-2xl font-serif text-3xl leading-tight">
-          {action.title}
-        </h2>
-        <p className="mt-2 max-w-xl text-[15px] text-white/80">{action.body}</p>
+      <section aria-labelledby="next" className="flex flex-col gap-5 rounded-xl border border-border bg-surface p-6 shadow-1 sm:flex-row sm:items-center md:p-7">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-strong" aria-hidden>
+          <Icon name={ACTION_ICONS[action.kind]} size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-money">Next best step</p>
+          <h2 id="next" className="mt-1 font-serif text-2xl leading-snug md:text-[28px]">
+            {action.title}
+          </h2>
+          <p className="mt-1 max-w-xl text-[15px] text-muted">{action.body}</p>
+        </div>
         <Link
           href={action.href}
-          className="mt-5 inline-flex h-10 items-center gap-2 rounded-lg bg-[#e6f4a0] px-4 text-sm font-medium text-[#1d2740] transition hover:brightness-95"
+          className="inline-flex h-10 shrink-0 items-center gap-2 self-start rounded-lg bg-ink px-4 text-sm font-medium text-on-ink shadow-1 transition-colors hover:bg-ink-hover sm:self-center"
         >
           {action.cta} <Icon name="arrow" size={16} />
         </Link>
@@ -196,7 +198,7 @@ export default async function Today({ searchParams }: PageProps<"/app">) {
               <ul className="space-y-2">
                 {interviews.map((j) => (
                   <li key={j.id} className="flex items-center gap-4 rounded-xl border border-border bg-surface px-5 py-3">
-                    <div className="flex w-12 flex-col items-center rounded-lg bg-highlight py-1 text-ink">
+                    <div className="flex w-12 flex-col items-center rounded-lg bg-brand-soft py-1 text-brand-strong">
                       <span className="text-[10px] font-medium uppercase">{new Date(`${j.interviewOn}T12:00:00Z`).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}</span>
                       <span className="font-mono text-lg leading-none">{Number(j.interviewOn!.slice(8))}</span>
                     </div>
@@ -243,7 +245,7 @@ export default async function Today({ searchParams }: PageProps<"/app">) {
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-xl">
+          <Card>
             <div className="flex items-center gap-4">
               <GoalRing done={stats.appliedThisWeek} goal={user.weeklyGoal} />
               <div className="min-w-0">
@@ -255,7 +257,7 @@ export default async function Today({ searchParams }: PageProps<"/app">) {
                   <label htmlFor="goal" className="text-[12px] text-muted">
                     Goal
                   </label>
-                  <input id="goal" name="goal" type="number" min={1} max={30} defaultValue={user.weeklyGoal} className="h-8 w-16 rounded-md border border-strong-border bg-surface px-2 text-sm" />
+                  <input id="goal" name="goal" type="number" min={1} max={30} defaultValue={user.weeklyGoal} className="h-8 w-16 rounded-xl border border-border bg-surface shadow-1 px-2 text-sm" />
                   <button type="submit" className="text-[12px] font-medium underline underline-offset-4">
                     Save
                   </button>
@@ -265,15 +267,15 @@ export default async function Today({ searchParams }: PageProps<"/app">) {
           </Card>
 
           {jobs.length > 0 && (
-            <Card className="rounded-xl">
+            <Card>
               <Eyebrow className="mb-3">Pipeline</Eyebrow>
               <ul className="space-y-2">
                 {STATUSES.map((s) => (
                   <li key={s}>
                     <Link href={`/app/jobs#stage-${s}`} className="group grid grid-cols-[90px_1fr_24px] items-center gap-3 text-[13px]">
                       <span className="text-muted group-hover:text-foreground">{STATUS_LABELS[s]}</span>
-                      <span className="h-2 overflow-hidden rounded-full bg-background">
-                        <span className={`block h-full rounded-full ${s === "offer" ? "bg-money" : s === "rejected" ? "bg-faint" : "bg-ink"}`} style={{ width: `${(counts[s] / maxCount) * 100}%` }} />
+                      <span className="h-2 overflow-hidden rounded-full bg-subtle">
+                        <span className={`block h-full rounded-full ${s === "offer" ? "bg-brand" : s === "rejected" ? "bg-faint" : "bg-foreground/80"}`} style={{ width: `${(counts[s] / maxCount) * 100}%` }} />
                       </span>
                       <span className="text-right font-mono tabular-nums">{counts[s]}</span>
                     </Link>
@@ -284,7 +286,7 @@ export default async function Today({ searchParams }: PageProps<"/app">) {
           )}
 
           {ready && (
-            <Card className="rounded-xl">
+            <Card>
               <div className="mb-3 flex items-baseline justify-between">
                 <Eyebrow>CV strength</Eyebrow>
                 <Link href="/app/studio" className="text-[12px] underline underline-offset-4">

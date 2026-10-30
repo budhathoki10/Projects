@@ -91,6 +91,10 @@ npm run test:e2e     # Playwright: builds the app, starts it and a fake-sites se
   - Fit-to-pages steps only tighten and stay in range.
   - Gallery filters and recommendations.
   - The Word file for every layout engine contains every fact, and uses the template's fonts, colours and paper.
+- `palette.test.ts`:
+  - Every text and background pair passes 4.5:1, in light and dark: foreground and muted on every surface, buttons, and the strong text on each tint.
+  - Brand marks reach 3:1.
+  - No component uses a raw colour.
 - `today-and-strength.test.ts`:
   - The next best step's order of priority.
   - The 8-week trend and upcoming interviews.
@@ -124,7 +128,7 @@ npm run test:e2e     # Playwright: builds the app, starts it and a fake-sites se
 - axe finds no serious WCAG 2 AA problems on Today, Jobs, Studio, the gallery, the editor, a job, its Tailored CV tab and the public gallery.
 - Phones get the bottom tabs and the "More" sheet, and Studio, the gallery, the editor and Interviews fit the screen.
 
-**Current totals:** 126 unit, 23 integration and 16 browser tests, plus the screenshot run.
+**Current totals:** 167 unit, 23 integration and 16 browser tests, plus the screenshot run.
 
 ## Screenshots
 `SCREENSHOTS=1 npx playwright test e2e/screenshots.spec.ts` seeds an example account and saves the images to `docs/screenshots/`. This includes Studio, the gallery, a preview, the editor, Today in dark mode and Today on a phone.

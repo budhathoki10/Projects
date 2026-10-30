@@ -1,50 +1,98 @@
 @import "tailwindcss";
+@import "./colors.css";
 
 /*
- * Paper, navy ink and a highlighter. Lime highlight marks what in a job post you already
- * have; red marks a real gap; green means something went well (a match, an offer).
+ * Shortlist's colour system. Primitive scales (sand, jade, tomato, amber) come from
+ * colors.css; these semantic tokens are the only colours components use. Rules, in short:
+ * neutrals do almost all the work, jade means "shortlisted": brand, success, focus and
+ * progress, never decoration. Tomato is a real gap or an error, amber a notice. Text on a
+ * tint uses the scale's step 12, so it stays readable (see tests/palette.test.ts and
+ * docs/DESIGN.md).
  */
 :root {
-  --background: #f6f4ef;
-  --surface: #fffefb;
-  --foreground: #1b1a17;
-  --muted: #6e695f;
-  --faint: #726e68;
-  --border: #e3dfd5;
-  --strong-border: #c9c3b6;
-  --ink: #1d2740;
-  --ink-hover: #2f3d60;
-  --on-ink: #fffefb;
-  --pen: #b0321c;
-  --pen-soft: #f8e6e1;
-  --money: #2d6a3e;
-  --money-soft: #e3efe5;
-  --highlight: #e6f4a0;
+  --background: var(--sand-1);
+  --surface: #ffffff;
+  --panel: var(--sand-2);
+  --subtle: var(--sand-3);
+  --subtle-hover: var(--sand-4);
+  --foreground: var(--sand-12);
+  --muted: var(--sand-11);
+  --faint: var(--sand-10);
+  --border: var(--sand-6);
+  --strong-border: var(--sand-7);
+  --hover-border: var(--sand-8);
+
+  --ink: var(--sand-12);
+  --ink-hover: var(--sand-11);
+  --on-ink: var(--sand-1);
+
+  --brand: var(--jade-10);
+  --brand-soft: var(--jade-3);
+  --brand-border: var(--jade-7);
+  --brand-strong: var(--jade-12);
+  --highlight: var(--jade-4);
+
+  --money: var(--jade-11);
+  --money-soft: var(--jade-3);
+  --money-strong: var(--jade-12);
+
+  --pen: var(--tomato-11);
+  --pen-soft: var(--tomato-3);
+  --pen-border: var(--tomato-7);
+  --pen-strong: var(--tomato-12);
+
+  --notice: var(--amber-11);
+  --notice-soft: var(--amber-2);
+  --notice-border: var(--amber-6);
+  --notice-strong: var(--amber-12);
+
+  /* CVs are documents: always white paper with dark ink, in dark mode too. */
+  --paper: #ffffff;
+  --paper-ink: #21201c;
+
+  --scrim: rgb(33 32 28 / 0.4);
+  --elev-1: 0 1px 2px rgb(33 32 28 / 0.05);
+  --elev-2: 0 1px 2px rgb(33 32 28 / 0.04), 0 8px 24px -6px rgb(33 32 28 / 0.12);
+  --elev-3: 0 2px 4px rgb(33 32 28 / 0.04), 0 24px 56px -12px rgb(33 32 28 / 0.22);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #161512;
-    --surface: #1d1c19;
-    --foreground: #ebe8e1;
-    --muted: #a39e93;
-    --faint: #8f8a80;
-    --border: #2e2c27;
-    --strong-border: #45423b;
-    --ink: #dfe6f5;
-    --ink-hover: #ffffff;
-    --on-ink: #161512;
-    --pen: #f07a62;
-    --pen-soft: #3a1e17;
-    --money: #7cc48f;
-    --money-soft: #1c2f21;
-    --highlight: #3d4719;
+    --surface: var(--sand-2);
+    --panel: var(--sand-1);
+    --brand: var(--jade-9);
+    --highlight: var(--jade-5);
+    --scrim: rgb(0 0 0 / 0.6);
+    --elev-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --elev-2: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -6px rgb(0 0 0 / 0.6);
+    --elev-3: 0 2px 4px rgb(0 0 0 / 0.4), 0 24px 56px -12px rgb(0 0 0 / 0.7);
   }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-panel: var(--panel);
+  --color-subtle: var(--subtle);
+  --color-subtle-hover: var(--subtle-hover);
+  --color-hover-border: var(--hover-border);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-border: var(--brand-border);
+  --color-brand-strong: var(--brand-strong);
+  --color-money-strong: var(--money-strong);
+  --color-pen-border: var(--pen-border);
+  --color-pen-strong: var(--pen-strong);
+  --color-notice: var(--notice);
+  --color-notice-soft: var(--notice-soft);
+  --color-notice-border: var(--notice-border);
+  --color-notice-strong: var(--notice-strong);
+  --color-scrim: var(--scrim);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+  --shadow-1: var(--elev-1);
+  --shadow-2: var(--elev-2);
+  --shadow-3: var(--elev-3);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
@@ -78,12 +126,19 @@ textarea {
 
 ::selection {
   background: var(--highlight);
+  color: var(--foreground);
 }
 
-/* Highlighter stroke for words in a job post the user already has. */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Words in a job post the user already has: a soft jade tint with a thin underline. */
 .marker {
-  background: linear-gradient(transparent 12%, var(--highlight) 12%, var(--highlight) 88%, transparent 88%);
-  border-radius: 2px;
+  background: var(--highlight);
+  box-shadow: inset 0 -1.5px 0 var(--brand);
+  border-radius: 3px;
   padding: 0 2px;
 }
 

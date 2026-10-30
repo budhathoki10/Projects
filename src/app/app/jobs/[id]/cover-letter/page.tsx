@@ -19,7 +19,7 @@ export default async function CoverTab({ params }: PageProps<"/app/jobs/[id]/cov
   if (!job) notFound();
   if (!profileReady(profile)) {
     return (
-      <div className="rounded-md border border-dashed border-strong-border px-6 py-8">
+      <div className="rounded-xl border border-dashed border-strong-border px-6 py-8">
         <p className="mb-4 text-muted">Add your CV first. The letter is written from it.</p>
         <ButtonLink href="/app/profile">Add your CV</ButtonLink>
       </div>
@@ -27,7 +27,7 @@ export default async function CoverTab({ params }: PageProps<"/app/jobs/[id]/cov
   }
   if (!doc?.text) {
     return (
-      <div className="max-w-2xl space-y-4 rounded-md border border-border bg-surface p-6">
+      <div className="max-w-2xl space-y-4 rounded-xl border border-border bg-surface shadow-1 p-6">
         <h2 className="font-serif text-2xl font-medium">A cover letter for this job</h2>
         <p className="text-sm text-muted">
           Short, specific and in plain words: why this job, and two or three things you&apos;ve actually done that it needs. Nothing invented. Edit it

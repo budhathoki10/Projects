@@ -34,7 +34,7 @@ export default async function PrintLetter({ params }: PageProps<"/app/print/lett
       {/* Built only from validated numbers and enums (see printPageCss). */}
       <style>{printPageCss(spec)}</style>
       <div className="overflow-x-auto print:overflow-visible">
-        <div className="mx-auto w-fit shadow-[0_1px_3px_rgb(0_0_0/0.08),0_8px_24px_rgb(0_0_0/0.06)] print:w-auto print:shadow-none">
+        <div className="mx-auto w-fit shadow-2 print:w-auto print:shadow-none">
           <LetterDocument spec={spec} cv={profile} text={doc.text} photoUrl={photo} />
         </div>
       </div>

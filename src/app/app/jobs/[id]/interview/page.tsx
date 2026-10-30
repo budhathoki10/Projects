@@ -18,7 +18,7 @@ export default async function InterviewTab({ params }: PageProps<"/app/jobs/[id]
   if (!job) notFound();
   if (!profileReady(profile)) {
     return (
-      <div className="rounded-md border border-dashed border-strong-border px-6 py-8">
+      <div className="rounded-xl border border-dashed border-strong-border px-6 py-8">
         <p className="mb-4 text-muted">Add your CV first. Questions are built from it and the job.</p>
         <ButtonLink href="/app/profile">Add your CV</ButtonLink>
       </div>
@@ -26,7 +26,7 @@ export default async function InterviewTab({ params }: PageProps<"/app/jobs/[id]
   }
   if (!session) {
     return (
-      <div className="max-w-2xl space-y-4 rounded-md border border-border bg-surface p-6">
+      <div className="max-w-2xl space-y-4 rounded-xl border border-border bg-surface shadow-1 p-6">
         <h2 className="font-serif text-2xl font-medium">Practise for the interview</h2>
         <p className="text-sm text-muted">
           The questions an interviewer for this job is likely to ask you: about what the job needs, about your own experience, and about the gaps.
@@ -46,7 +46,7 @@ export default async function InterviewTab({ params }: PageProps<"/app/jobs/[id]
         {session.questions.map((q, i) => (
           <li key={q.id} className="space-y-3 border-t border-border pt-5">
             <div>
-              <p className="font-mono text-xs text-faint">{String(i + 1).padStart(2, "0")}</p>
+              <p className="font-mono text-xs text-muted">{String(i + 1).padStart(2, "0")}</p>
               <h3 className="font-serif text-xl font-medium">{q.question}</h3>
               <p className="mt-1 text-[13px] text-muted">{q.why}</p>
             </div>

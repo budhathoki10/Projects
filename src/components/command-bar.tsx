@@ -71,8 +71,8 @@ export function CommandBar({ open, onClose, jobs }: { open: boolean; onClose: ()
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[12vh]" role="dialog" aria-modal="true" aria-label="Search and jump">
-      <button type="button" className="absolute inset-0 bg-black/30" aria-label="Close" tabIndex={-1} onClick={onClose} />
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_24px_64px_rgb(0_0_0/0.18)]">
+      <button type="button" className="absolute inset-0 bg-scrim" aria-label="Close" tabIndex={-1} onClick={onClose} />
+      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-surface shadow-3">
         <div className="flex items-center gap-3 border-b border-border px-4">
           <Icon name="search" className="text-muted" />
           <input
@@ -116,7 +116,7 @@ export function CommandBar({ open, onClose, jobs }: { open: boolean; onClose: ()
               aria-selected={i === active}
               onMouseEnter={() => setActive(i)}
               onClick={() => go(c)}
-              className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${i === active ? "bg-background" : ""}`}
+              className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${i === active ? "bg-subtle" : ""}`}
             >
               <Icon name={c.icon} size={16} className="text-muted" />
               <span className="truncate">{c.label}</span>

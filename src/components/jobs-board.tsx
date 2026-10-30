@@ -67,7 +67,7 @@ export function JobsBoard({ jobs }: { jobs: BoardJob[] }) {
         </div>
         <label className="flex items-center gap-2 text-[13px] text-muted">
           Sort by
-          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-8 rounded-md border border-border bg-surface px-2 text-[13px] text-foreground">
+          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-8 rounded-xl border border-border bg-surface shadow-1 px-2 text-[13px] text-foreground">
             <option value="added">Newest</option>
             <option value="match">Best match</option>
             <option value="applied">Applied date</option>
@@ -97,7 +97,7 @@ export function JobsBoard({ jobs }: { jobs: BoardJob[] }) {
                     setDragging(null);
                     if (id && items.find((j) => j.id === id)?.status !== s) moveTo(id, s);
                   }}
-                  className={`min-w-0 scroll-mt-24 rounded-xl p-2 transition-colors ${over === s ? "bg-highlight/40 ring-2 ring-ink/20" : "bg-background"}`}
+                  className={`min-w-0 scroll-mt-24 rounded-xl p-2 transition-colors ${over === s ? "bg-brand-soft ring-2 ring-brand-border" : "bg-panel"}`}
                 >
                   <h2 id={`col-${s}`} className="mb-2 flex items-baseline justify-between px-1 text-[13px] font-medium">
                     {STATUS_LABELS[s]}
@@ -114,7 +114,7 @@ export function JobsBoard({ jobs }: { jobs: BoardJob[] }) {
                           setDragging(j.id);
                         }}
                         onDragEnd={() => setDragging(null)}
-                        className={`group relative rounded-lg border border-border bg-surface p-3 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition hover:border-strong-border ${dragging === j.id ? "opacity-40" : ""}`}
+                        className={`group relative rounded-lg border border-border bg-surface p-3 shadow-1 transition hover:border-strong-border ${dragging === j.id ? "opacity-40" : ""}`}
                       >
                         <Link href={`/app/jobs/${j.id}`} className="block after:absolute after:inset-0">
                           <p className="truncate pr-6 text-sm font-medium">{j.title || "Untitled job"}</p>
@@ -129,7 +129,7 @@ export function JobsBoard({ jobs }: { jobs: BoardJob[] }) {
                           <select
                             value={j.status}
                             onChange={(e) => moveTo(j.id, e.target.value as Status)}
-                            className="size-7 cursor-pointer appearance-none rounded-md bg-transparent text-transparent opacity-60 hover:bg-background hover:opacity-100 focus:opacity-100"
+                            className="size-7 cursor-pointer appearance-none rounded-md bg-transparent text-transparent opacity-60 hover:bg-subtle hover:opacity-100 focus:opacity-100"
                             style={{ backgroundImage: "radial-gradient(circle, var(--muted) 1.4px, transparent 1.6px)", backgroundSize: "6px 6px", backgroundPosition: "center", backgroundRepeat: "repeat-x" }}
                           >
                             {STATUSES.map((o) => (
@@ -161,7 +161,7 @@ export function JobsBoard({ jobs }: { jobs: BoardJob[] }) {
             </thead>
             <tbody>
               {sorted.map((j) => (
-                <tr key={j.id} className="border-b border-border last:border-0 hover:bg-background">
+                <tr key={j.id} className="border-b border-border last:border-0 hover:bg-subtle">
                   <td className="px-4 py-3">
                     <Link href={`/app/jobs/${j.id}`} className="font-medium hover:underline">
                       {j.title || "Untitled job"}
@@ -174,7 +174,7 @@ export function JobsBoard({ jobs }: { jobs: BoardJob[] }) {
                       aria-label={`Stage for ${j.title}`}
                       value={j.status}
                       onChange={(e) => moveTo(j.id, e.target.value as Status)}
-                      className="h-8 rounded-md border border-border bg-surface px-2 text-[13px]"
+                      className="h-8 rounded-xl border border-border bg-surface shadow-1 px-2 text-[13px]"
                     >
                       {STATUSES.map((o) => (
                         <option key={o} value={o}>

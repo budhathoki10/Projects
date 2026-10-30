@@ -13,7 +13,7 @@ export function PhotoUpload({ photoUrl }: { photoUrl: string | null }) {
   const message = removed?.success && !state?.success ? removed : state;
   return (
     <div className="flex flex-wrap items-center gap-4">
-      <div className="flex size-20 items-center justify-center overflow-hidden rounded-full bg-background ring-1 ring-border">
+      <div className="flex size-20 items-center justify-center overflow-hidden rounded-full bg-subtle ring-1 ring-border">
         {photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- private, per-user image
           <img src={photoUrl} alt="Your photo" className="size-full object-cover" />
@@ -23,7 +23,7 @@ export function PhotoUpload({ photoUrl }: { photoUrl: string | null }) {
       </div>
       <div className="space-y-2">
         <form ref={form} action={upload}>
-          <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-strong-border bg-surface px-3 text-[13px] font-medium hover:border-ink has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ink">
+          <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-strong-border bg-surface px-3 text-[13px] font-medium hover:border-hover-border has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand">
             <Icon name="photo" size={15} />
             {uploading ? "Uploading…" : photoUrl ? "Replace photo" : "Add a photo"}
             <input
