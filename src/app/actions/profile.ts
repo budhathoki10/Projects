@@ -5,8 +5,10 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { cvFileToText, MAX_CV_BYTES, UnreadableFileError } from "@/lib/cv/extract-text";
+import { draftSummary, notesToBullets, type Suggestion } from "@/lib/cv/assist";
 import { parseCv } from "@/lib/cv/parse";
-import type { Profile } from "@/lib/model/types";
+import { aiEnabled } from "@/lib/ai";
+import { EMPTY_PROFILE, type Profile } from "@/lib/model/types";
 import { rescoreAll } from "@/lib/services/jobs";
 import { getProfile, saveProfile } from "@/lib/services/profile";
 import { refundAllowance, spendAllowance } from "@/lib/services/usage";
@@ -98,4 +100,54 @@ export async function updateProfile(_: ProfileState, formData: FormData): Promis
 export async function profileJson(): Promise<string> {
   const user = await requireUser();
   return JSON.stringify((await getProfile(user.id)) ?? {}, null, 2);
+}
+
+export type AssistState = { suggestions?: Suggestion[]; text?: string; flags?: string[]; method?: "ai" | "basic"; error?: string };
+
+const ASSIST_LIMIT = "You've used this month's writing help. You can still type it yourself, or get a Job-hunt pass for more.";
+
+/** Builder help: AI work counts against the monthly `assist` allowance; the plain-code version is free. */
+async function assisted<T>(user: { id: string; passUntil: Date | null }, work: () => Promise<T>): Promise<T | null> {
+  if (!aiEnabled()) return work();
+  if (!(await spendAllowance(user, "assist"))) return null;
+  try {
+    return await work();
+  } catch (err) {
+    await refundAllowance(user.id, "assist");
+    throw err;
+  }
+}
+
+const notesSchema = z.object({ notes: z.string().trim().min(10, "Write a few words about what you did first.").max(3000), title: Str(160), company: Str(160) });
+
+/** Rough notes about one role, turned into bullet points that only use what the notes say. */
+export async function turnNotesIntoBullets(input: { notes: string; title: string; company: string }): Promise<AssistState> {
+  const user = await requireUser();
+  const parsed = notesSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const profile = (await getProfile(user.id)) ?? { ...EMPTY_PROFILE, name: user.name };
+  try {
+    const result = await assisted(user, () => notesToBullets(parsed.data.notes, parsed.data, profile));
+    if (!result) return { error: ASSIST_LIMIT };
+    if (!result.suggestions.length) return { error: "Write a little more: a sentence or two for each thing you did." };
+    return result;
+  } catch {
+    return { error: "We couldn't write that right now. Try again, or write the points yourself." };
+  }
+}
+
+/** A short summary drafted from the saved profile, fact-checked. */
+export async function writeSummary(): Promise<AssistState> {
+  const user = await requireUser();
+  const profile = await getProfile(user.id);
+  if (!profile || (!profile.experience.length && !profile.education.length && !profile.skills.length)) {
+    return { error: "Add your work, studies or skills first, so there's something to summarise." };
+  }
+  try {
+    const result = await assisted(user, () => draftSummary(profile));
+    if (!result) return { error: ASSIST_LIMIT };
+    return result;
+  } catch {
+    return { error: "We couldn't write that right now. Try again, or write it yourself." };
+  }
 }

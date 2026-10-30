@@ -22,7 +22,7 @@ export const metadata: Metadata = { title: "CV Studio" };
 
 export default async function Studio({ searchParams }: PageProps<"/app/studio">) {
   const user = await requireUser();
-  const [{ deleted, full }, profile, photo, mine, style] = await Promise.all([
+  const [{ deleted, full, ready: built }, profile, photo, mine, style] = await Promise.all([
     searchParams,
     getProfile(user.id),
     photoUrl(user.id),
@@ -45,6 +45,7 @@ export default async function Studio({ searchParams }: PageProps<"/app/studio">)
           </Link>
         }
       />
+      <FlashToast message={built === "1" ? "Your CV is ready. It’s saved, and this is now your default look." : null} clear={["ready"]} />
       <FlashToast message={deleted === "1" ? "Template deleted. Jobs that used it now use your default." : null} clear={["deleted"]} />
       {full === "1" && <FormMessage error={`You can keep up to ${MAX_TEMPLATES} templates. Delete one to make room.`} />}
       {!ready && (

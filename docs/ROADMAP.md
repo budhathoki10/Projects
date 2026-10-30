@@ -77,6 +77,16 @@ This is the build plan. Tick a box only when its code is merged locally **and** 
 - [x] Consistent radii (8, 12, 16) and a 3-step elevation scale
 - [x] `tests/palette.test.ts`: every text pair passes 4.5:1 in both themes, and components use no raw colours
 
+### 5c. Guided CV builder
+- [x] `src/lib/cv/builder.ts` (plain logic) and `src/lib/cv/assist.ts` (AI with the fact check, falling back to the plain logic)
+- [x] `turnNotesIntoBullets` and `writeSummary` actions, metered as `assist` only when AI runs, refunded on failure
+- [x] `/app/profile/build`: six steps, saves each step, resumes, live preview, four recommended looks, sets the default
+- [x] Entry points: the profile page's two equal choices and Today's first step
+- [x] Tests: 9 unit, 4 integration, 2 browser; `builder` and `builder-mobile` screenshots
+
+### 5d. Messages
+- [x] Toasts for one-off confirmations, a slim confirm-email bar, and quieter form results (DESIGN.md → Messages and toasts)
+
 ### 6. Finish
 - [x] All new tests (see TESTING.md), with `npm run test:all` green: 169 unit, 26 integration, 17 browser
 - [x] axe checks on the main pages

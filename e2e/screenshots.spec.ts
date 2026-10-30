@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { FIXTURE_BASE } from "../playwright.config";
-import { addFixtureJob, query, setUpJobSeeker } from "./helpers";
+import { addFixtureJob, query, setUpJobSeeker, signUp } from "./helpers";
 
 // Regenerates docs/screenshots. Run with SCREENSHOTS=1 npx playwright test screenshots.
 test.skip(!process.env.SCREENSHOTS, "Set SCREENSHOTS=1 to regenerate docs/screenshots");
@@ -19,6 +19,31 @@ test("screenshots", async ({ page, browser }) => {
   await guest.evaluate(() => document.querySelectorAll("img[loading=lazy]").forEach((i) => i.setAttribute("loading", "eager")));
   await guest.waitForLoadState("networkidle");
   await guest.screenshot(shot("templates-public", false));
+
+  // The guided builder, on the work step with suggested bullet points, then on a phone.
+  const builder = await browser.newPage({ viewport: { width: 1280, height: 860 } });
+  await signUp(builder, `shots-builder-${Date.now()}@example.com`, "Sita Thapa");
+  await builder.goto("/app/profile/build");
+  await builder.getByLabel("Headline").fill("Staff Nurse");
+  await builder.getByLabel("City and country").fill("Pokhara, Nepal");
+  await builder.getByRole("button", { name: "Continue" }).click();
+  await builder.getByLabel("Job title").fill("Staff Nurse");
+  await builder.getByLabel("Employer").fill("Manipal Hospital");
+  await builder.getByLabel("From").fill("2021");
+  await builder.getByLabel("I work here now").check();
+  await builder.getByLabel("What did you do there?").fill("I looked after 12 patients a shift on the surgical ward. I trained 3 new nurses. I started a handover checklist so fewer things got missed.");
+  await builder.getByRole("button", { name: "Turn into bullet points" }).click();
+  await expect(builder.getByRole("checkbox")).toHaveCount(4);
+  await builder.getByRole("button", { name: "Add these points" }).click();
+  await builder.getByLabel("What did you do there?").fill("I looked after 12 patients a shift on the surgical ward. I trained 3 new nurses.");
+  await builder.getByRole("button", { name: "Turn into bullet points" }).click();
+  await builder.evaluate(() => window.scrollTo(0, 0));
+  await builder.screenshot(shot("builder"));
+  const builderPhone = await browser.newPage({ viewport: { width: 390, height: 844 }, storageState: await builder.context().storageState() });
+  await builderPhone.goto("/app/profile/build");
+  await builderPhone.screenshot(shot("builder-mobile", false));
+  await builderPhone.close();
+  await builder.close();
 
   await setUpJobSeeker(page, `shots-${Date.now()}@example.com`);
   await page.screenshot(shot("profile"));

@@ -46,7 +46,7 @@ Email the address in `SUPPORT_EMAIL` with "Security" in the subject. Please don'
 - `FETCH_ALLOW_PRIVATE_HOSTS` exists only for tests.
 
 ### AI (`src/lib/ai.ts`, `src/lib/tailor/`)
-- CV and job text is wrapped with `quoted(label, text)`. The system prompt says it is data, and that any instructions inside it must be ignored.
+- CV text, job text and the CV builder's rough notes are wrapped with `quoted(label, text)`. The system prompt says it is data, and that any instructions inside it must be ignored. Builder suggestions go through the same fact check as tailoring and are only saved once the person ticks and keeps them.
 - Output must match a zod schema, or it's rejected.
 - **No-invention check** (`fact-check.ts`): plain code that blocks any number, proper noun, acronym, technical term or qualification that isn't in the profile, or in the job post where allowed. Blocked changes can't be accepted.
 - Nothing the AI writes is used until the user accepts it.

@@ -36,7 +36,7 @@ export async function usageThisMonth(userId: string, now = new Date()): Promise<
     .select({ kind: schema.usage.kind, count: schema.usage.count })
     .from(schema.usage)
     .where(and(eq(schema.usage.userId, userId), eq(schema.usage.month, monthKey(now))));
-  const out: Record<UsageKind, number> = { tailor: 0, cover: 0, interview: 0, import: 0 };
+  const out: Record<UsageKind, number> = { tailor: 0, cover: 0, interview: 0, import: 0, assist: 0 };
   for (const r of rows) out[r.kind as UsageKind] = r.count;
   return out;
 }

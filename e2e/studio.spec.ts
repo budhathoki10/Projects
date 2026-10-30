@@ -1,9 +1,8 @@
-import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import JSZip from "jszip";
 import sharp from "sharp";
 import { FIXTURE_BASE } from "../playwright.config";
-import { addFixtureJob, logIn, query, setUpJobSeeker, signUp } from "./helpers";
+import { addFixtureJob, expectNoSeriousA11yIssues, logIn, query, setUpJobSeeker, signUp } from "./helpers";
 
 const stamp = Date.now();
 const email = `studio-${stamp}@example.com`;
@@ -13,12 +12,6 @@ test.describe.configure({ mode: "serial" });
 
 const userId = async (address: string) => (await query((sql) => sql`select id from users where email = ${address}`))[0].id as string;
 
-async function expectNoSeriousA11yIssues(page: Page, what: string) {
-  const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).exclude("nextjs-portal").analyze();
-  const serious = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
-  const describe = (v: (typeof serious)[number]) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => `${n.html.slice(0, 120)} (${n.failureSummary?.split("\n").at(-1)?.trim()})`).join(" | ")}`;
-  expect(serious.map(describe), `${what} has accessibility problems`).toEqual([]);
-}
 
 test("browse the gallery with your own CV, make a template your own and use it for a job", async ({ page }) => {
   await setUpJobSeeker(page, email);

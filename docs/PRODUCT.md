@@ -26,7 +26,15 @@ They aren't writers or designers. Most of them apply on their phone at night.
 ## Features
 
 ### 1. Your profile (the only source of facts)
-- Import from a PDF, DOCX or pasted text. AI or the basic reader turns it into editable sections.
+- Three ways in: upload a PDF or DOCX, paste the text, or **build one with help**. For an upload or paste, AI or the basic reader turns it into editable sections.
+- **Build one with help** (`/app/profile/build`) is for people with no CV yet. It has six short steps (about you, work, studies, skills and languages, summary, a look), with a live preview:
+  - Under each job or project, people write roughly what they did. **Turn into bullet points** proposes up to five bullets from those notes only. Any word the fact check can't find in the notes or profile is named, and that bullet starts unticked.
+  - "No work yet?" switches to projects, volunteering and part-time work.
+  - Skills come as one-tap chips, starting with ones their own words mention.
+  - **Write it for me** drafts the summary from what's entered, fact-checked.
+  - The last step shows four recommended templates using their own CV. Finish sets the default look and opens Studio.
+  - Every step saves, so leaving halfway loses nothing, and coming back opens the first step that's still empty.
+  - Without an AI key, plain-code versions run instead: they tidy the person's own sentences and assemble the summary from the profile, adding nothing.
 - Edit everything: contact details, summary, experience, education, skills, certifications, languages, projects and an optional photo.
 - Download it as JSON at any time from Settings.
 
@@ -87,6 +95,7 @@ Written for the job from your real experience, then checked for invented facts. 
 | Cover letters | 3 a month | 200 a month |
 | Interview prep sessions | 3 a month | 200 a month |
 | CV imports | 5 a month | 50 a month |
+| Writing help in the CV builder (AI only; the basic version is free) | 20 a month | 300 a month |
 | All 100 templates and your own | Yes | Yes |
 | PDF download | Yes | Yes |
 | Word download | No | Yes |

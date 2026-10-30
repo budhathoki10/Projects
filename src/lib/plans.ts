@@ -13,10 +13,11 @@ export function isPassId(v: unknown): v is PassId {
 
 /** AI actions allowed per calendar month. The pass cap is a fair-use ceiling, not a selling point. */
 export const LIMITS = {
-  free: { tailor: 3, cover: 3, interview: 3, import: 5, docx: false },
-  pass: { tailor: 200, cover: 200, interview: 200, import: 50, docx: true },
+  free: { tailor: 3, cover: 3, interview: 3, import: 5, assist: 20, docx: false },
+  pass: { tailor: 200, cover: 200, interview: 200, import: 50, assist: 300, docx: true },
 } as const;
-export type UsageKind = "tailor" | "cover" | "interview" | "import";
+/** `assist` is writing help in the CV builder (notes to bullet points, a summary draft). */
+export type UsageKind = "tailor" | "cover" | "interview" | "import" | "assist";
 
 export function hasPass(user: Pick<User, "passUntil">, now = new Date()): boolean {
   return !!user.passUntil && user.passUntil > now;
