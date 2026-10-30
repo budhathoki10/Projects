@@ -7,7 +7,7 @@ import { and, eq, gt } from "drizzle-orm";
 import { db, schema } from "@/db";
 import type { User } from "@/db/schema";
 
-export const SESSION_COOKIE = "pc_session";
+export const SESSION_COOKIE = "sl_session";
 const SESSION_DAYS = 30;
 
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
