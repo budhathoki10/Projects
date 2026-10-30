@@ -46,7 +46,7 @@ test("a job seeker goes from CV to application to follow-up, without anything in
   await page.getByRole("button", { name: "Suggest changes" }).click();
   await expect(page.getByRole("heading", { name: "Suggested changes" })).toBeVisible();
   const preview = page.getByLabel("CV preview");
-  await expect(preview.getByRole("listitem").first()).toContainText("Zendesk");
+  await expect(preview.getByRole("region", { name: "Experience" }).getByRole("listitem").first()).toContainText("Zendesk");
   await expect(preview).toContainText("Zendesk, Customer Success, Onboarding");
   await expect(preview).not.toContainText("HubSpot");
 
@@ -111,7 +111,7 @@ test("the free allowance runs out, and a Khalti pass lifts it and unlocks Word d
   await expect(page).toHaveURL(/\/app$/);
   await page.goto("/app/jobs");
   await page.getByRole("link", { name: /Customer Success Lead/ }).click();
-  await page.getByRole("link", { name: "Tailored CV" }).click();
+  await page.getByRole("link", { name: "Tailored CV", exact: true }).click();
 
   // One tailoring used already; two more reach the free limit of 3.
   for (let i = 0; i < 2; i++) {
@@ -130,7 +130,7 @@ test("the free allowance runs out, and a Khalti pass lifts it and unlocks Word d
 
   await page.goto("/app/jobs");
   await page.getByRole("link", { name: /Customer Success Lead/ }).click();
-  await page.getByRole("link", { name: "Tailored CV" }).click();
+  await page.getByRole("link", { name: "Tailored CV", exact: true }).click();
   await page.getByRole("button", { name: "Suggest again" }).click();
   await expect(page.getByText(/suggested change/)).toBeVisible();
 
