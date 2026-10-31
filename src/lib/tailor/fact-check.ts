@@ -1,4 +1,6 @@
 import type { Profile } from "@/lib/model/types";
+import { SKILL_TERMS } from "@/lib/jobs/skills-dictionary";
+import { containsTerm } from "@/lib/text";
 
 /**
  * The fact check: every number, name, tool, acronym or qualification in rewritten text must
@@ -77,6 +79,11 @@ export function unsupportedFacts(text: string, profile: Profile, extra = ""): st
   const corpus = `${profileCorpus(profile)}\n${extra.toLowerCase()}`;
   const corpusNumbers = new Set(numbersIn(corpus));
   const flags = new Set<string>();
+  // Skills at the start of a sentence or written in lowercase are still factual claims.
+  for (const skill of SKILL_TERMS) if (containsTerm(text, skill)) {
+    const evidence = corpus.split(/\n|(?<=[.!?])\s+/).some((line) => containsTerm(line, skill) && !/\b(no|not|never|haven.t|learning|plan to learn|want to learn)\b/i.test(line));
+    if (!evidence) flags.add(skill);
+  }
   for (const n of numbersIn(text)) if (!corpusNumbers.has(n)) flags.add(n);
   for (const w of factWords(text)) if (!inCorpus(w, corpus)) flags.add(w);
   const hasAnyQualification =
@@ -85,6 +92,17 @@ export function unsupportedFacts(text: string, profile: Profile, extra = ""): st
     // "degree" or "certified" is fine if the profile names any qualification; "MBA" needs an MBA.
     if (GENERIC.test(q) ? hasAnyQualification : inCorpus(q.replace(/'s$/, ""), corpus)) continue;
     flags.add(q);
+  }
+  return [...flags];
+}
+
+/** Employer requirements can support company context, never the applicant's claimed experience. */
+export function unsupportedExperienceClaims(text: string, profile: Profile, candidateAnswer = ""): string[] {
+  const flags = new Set<string>();
+  for (const clause of text.split(/(?<=[.!?])\s+|\n|\bbut\b|\bhowever\b/i)) {
+    if (!/\b(I|we|my|our)\b/i.test(clause) || !/\b(used|use|built|work|worked|experience|experienced|proficient|expertise|skilled|led|implemented|developed|managed|bring|have|hold|earned|achieved)\b/i.test(clause)) continue;
+    if (/\b(have not|haven.t|never|not yet|no experience|learning|want to learn|would learn|eager to learn)\b/i.test(clause)) continue;
+    for (const fact of unsupportedFacts(clause, profile, candidateAnswer)) flags.add(fact);
   }
   return [...flags];
 }

@@ -1,50 +1,101 @@
 @import "tailwindcss";
 
 /*
- * Paper, navy ink and a highlighter. Lime highlight marks what in a job post you already
- * have; red marks a real gap; green means something went well (a match, an offer).
+ * Design tokens. A cool-tinted neutral ramp, one confident blue accent, and three semantic colours.
+ *
+ *   neutrals   background < surface < surface-hover, with border / strong-border for edges
+ *   text       foreground > muted > faint  (all three pass 4.5:1 on background and surface)
+ *   accent     links, focus, selection, the active nav item. Nothing else is blue.
+ *   success    "you show this", offers, confirmations
+ *   warning    "only in your skills list", things worth a second look
+ *   danger     gaps, blocked changes, destructive actions
+ *
+ * Primary actions, the active nav item, key numbers and progress use the accent; `ink` is the dark secondary.
+ *   tint          the faintest wash of the accent, for sections that should feel part of the brand
+ *   accent-strong accent-coloured text on tint or accent-soft surfaces
+ * Type scale: 12 / 13 / 14 / 16 / 20 / 24 / 32, weights 400 / 500 / 600. Spacing on a 4px grid.
+ * Radius: 4 controls, 6 cards, 12 dialogs. Motion: 120-180ms, opacity and a few px of travel only.
  */
 :root {
-  --background: #f6f4ef;
-  --surface: #fffefb;
-  --foreground: #1b1a17;
-  --muted: #6e695f;
-  --faint: #a29d92;
-  --border: #e3dfd5;
-  --strong-border: #c9c3b6;
-  --ink: #1d2740;
-  --ink-hover: #2f3d60;
-  --on-ink: #fffefb;
-  --pen: #c23a22;
-  --pen-soft: #f8e6e1;
-  --money: #2d6a3e;
-  --money-soft: #e3efe5;
-  --highlight: #e6f4a0;
+  color-scheme: light;
+  --background: #f7f8fb;
+  --surface: #ffffff;
+  --surface-hover: #f0f2f8;
+  --sunken: #f0f2f8;
+  --border: #e2e5ee;
+  --strong-border: #cdd2e0;
+  --foreground: #11131a;
+  --muted: #4a5062;
+  --faint: #626a7e;
+  --ink: #11131a;
+  --ink-hover: #2b3040;
+  --on-ink: #f7f8fb;
+  --accent: #2f5bea;
+  --accent-hover: #2449c7;
+  --accent-soft: #e8eeff;
+  --accent-strong: #1f3fae;
+  --tint: #f2f5ff;
+  --on-accent: #ffffff;
+  --success: #137a48;
+  --success-soft: #e6f5ec;
+  --warning: #94560a;
+  --warning-soft: #fdf3e1;
+  --danger: #c42b2b;
+  --danger-soft: #fef0ee;
+  /* Words in a job post that the CV already shows. */
+  --mark: #d3f0df;
+  /* Decoration only: the dot grid and the slow colour wash behind the hero. */
+  --dot: #c5cce0;
+  --wash: rgb(47 91 234 / 0.1);
+  --overlay: rgb(9 9 11 / 0.45);
+  /* The navigation rail is dark in both themes, like the content around it is not. */
+  --sidebar: #161719;
+  --sidebar-hover: #232427;
+  --sidebar-active: #2d2f33;
+  --sidebar-border: #2a2b2f;
+  --sidebar-fg: #ececef;
+  --sidebar-muted: #a1a1ab;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #161512;
-    --surface: #1d1c19;
-    --foreground: #ebe8e1;
-    --muted: #a39e93;
-    --faint: #6f6a61;
-    --border: #2e2c27;
-    --strong-border: #45423b;
-    --ink: #dfe6f5;
+    color-scheme: dark;
+    --background: #0d0f15;
+    --surface: #141720;
+    --surface-hover: #1b1f2b;
+    --sunken: #10131b;
+    --border: #252a38;
+    --strong-border: #353c4f;
+    --foreground: #eceef5;
+    --muted: #a3aabd;
+    --faint: #8b93a8;
+    --ink: #eceef5;
     --ink-hover: #ffffff;
-    --on-ink: #161512;
-    --pen: #f07a62;
-    --pen-soft: #3a1e17;
-    --money: #7cc48f;
-    --money-soft: #1c2f21;
-    --highlight: #3d4719;
+    --on-ink: #0d0f15;
+    --accent: #7c9bff;
+    --accent-hover: #9bb2ff;
+    --accent-soft: #19244a;
+    --accent-strong: #a9bdff;
+    --tint: #111830;
+    --on-accent: #0b0d14;
+    --success: #56d08a;
+    --success-soft: #12301f;
+    --warning: #f0b252;
+    --warning-soft: #33270f;
+    --danger: #ff7b72;
+    --danger-soft: #3a1b1b;
+    --mark: #17402b;
+    --dot: #2b3246;
+    --wash: rgb(124 155 255 / 0.12);
+    --overlay: rgb(0 0 0 / 0.6);
   }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-sunken: var(--sunken);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
@@ -53,43 +104,360 @@
   --color-ink: var(--ink);
   --color-ink-hover: var(--ink-hover);
   --color-on-ink: var(--on-ink);
-  --color-pen: var(--pen);
-  --color-pen-soft: var(--pen-soft);
-  --color-money: var(--money);
-  --color-money-soft: var(--money-soft);
-  --color-highlight: var(--highlight);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-serif: var(--font-newsreader);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-strong: var(--accent-strong);
+  --color-tint: var(--tint);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-mark: var(--mark);
+  --color-paper: #ffffff;
+  --color-notice-border: color-mix(in srgb, var(--warning) 40%, transparent);
+  --shadow-1: 0 1px 2px rgb(17 19 26 / 0.06);
+  --shadow-2: 0 10px 28px -12px rgb(17 19 26 / 0.28);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-fg: var(--sidebar-fg);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-feature-settings: "ss01", "cv11";
+/* Type roles. Use these instead of picking sizes ad hoc. */
+@utility t-display {
+  font-size: 2rem;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  @media (min-width: 40rem) {
+    font-size: 2.75rem;
+  }
+  @media (min-width: 64rem) {
+    font-size: 3rem;
+  }
+}
+@utility t-heading {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+@utility t-title {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+@utility t-label {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 500;
 }
 
-input,
-select,
-textarea {
-  color: var(--foreground);
-  background: var(--surface);
+@layer base {
+  html {
+    scroll-padding-top: 4rem;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
+  }
+
+  input,
+  select,
+  textarea {
+    color: var(--foreground);
+    background: var(--surface);
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--foreground);
+  }
+
+  /* One focus treatment everywhere, visible for keyboard use only. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
-::selection {
-  background: var(--highlight);
+@layer components {
+  /* Words in a job post. Green fill: the CV shows it. Dotted: only in the skills list. Wavy red: not in the CV. */
+  .hl-shown {
+    background: var(--mark);
+    border-radius: 2px;
+    padding: 0 2px;
+    color: inherit;
+  }
+  .hl-listed {
+    text-decoration: underline dotted var(--muted);
+    text-underline-offset: 4px;
+  }
+  .hl-missing {
+    text-decoration: underline wavy var(--danger);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 4px;
+  }
 }
 
-/* Highlighter stroke for words in a job post the user already has. */
-.marker {
-  background: linear-gradient(transparent 12%, var(--highlight) 12%, var(--highlight) 88%, transparent 88%);
-  border-radius: 2px;
-  padding: 0 2px;
+@layer base {
+  /* Dialogs and drawers: native <dialog>, so focus trapping, Esc and focus return come from the browser. */
+  dialog {
+    color: var(--foreground);
+    padding: 0;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    max-height: 100dvh;
+  }
+  dialog::backdrop {
+    background: var(--overlay);
+  }
+  dialog[open] {
+    animation: dialog-in 150ms ease-out;
+  }
+  dialog[open]::backdrop {
+    animation: fade-in 150ms ease-out;
+  }
+  dialog.drawer {
+    margin: 0;
+    height: 100dvh;
+    max-height: 100dvh;
+    width: min(20rem, 88vw);
+    border-width: 0 1px 0 0;
+    border-radius: 0;
+  }
+  dialog.drawer[open] {
+    animation: drawer-in 180ms ease-out;
+  }
 }
 
-/* A hand-drawn red underline for real gaps. */
-.pen-mark {
-  text-decoration: underline wavy var(--pen);
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 4px;
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+/* Toasts drop in from the top, leave the way they came, and a repeated one nudges instead of stacking. */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+}
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+}
+.toast-enter {
+  animation: toast-in 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toast-leave {
+  animation: toast-out 160ms ease-in forwards;
+}
+.toast-bump {
+  animation: nudge 380ms ease-in-out;
+}
+
+
+/*
+ * Motion system. One easing, a few durations, transform and opacity only.
+ *   --ease-out   entrances and settles (a strong ease-out, no overshoot)
+ *   --dur-1      hover and press, 150ms     --dur-2  small reveals, 400ms     --dur-3  hero and section entrances, 700ms
+ * The hero is plain CSS, so it paints and animates without waiting for JavaScript. Everything collapses to its end
+ * state under prefers-reduced-motion (the rule at the bottom of this file).
+ */
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-1: 150ms;
+  --dur-2: 400ms;
+  --dur-3: 700ms;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes word-in {
+  from {
+    transform: translateY(105%);
+  }
+}
+@keyframes wipe-in {
+  from {
+    background-size: 0% 100%;
+  }
+}
+@keyframes strike-in {
+  from {
+    text-decoration-color: transparent;
+  }
+}
+@keyframes float-y {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+@keyframes drift {
+  50% {
+    transform: translate3d(3%, -4%, 0) scale(1.08);
+  }
+}
+@keyframes nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  30% {
+    transform: translateX(-3px);
+  }
+  60% {
+    transform: translateX(2px);
+  }
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes count-up {
+  from {
+    --n: 0;
+  }
+}
+@property --n {
+  syntax: "<integer>";
+  initial-value: 0;
+  inherits: false;
+}
+
+@layer utilities {
+  /* Entrances for the hero: delay with style="--d: 200ms". */
+  .rise {
+    animation: rise-in var(--dur-3) var(--ease-out) both;
+    animation-delay: var(--d, 0ms);
+  }
+  /* A headline word rising out of a mask. */
+  .word {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding-bottom: 0.12em;
+    margin-bottom: -0.12em;
+  }
+  .word > span {
+    display: inline-block;
+    animation: word-in var(--dur-3) var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 70ms + 120ms);
+  }
+  /* A highlight that wipes across the words it marks. */
+  .wipe {
+    background-image: linear-gradient(var(--mark), var(--mark));
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    animation: wipe-in 600ms var(--ease-out) both;
+    animation-delay: var(--d, 0ms);
+  }
+  /* Opacity only, for anything you might click or type into: it must not move while it appears. */
+  .fade {
+    animation: fade-in 500ms var(--ease-out) both;
+    animation-delay: var(--d, 0ms);
+  }
+  .float {
+    animation: float-y 7s ease-in-out infinite;
+    animation-delay: var(--d, 0ms);
+  }
+  /* A number that counts up. The real text sits in a visually hidden span, so screen readers get it straight away. */
+  .ticker {
+    --n: 72;
+    counter-reset: n var(--n);
+    animation: count-up 1400ms var(--ease-out) both;
+    animation-delay: var(--d, 0ms);
+  }
+  .ticker::after {
+    content: counter(n);
+  }
+  /* The dot grid behind the hero, faded out at the edges. */
+  .dots {
+    background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 100%);
+  }
+  .wash {
+    background: radial-gradient(closest-side, var(--wash), transparent);
+    animation: drift 22s ease-in-out infinite;
+  }
+  /* Signed-in pages ease in when you navigate. */
+  .page-in {
+    animation: page-in 220ms var(--ease-out) both;
+  }
+  /* Soft hover lift for cards you can click. Transform only, so nothing else moves. */
+  .lift {
+    transition: transform var(--dur-1) var(--ease-out), border-color var(--dur-1), box-shadow var(--dur-1);
+  }
+  .lift:hover {
+    transform: translateY(-2px);
+    border-color: var(--strong-border);
+    box-shadow: 0 6px 20px -8px rgb(17 19 26 / 0.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  .float,
+  .wash {
+    animation: none !important;
+  }
+}
+
+@media print {
+  @page { size: A4; margin: 16mm; }
+  body {
+    background: #fff;
+    color: #18181b;
+  }
+  .cv-sheet { font-size: 10pt; line-height: 1.4; }
+  .cv-sheet h2 { break-after: avoid; }
+  .cv-sheet li { break-inside: avoid; }
 }

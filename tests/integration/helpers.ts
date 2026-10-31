@@ -1,16 +1,23 @@
-import { sql } from "drizzle-orm";
-import { db, schema } from "@/db";
+import { collections } from "@/db/mongo";
+import type { User } from "@/db/types";
+import { createUser } from "@/lib/services/users";
 import { shortId } from "@/lib/util";
 
 export async function resetDb() {
-  await db.execute(sql`truncate users, sessions, auth_tokens, payments, profiles, jobs, documents, interviews, usage cascade`);
+  const c = await collections();
+  await Promise.all(Object.values(c).map((coll) => coll.deleteMany({})));
 }
 
-export async function makeUser(overrides: Partial<typeof schema.users.$inferInsert> = {}) {
-  const [user] = await db
-    .insert(schema.users)
-    .values({ email: `${shortId()}@example.com`, name: "Test User", passwordHash: "scrypt$00$00", ...overrides })
-    .returning();
+export async function makeUser(overrides: Partial<Pick<User, "email" | "name" | "subscriptionAccessUntil" | "emailVerifiedAt">> = {}): Promise<User> {
+  const { email = `${shortId()}@example.com`, name = "Test User", subscriptionAccessUntil, ...rest } = overrides;
+  const user = await createUser({ email, name, passwordHash: "scrypt$00$00" });
+  if (!user) throw new Error("makeUser: email already in use");
+  if (Object.keys(rest).length) {
+    await (await collections()).users.updateOne({ _id: user.id }, { $set: rest });
+    Object.assign(user, rest);
+  }
+  // Paid access is derived from subscriptions on every request, never stored on the user, so a test passes it in directly.
+  if (subscriptionAccessUntil !== undefined) user.subscriptionAccessUntil = subscriptionAccessUntil;
   return user;
 }
 

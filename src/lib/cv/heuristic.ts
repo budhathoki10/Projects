@@ -1,5 +1,6 @@
 import { EMPTY_PROFILE, type Education, type Experience, type Profile } from "@/lib/model/types";
-import { localId } from "@/lib/text";
+import { localId, splitSentences } from "@/lib/text";
+import { textLinks } from "./links";
 
 /**
  * A plain-code CV reader used when no AI key is configured. It understands the common
@@ -12,8 +13,8 @@ const HEADINGS = {
   experience: /^(experience|work experience|employment( history)?|professional experience|work history|career history)$/i,
   education: /^(education|academic background|qualifications|education and training)$/i,
   skills: /^(skills|technical skills|key skills|core skills|competencies|skills and tools)$/i,
-  projects: /^(projects|personal projects|selected projects)$/i,
-  certifications: /^(certifications|certificates|licenses( and certifications)?|courses)$/i,
+  projects: /^(projects|personal projects|selected projects|relevant projects|key projects)$/i,
+  certifications: /^(certifications|certificates|licenses( and certifications)?|courses|certifications [&] achievements|certifications and achievements|achievements)$/i,
   languages: /^(languages)$/i,
 };
 for (const [k, re] of Object.entries(HEADINGS)) SECTIONS.push([k as keyof typeof HEADINGS, re]);
@@ -29,14 +30,14 @@ const LINK = /\b((?:https?:\/\/)?(?:www\.)?(?:linkedin\.com|github\.com|gitlab\.
 function headingOf(line: string): keyof typeof HEADINGS | null {
   const t = line.replace(/[:#*_]/g, "").trim();
   if (t.length > 40) return null;
-  return SECTIONS.find(([, re]) => re.test(t))?.[0] ?? null;
+  return SECTIONS.find(([, re]) => re.test(t) || re.test(t.replace(/\s+/g, "")))?.[0] ?? null;
 }
 
 const stripBullet = (l: string) => l.replace(BULLET, "").trim();
 
 /** "Frontend Developer, Himalayan Tech — Kathmandu" / "Developer at Acme" / "Acme | Developer" */
 function splitRole(line: string): { title: string; company: string; location: string } {
-  const noDates = line.replace(DATE_RANGE, "").replace(/[()]/g, "").replace(/\s{2,}/g, " ").trim().replace(/[,|–—-]\s*$/, "");
+  const noDates = line.replace(/\bCertificate\s*\(https?:\/\/[^\s]+\)/gi, "").replace(DATE_RANGE, "").replace(/[()]/g, "").replace(/\s{2,}/g, " ").trim().replace(/[,|–—-]\s*$/, "");
   let location = "";
   let rest = noDates;
   const loc = rest.match(/\s+[—–]\s+([^,|]+)$/);
@@ -74,6 +75,12 @@ function parseExperience(lines: string[]): Experience[] {
       if (nextDates) i++;
       continue;
     }
+    if (current && !current.company && !current.bullets.length && line.length < 160) {
+      const parts = line.split(/\s+[—–·]\s+|\s*\|\s*/);
+      current.company = parts[0];
+      current.location = parts.slice(1).join(", ");
+      continue;
+    }
     if (current && current.bullets.length > 0 && line.length > 60) {
       // Wrapped bullet text from a PDF.
       current.bullets[current.bullets.length - 1] += ` ${line}`;
@@ -107,6 +114,14 @@ function parseEducation(lines: string[]): Education[] {
       continue;
     }
     const clean = line.replace(DATE_RANGE, "").trim();
+    if (current && !dates && !current.school && /\b(university|college|school|institute|academy)\b/i.test(clean)) {
+      current.school = clean.replace(/\s+[—–]\s+/g, ", ");
+      continue;
+    }
+    if (current && !dates && (current.school || clean.length > 100)) {
+      current.details.push(stripBullet(clean));
+      continue;
+    }
     const parts = clean.split(/\s*[,|]\s*|\s+[—–-]\s+/).filter(Boolean);
     current = { id: localId("e"), degree: parts[0] ?? clean, school: parts.slice(1).join(", "), start: "", end: "", details: [] };
     if (dates) {
@@ -119,21 +134,67 @@ function parseEducation(lines: string[]): Education[] {
 }
 
 function parseList(lines: string[]): string[] {
+  const plainLines = lines.every((l) => !/[,;•·|:]/.test(l) && l.length < 60);
+  const text = lines.map((line, i) => {
+    const category = /^[A-Za-z &/]{2,40}:\s*/;
+    const separator = i && (plainLines || BULLET.test(line) || category.test(stripBullet(line))) ? ", " : " ";
+    return separator + stripBullet(line).replace(category, "");
+  }).join("");
   return [
     ...new Set(
-      lines
-        .flatMap((l) => stripBullet(l).replace(/^[A-Za-z ]{2,30}:\s*/, "").split(/\s*[,;•|]\s*/))
+      text.split(/\s*[,;•·|]\s*/)
         .map((s) => s.trim())
         .filter((s) => s.length > 0 && s.length < 60),
     ),
   ];
 }
 
+function parseProjects(lines: string[]): Profile["projects"] {
+  const projects: Profile["projects"] = [];
+  const paragraphs = new Map<string, string[]>();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const urls = textLinks(line);
+    const clean = line.replace(/\s*\(https?:\/\/[^\s]+\)/g, "").replace(/\s+Live\s*$/i, "").trim();
+    const next = lines[i + 1] ?? "";
+    if (projects.length && urls.length && /^(?:live|demo|github|source(?: code)?|website|(?:https?:\/\/)?[\w-]+(?:\.[\w-]+)+(?:\/\S*)?)$/i.test(clean)) {
+      projects[projects.length - 1].link ||= urls[0];
+      continue;
+    }
+    const isTitle = !BULLET.test(line) && clean.length <= 160 && !/^Tech Stack:/i.test(clean) && (
+      /\s[—–]\s/.test(clean) || /^Tech Stack:/i.test(next) ||
+      (clean.length < 80 && BULLET.test(next) && !/[,;:]/.test(clean) && !/[.!?]$/.test(clean)) || !projects.length
+    );
+    if (isTitle) {
+      const project = { id: localId("p"), name: clean.replace(/https?:\/\/\S+/g, "").trim(), link: urls[0] ?? "", bullets: [] as string[] };
+      projects.push(project);
+      paragraphs.set(project.id, []);
+    } else if (projects.length) {
+      const current = projects[projects.length - 1];
+      const parts = paragraphs.get(current.id)!;
+      if (BULLET.test(line)) parts.push(stripBullet(line));
+      else if (parts.length && !/[.!?]$/.test(parts[parts.length - 1]) && !/^(?:This is |The second |[A-Z][\w-]+ helps )/.test(clean)) parts[parts.length - 1] += ` ${clean}`;
+      else parts.push(clean);
+      if (!current.link && urls.length) current.link = urls[0];
+    }
+  }
+  for (const p of projects) {
+    const points: string[] = [];
+    for (const sentence of paragraphs.get(p.id)!.flatMap(splitSentences).filter(Boolean)) {
+      const last = points[points.length - 1];
+      if (last && !/^Tech Stack:/i.test(last) && !/^Tech Stack:/i.test(sentence) && last.length + sentence.length < 520) points[points.length - 1] += ` ${sentence}`;
+      else points.push(sentence);
+    }
+    p.bullets = points;
+  }
+  return projects;
+}
+
 export function heuristicProfile(text: string): Profile {
   const lines = text
     .split("\n")
     .map((l) => l.trim())
-    .filter(Boolean);
+    .filter((l) => !!l && !/^\d+$/.test(l) && !/·\s*\d+\s*\/\s*\d+$/.test(l) && !/^(?:https?:\/\/)?localhost:\d+\/app\/print\//i.test(l) && !/^\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}/.test(l));
   const profile: Profile = structuredClone(EMPTY_PROFILE);
   const firstHeading = lines.findIndex((l) => headingOf(l));
   const top = lines.slice(0, firstHeading === -1 ? Math.min(lines.length, 5) : firstHeading);
@@ -141,7 +202,7 @@ export function heuristicProfile(text: string): Profile {
   const contact = top.join(" | ");
   profile.email = contact.match(EMAIL)?.[0] ?? "";
   profile.phone = contact.replace(EMAIL, "").match(PHONE)?.[1]?.trim() ?? "";
-  profile.links = [...new Set(contact.match(LINK) ?? [])];
+  profile.links = textLinks(contact);
   const plain = top.filter((l) => !EMAIL.test(l) && !PHONE.test(l) && !l.match(LINK));
   profile.name = plain[0] ?? "";
   profile.headline = plain[1] && plain[1].length < 80 ? plain[1] : "";
@@ -166,12 +227,13 @@ export function heuristicProfile(text: string): Profile {
   profile.experience = parseExperience(sections.get("experience") ?? []);
   profile.education = parseEducation(sections.get("education") ?? []);
   profile.skills = parseList(sections.get("skills") ?? []);
-  profile.certifications = (sections.get("certifications") ?? []).map(stripBullet);
-  profile.languages = parseList(sections.get("languages") ?? []);
-  profile.projects = (sections.get("projects") ?? []).reduce<Profile["projects"]>((acc, line) => {
-    if (BULLET.test(line) && acc.length) acc[acc.length - 1].bullets.push(stripBullet(line));
-    else if (!BULLET.test(line)) acc.push({ id: localId("p"), name: line, link: line.match(LINK)?.[0] ?? "", bullets: [] });
-    return acc;
+  profile.certifications = (sections.get("certifications") ?? []).reduce<string[]>((all, line) => {
+    if (BULLET.test(line) || !all.length) all.push(stripBullet(line));
+    else all[all.length - 1] += ` ${line}`;
+    return all;
   }, []);
+  const languageLines = (sections.get("languages") ?? []).join(", ");
+  profile.languages = languageLines.split(/[,;|·]|\s+(?=[\p{L}]+:)/u).map(stripBullet).filter(Boolean);
+  profile.projects = parseProjects(sections.get("projects") ?? []);
   return profile;
 }

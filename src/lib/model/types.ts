@@ -21,6 +21,8 @@ export type Education = {
 };
 
 export type Project = { id: string; name: string; link: string; bullets: string[] };
+export const CV_SECTIONS = ["summary", "skills", "experience", "projects", "education", "certifications", "languages"] as const;
+export type CvSection = typeof CV_SECTIONS[number];
 
 export type Profile = {
   name: string;
@@ -36,6 +38,8 @@ export type Profile = {
   projects: Project[];
   certifications: string[];
   languages: string[];
+  /** Presentation of an accepted tailored version; never new candidate facts. */
+  sectionOrder?: CvSection[];
 };
 
 export const EMPTY_PROFILE: Profile = {
@@ -83,10 +87,18 @@ export type Change =
   | { id: string; kind: "summary"; before: string; after: string; reason: string; flags: string[]; accepted: boolean }
   | { id: string; kind: "bullet"; experienceId: string; index: number; before: string; after: string; reason: string; flags: string[]; accepted: boolean }
   | { id: string; kind: "bullet-order"; experienceId: string; order: number[]; reason: string; flags: string[]; accepted: boolean }
-  | { id: string; kind: "skills-order"; order: string[]; reason: string; flags: string[]; accepted: boolean };
+  | { id: string; kind: "skills-order"; order: string[]; reason: string; flags: string[]; accepted: boolean }
+  | { id: string; kind: "project-bullet"; projectId: string; index: number; before: string; after: string; reason: string; flags: string[]; accepted: boolean }
+  | { id: string; kind: "projects-order"; order: string[]; reason: string; flags: string[]; accepted: boolean }
+  | { id: string; kind: "section-order"; order: CvSection[]; reason: string; flags: string[]; accepted: boolean };
 
 export type TailoredCv = { changes: Change[] };
 
-export type InterviewQuestion = { id: string; question: string; why: string; answer: string; feedback: AnswerFeedback | null };
+export type InterviewQuestion = { id: string; question: string; why: string; answer: string; feedback: AnswerFeedback | null; prompt?: import("@/lib/career/types").CareerQuestion };
 
-export type AnswerFeedback = { score: number; strengths: string[]; improve: string[]; rewrite: string };
+export type AnswerFeedback = {
+  score: number | null; strengths: string[]; improve: string[]; rewrite: string;
+  method?: "ai" | "checklist";
+  rubric?: { label: string; score: number | null; note: string }[];
+  corrections?: string[]; modelAnswer?: string; sources?: { title: string; url: string }[];
+};

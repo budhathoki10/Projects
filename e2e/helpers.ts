@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, type Page } from "@playwright/test";
-import postgres from "postgres";
-import { EMAIL_OUTBOX, TEST_DATABASE_URL } from "../playwright.config";
+import { MongoClient, type Db } from "mongodb";
+import { EMAIL_OUTBOX, TEST_MONGODB_DB, TEST_MONGODB_URI } from "../playwright.config";
 
 export const PASSWORD = "correct-horse-battery";
 export const CV_PDF = "test-results/fixtures/asha-gurung-cv.pdf";
@@ -28,7 +28,9 @@ export async function setUpJobSeeker(page: Page, address: string) {
   await signUp(page, address);
   await page.locator("input[type=file][name=file]").setInputFiles(CV_PDF);
   await page.getByRole("button", { name: "Read my CV" }).click();
-  await expect(page.getByText("Your CV is in.")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByLabel("CV import review")).toBeVisible({ timeout: 20_000 });
+  await page.getByRole("button", { name: "Use this CV" }).click();
+  await expect(page.getByText("CV imported.")).toBeVisible({ timeout: 20_000 });
 }
 
 /** Add the fixture job by link and land on its Match tab. */
@@ -52,11 +54,19 @@ export function latestEmailLink(to: string, subject: string): string {
   return link;
 }
 
-export async function query<T extends Record<string, unknown>>(run: (sql: postgres.Sql) => Promise<T[]>): Promise<T[]> {
-  const sql = postgres(TEST_DATABASE_URL, { max: 1, onnotice: () => {} });
+/** Run something against the test database (setting up state the UI can't, or checking what it stored). */
+export async function withDb<T>(run: (db: Db) => Promise<T>): Promise<T> {
+  const client = new MongoClient(TEST_MONGODB_URI);
   try {
-    return await run(sql);
+    await client.connect();
+    return await run(client.db(TEST_MONGODB_DB));
   } finally {
-    await sql.end();
+    await client.close();
   }
+}
+
+export async function userIdFor(address: string): Promise<string> {
+  const user = await withDb((db) => db.collection("users").findOne({ email: address }));
+  if (!user) throw new Error(`No user ${address}`);
+  return String(user._id);
 }

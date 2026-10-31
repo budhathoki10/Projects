@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ProfileImport } from "@/components/profile-import";
-import { Eyebrow, FormMessage } from "@/components/ui";
+import { FlashToast } from "@/components/toast";
+import { buttonClass, Notice, PageHeader } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { EMPTY_PROFILE } from "@/lib/model/types";
 import { getProfileRow, profileReady } from "@/lib/services/profile";
+import { profileNeedsRepair } from "@/lib/cv/quality";
 
 export const metadata: Metadata = { title: "Your CV" };
 
@@ -15,41 +17,39 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
   const ready = profileReady(profile);
 
   return (
-    <div className="max-w-3xl space-y-10">
-      <div>
-        <Eyebrow>{welcome === "1" ? "Step 1 of 2" : "Your profile"}</Eyebrow>
-        <h1 className="mt-2 font-serif text-4xl font-medium tracking-tight">{profile ? "Your CV" : "Start with your CV"}</h1>
-        <p className="mt-1.5 text-sm text-muted">
-          Everything Shortlist writes for you comes from here and nowhere else. If it isn&apos;t in your profile, it won&apos;t appear in a tailored CV
-          or cover letter.
-        </p>
-        {imported && (
-          <div className="mt-4">
-            <FormMessage
-              success={
-                imported === "ai"
-                  ? "Your CV is in. Check every section below: this is the only source of facts we'll use."
-                  : "Your CV is in. We read it with our basic reader, so check each section carefully and fix anything that landed in the wrong place."
-              }
-            />
-          </div>
-        )}
-        {needed === "1" && !ready && (
-          <p role="alert" className="mt-4 border-l-2 border-pen bg-pen-soft px-3 py-2 text-sm text-pen">
-            Add your CV first, with at least one job, project or qualification, so there&apos;s something to tailor.
-          </p>
-        )}
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <PageHeader
+          title={profile ? "Your CV" : "Start with your CV"}
+          eyebrow={welcome === "1" ? "Step 1 of 2" : "Your application foundation"}
+          description="Your experience, in one place. Review each section once, then use it for every application."
+          actions={ready && !profileNeedsRepair(profile) ? <a href="/app/download/profile" className={buttonClass("secondary")}>{row?.original?.type === "application/pdf" ? "Download original PDF" : "Download CV"}</a> : undefined}
+        />
+        <FlashToast
+          message={imported === "ai" ? "CV imported. Review each section below before using it in your applications." : imported ? "CV imported with the basic reader. AI extraction was unavailable, so check each section for missing details or misplaced content." : null}
+          tone={imported === "ai" ? "success" : "default"}
+          clear={["imported"]}
+        />
+        {needed === "1" && !ready && <Notice title="Add your experience to continue">Upload your CV or add at least one role, project or qualification to prepare an application.</Notice>}
       </div>
 
+      {row?.original?.type === "application/pdf" ? <div className="rounded-lg border border-border bg-surface px-5 py-4 text-sm"><p className="font-medium">Original formatting is your default</p><p className="mt-1 text-muted">Your uploaded PDF downloads unchanged, including its fonts, layout and clickable links. Profile edits and AI suggestions are available in the separate tailored version.</p>{!row.original.matchesProfile && <p className="mt-2 text-warning">Your saved profile has changed since this PDF was uploaded. Upload a revised PDF to update the original.</p>}</div> : ready && <p className="rounded-lg border border-border bg-surface px-5 py-4 text-sm text-muted">Upload your original PDF to preserve its exact formatting. Extracted text alone cannot restore the original design.</p>}
+
+      {profile && profileNeedsRepair(profile) && <Notice tone="warning" title="Review your CV import">Some project descriptions appear in title fields. Upload your original CV below to recover the structure and embedded links. Your saved profile stays in place until you approve the replacement.</Notice>}
       {profile ? (
-        <details className="rounded-md border border-border bg-surface p-5">
-          <summary className="cursor-pointer text-sm font-medium">Replace from a new CV file</summary>
-          <div className="mt-4">
+        <details open={profileNeedsRepair(profile)} className="group rounded-md border border-border bg-surface">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-5 text-sm font-medium [&::-webkit-details-marker]:hidden">
+            Replace from a new CV file
+            <span aria-hidden="true" className="text-faint transition-transform duration-150 group-open:rotate-90">
+              ›
+            </span>
+          </summary>
+          <div className="border-t border-border p-5">
             <ProfileImport replacing />
           </div>
         </details>
       ) : (
-        <div className="rounded-md border border-border bg-surface p-6">
+        <div className="rounded-md border border-border bg-surface p-5 sm:p-6">
           <ProfileImport replacing={false} />
           <p className="mt-6 border-t border-border pt-4 text-sm text-muted">
             No CV yet? Fill in the form below instead. Even a first job hunt has something to put here: school, projects, volunteering, part-time work.

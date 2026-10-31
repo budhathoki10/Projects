@@ -1,125 +1,187 @@
 import Link from "next/link";
 import { cloneElement, useId, type ComponentProps, type ReactElement, type ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "ghost";
+/* ---------- Buttons ---------- */
+
+type Variant = "primary" | "dark" | "secondary" | "ghost" | "danger";
+type Size = "sm" | "md" | "lg";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-ink text-on-ink hover:bg-ink-hover disabled:opacity-50",
-  secondary: "border border-strong-border bg-surface text-foreground hover:border-ink disabled:opacity-50",
-  ghost: "text-muted underline-offset-4 hover:text-foreground hover:underline",
+  primary: "bg-accent text-on-accent hover:bg-accent-hover active:bg-accent-hover",
+  dark: "bg-ink text-on-ink hover:bg-ink-hover active:bg-ink-hover",
+  secondary: "border border-strong-border bg-surface text-foreground hover:bg-surface-hover active:bg-sunken",
+  ghost: "text-muted hover:bg-surface-hover hover:text-foreground active:bg-sunken",
+  danger: "border border-danger/40 bg-surface text-danger hover:bg-danger hover:text-on-accent active:bg-danger",
+};
+
+// 36px (32px small) tall on desktop; 44px (40px small) on touch screens.
+const SIZES: Record<Size, string> = {
+  md: "h-9 px-3.5 text-sm max-sm:h-11",
+  sm: "h-8 px-3 text-[13px] max-sm:h-10",
+  lg: "h-11 px-6 text-[15px] max-sm:h-12",
 };
 
 const BASE =
-  "inline-flex items-center justify-center gap-2 rounded-[5px] px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
+  "inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded font-medium transition-[background-color,color,border-color,transform] duration-150 ease-out active:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50";
 
-export function Button({ variant = "primary", className = "", ...props }: ComponentProps<"button"> & { variant?: Variant }) {
-  return <button className={`${BASE} ${VARIANTS[variant]} ${className}`} {...props} />;
+export const buttonClass = (variant: Variant = "primary", size: Size = "md", className = "") => `${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${className}`;
+
+export function Spinner({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`size-3.5 animate-spin ${className}`} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" />
+      <path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
 }
 
-export function ButtonLink({
+export function Button({
   variant = "primary",
+  size = "md",
+  loading = false,
   className = "",
+  children,
+  disabled,
   ...props
-}: ComponentProps<typeof Link> & { variant?: Variant }) {
-  return <Link className={`${BASE} ${VARIANTS[variant]} ${className}`} {...props} />;
+}: ComponentProps<"button"> & { variant?: Variant; size?: Size; loading?: boolean }) {
+  return (
+    <button className={buttonClass(variant, size, className)} disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
+      {loading && <Spinner />}
+      {children}
+    </button>
+  );
 }
+
+export function ButtonLink({ variant = "primary", size = "md", className = "", ...props }: ComponentProps<typeof Link> & { variant?: Variant; size?: Size }) {
+  return <Link className={buttonClass(variant, size, className)} {...props} />;
+}
+
+/** Keyboard shortcut hint, shown next to the actions it triggers. */
+export function Kbd({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <kbd className={`inline-flex min-w-5 items-center justify-center rounded border border-border bg-sunken px-1 font-mono text-[11px] leading-5 text-muted ${className}`}>
+      {children}
+    </kbd>
+  );
+}
+
+/* ---------- Surfaces ---------- */
 
 export function Card({ className = "", children }: { className?: string; children: ReactNode }) {
   return <div className={`rounded-md border border-border bg-surface p-5 ${className}`}>{children}</div>;
 }
 
-/** Small uppercase label used above sections and table columns. */
+/** A short muted label above a section or heading. Sentence case. */
 export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <p className={`text-[11px] font-medium uppercase tracking-[0.08em] text-muted ${className}`}>{children}</p>;
+  return <p className={`text-[13px] font-medium text-muted ${className}`}>{children}</p>;
 }
 
 const BADGES = {
-  neutral: "border-border text-muted",
-  good: "border-transparent bg-money-soft text-money",
-  warn: "border-strong-border text-foreground",
-  bad: "border-transparent bg-pen-soft text-pen",
+  neutral: "border-border bg-sunken text-muted",
+  good: "border-transparent bg-success-soft text-success",
+  warn: "border-transparent bg-warning-soft text-warning",
+  bad: "border-transparent bg-danger-soft text-danger",
+  accent: "border-transparent bg-accent-soft text-accent",
 } as const;
 
 export function Badge({ tone = "neutral", children }: { tone?: keyof typeof BADGES; children: ReactNode }) {
+  return <span className={`inline-flex items-center whitespace-nowrap rounded border px-1.5 py-px text-xs font-medium tabular-nums ${BADGES[tone]}`}>{children}</span>;
+}
+
+export function scoreTone(score: number): keyof typeof BADGES {
+  return score >= 70 ? "good" : score >= 40 ? "warn" : "bad";
+}
+
+/** Page title with an optional description and actions, so every screen opens the same way. */
+export function PageHeader({ title, description, eyebrow, actions }: { title: ReactNode; description?: ReactNode; eyebrow?: ReactNode; actions?: ReactNode }) {
   return (
-    <span className={`inline-flex items-center whitespace-nowrap rounded-[3px] border px-1.5 py-px text-xs font-medium ${BADGES[tone]}`}>
-      {children}
-    </span>
+    <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+      <div className="min-w-0">
+        {eyebrow && <Eyebrow className="mb-1">{eyebrow}</Eyebrow>}
+        <h1 className="t-heading text-balance">{title}</h1>
+        {description && <p className="mt-1.5 max-w-2xl text-sm text-muted">{description}</p>}
+      </div>
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+    </header>
   );
 }
 
+/** Names what belongs here and offers the way to create it. */
+export function EmptyState({ title, children, action, className = "" }: { title: string; children?: ReactNode; action?: ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-md border border-dashed border-strong-border px-6 py-10 ${className}`}>
+      <h2 className="text-base font-semibold">{title}</h2>
+      {children && <p className="mt-1 max-w-md text-sm text-muted">{children}</p>}
+      {action && <div className="mt-4 flex flex-wrap gap-2">{action}</div>}
+    </div>
+  );
+}
+
+/** Placeholder with the same footprint as the content it stands in for, so nothing moves when data arrives. */
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <div aria-hidden="true" className={`animate-pulse rounded bg-sunken ${className}`} />;
+}
+
+/* ---------- Forms ---------- */
+
+type ControlProps = { id?: string; "aria-describedby"?: string; "aria-invalid"?: boolean };
+
+export const inputClass =
+  "w-full rounded border border-strong-border bg-surface px-3 py-2 text-sm leading-5 transition-colors duration-150 placeholder:text-faint hover:border-faint focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent/30 disabled:cursor-not-allowed disabled:bg-sunken disabled:opacity-60 aria-[invalid=true]:border-danger max-sm:text-base";
+
 /**
- * Label + control + optional hint. The hint is linked with aria-describedby rather than
- * nested in the label, so screen readers announce "Email", not "Email We'll never share…".
+ * Label above the control, with an optional hint and error. Both are linked with aria-describedby
+ * rather than nested in the label, so screen readers announce "Email", not "Email We'll never share…".
  */
-export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactElement<ControlProps> }) {
+export function Field({ label, hint, error, invalid = false, children }: { label: string; hint?: string; error?: string | null; invalid?: boolean; children: ReactElement<ControlProps> }) {
   const id = useId();
   const hintId = `${id}-hint`;
+  const errorId = `${id}-error`;
+  const describedBy = [hint && hintId, error && errorId].filter(Boolean).join(" ") || undefined;
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-[13px] font-medium">
+      <label htmlFor={id} className="t-label block">
         {label}
       </label>
-      {cloneElement(children, { id, "aria-describedby": hint ? hintId : undefined })}
-      {hint && (
+      {cloneElement(children, { id, "aria-describedby": describedBy, "aria-invalid": error || invalid ? true : undefined })}
+      {hint && !error && (
         <p id={hintId} className="text-xs text-muted">
           {hint}
+        </p>
+      )}
+      {error && (
+        <p id={errorId} className="text-xs text-danger">
+          {error}
         </p>
       )}
     </div>
   );
 }
 
-type ControlProps = { id?: string; "aria-describedby"?: string };
+type NoticeAction = { href: string; label: string };
 
-export const inputClass =
-  "w-full rounded-[5px] border border-strong-border px-3 py-2 text-sm outline-none placeholder:text-faint focus:border-ink focus:ring-1 focus:ring-ink";
-
-export function scoreTone(score: number): keyof typeof BADGES {
-  return score >= 80 ? "good" : score >= 50 ? "warn" : "bad";
+/** Calm, accessible feedback. Colour supports the icon; the message remains readable without it. */
+export function Notice({ tone = "info", title, children, action }: { tone?: "error" | "success" | "info" | "warning"; title?: string; children: ReactNode; action?: NoticeAction }) {
+  const colour = { error: "text-danger", success: "text-success", info: "text-accent", warning: "text-warning" }[tone];
+  return <div role={tone === "error" || tone === "warning" ? "alert" : "status"} aria-atomic="true" className="flex items-start gap-3 rounded-md border border-border bg-surface px-4 py-3 text-sm [overflow-wrap:anywhere]">
+    <svg className={`mt-0.5 size-4 shrink-0 ${colour}`} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><circle cx="10" cy="10" r="7.5" />{tone === "success" ? <path d="m6.5 10 2.3 2.4 4.7-4.8" strokeLinecap="round" strokeLinejoin="round" /> : tone === "info" ? <><circle cx="10" cy="6.2" r=".8" fill="currentColor" stroke="none" /><path d="M10 9.2v4.5" strokeLinecap="round" /></> : <><path d="M10 6.2v4.5" strokeLinecap="round" /><circle cx="10" cy="13.5" r=".8" fill="currentColor" stroke="none" /></>}</svg>
+    <div className="min-w-0 flex-1 leading-relaxed">{title && <p className="font-medium text-foreground">{title}</p>}<div className={title ? "mt-1 text-[13px] text-muted" : "text-[13px] text-foreground"}>{children}</div>{action && <Link href={action.href} className="mt-2 inline-flex min-h-7 items-center text-[13px] font-medium text-accent underline underline-offset-4 hover:text-accent-hover max-sm:min-h-11">{action.label}</Link>}</div>
+  </div>;
 }
 
-/** Website score as a number with a thin 20-step meter. */
-export function ScoreMeter({ score }: { score: number }) {
-  const filled = Math.round(score / 5);
-  const color = score >= 80 ? "bg-money" : score >= 50 ? "bg-ink" : "bg-pen";
-  return (
-    <div className="w-40" role="img" aria-label={`Website score ${score} out of 100`}>
-      <p className="font-mono text-4xl font-medium tabular-nums tracking-tight">
-        {score}
-        <span className="text-base text-faint">/100</span>
-      </p>
-      <div className="mt-2 flex gap-[3px]" aria-hidden="true">
-        {Array.from({ length: 20 }, (_, i) => (
-          <span key={i} className={`h-1.5 flex-1 rounded-[1px] ${i < filled ? color : "bg-border"}`} />
-        ))}
-      </div>
-    </div>
-  );
+export function FormMessage({ error, success, errorTitle, successTitle, action }: { error?: string | null; success?: string | null; errorTitle?: string; successTitle?: string; action?: NoticeAction }) {
+  if (!error && !success) return null;
+  return <Notice tone={error ? "error" : "success"} title={error ? errorTitle : successTitle} action={action}>{error || success}</Notice>;
 }
 
-export function FormMessage({ error, success }: { error?: string | null; success?: string | null }) {
-  if (error)
-    return (
-      <p role="alert" className="border-l-2 border-pen bg-pen-soft px-3 py-2 text-sm text-pen">
-        {error}
-      </p>
-    );
-  if (success)
-    return (
-      <p role="status" className="border-l-2 border-money bg-money-soft px-3 py-2 text-sm text-money">
-        {success}
-      </p>
-    );
-  return null;
-}
+/* ---------- Brand ---------- */
 
 export function Logo() {
   return (
-    <span className="inline-flex items-center gap-1.5 font-serif text-[22px] font-semibold leading-none tracking-tight">
-      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-        <rect x="1" y="1" width="16" height="16" rx="4" fill="var(--highlight)" />
-        <path d="M5 9.5l2.6 2.6L13 6.5" fill="none" stroke="var(--ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <span className="inline-flex items-center gap-2 text-base font-semibold leading-none tracking-[-0.02em]">
+      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+        <rect width="20" height="20" rx="5" fill="var(--ink)" />
+        <path d="M5.5 10.5l3 3 6-6.5" fill="none" stroke="var(--on-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       Shortlist
     </span>

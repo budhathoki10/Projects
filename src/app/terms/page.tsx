@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/legal-page";
-import { LIMITS, PASSES } from "@/lib/plans";
+import { LIMITS } from "@/lib/plans";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Terms of Service" };
@@ -45,12 +45,12 @@ export default function TermsPage() {
           calendar month.
         </li>
         <li>
-          A Job-hunt pass costs ${PASSES.month.usd} for 30 days or ${PASSES.quarter.usd} for 90 days (NPR {PASSES.month.npr} or {PASSES.quarter.npr} through
-          Khalti). It&apos;s a one-time payment and never renews automatically. Buying another pass adds time to the end of the current one. A
-          fair-use limit of {LIMITS.pass.tailor} tailored CVs a month applies.
+          A paid plan is a monthly or yearly subscription that renews automatically until you cancel. You can cancel at any time from the billing page: it
+          then stops renewing, and you keep paid features until the end of the period you&apos;ve already paid for. Paid plans have a fair-use limit of{" "}
+          {LIMITS.paid.tailor} tailored CVs a month.
         </li>
         <li>
-          Card payments are handled by Paddle as Merchant of Record, and Paddle&apos;s terms apply to the payment. Khalti payments are handled by Khalti.
+          Subscription payments are handled by Freemius, which acts as the seller of record, and Freemius&apos;s terms apply to the payment.
         </li>
         <li>
           Refunds follow our <Link href="/refund">Refund Policy</Link>.

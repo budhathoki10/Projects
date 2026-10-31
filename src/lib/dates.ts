@@ -1,4 +1,4 @@
-/** Calendar-date helpers. Dates are YYYY-MM-DD strings in UTC, matching Postgres `date` columns. */
+/** Calendar-date helpers. Dates are YYYY-MM-DD strings in UTC, matching the date strings stored on jobs. */
 
 export function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);

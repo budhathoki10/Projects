@@ -1,6 +1,6 @@
 /**
  * Common skills across many kinds of work, used to spot keywords when no AI key is set.
- * Not exhaustive: with Claude configured, keywords come from the post itself.
+ * Not exhaustive: with an AI key configured, keywords come from the post itself.
  */
 export const SKILL_TERMS = [
   // Software and data

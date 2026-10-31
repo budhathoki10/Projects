@@ -20,7 +20,7 @@ The rule everything follows: **Shortlist only uses what's in your profile.** The
 
 ## Plans
 
-| | Free | Job-hunt pass |
+| | Free | Paid plan |
 |---|---|---|
 | Tailored CVs | 3 a month | 200 a month |
 | Cover letters | 3 a month | 200 a month |
@@ -28,27 +28,27 @@ The rule everything follows: **Shortlist only uses what's in your profile.** The
 | CV imports | 5 a month | 50 a month |
 | Tracker, reminders, PDF | Yes | Yes |
 | Word (.docx) download | No | Yes |
-| Price | $0 | $15 for 30 days or $35 for 90 days (NPR 1,500 / 3,500 with Khalti) |
+| Price | $0 | Monthly or yearly subscription through Freemius (prices are set in Freemius) |
 
-A pass is a one-time payment. It never renews. Buying another adds its days to the end of the current one. Limits live in `src/lib/plans.ts`.
+A **subscription** renews until cancelled; cancelling keeps access until the end of the period already paid for. Limits live in `src/lib/plans.ts`; billing details are in [docs/billing-freemius.md](docs/billing-freemius.md).
 
 ## Running it locally
 
-You need Node 20 or newer and Postgres 15 or newer.
+You need Node 20 or newer and a MongoDB 5.0 or newer (Atlas free tier, a local install, or a container).
 
 ```bash
 npm install
-cp .env.example .env            # then fill in DATABASE_URL at least
-createdb shortlist               # or point DATABASE_URL at Neon, Supabase, Railway...
-npm run db:migrate
+cp .env.example .env            # then set MONGODB_URI (and OPENROUTER_API_KEY for the real AI)
 npm run dev                      # http://localhost:3000
 ```
 
-Everything works without any keys:
+The app creates its collections and indexes the first time it connects. To create them ahead of time, for example on a fresh production database, run `npm run db:setup`.
 
-- **No `ANTHROPIC_API_KEY`:** CVs and job posts are read with plain code, and tailoring only reorders bullets and skills. Cover letters and interview feedback use simple templates. It's useful for development, but not what you'd sell.
+Everything works without any keys except the database:
+
+- **No `OPENROUTER_API_KEY`:** CVs and job posts are read with plain code, and tailoring only reorders bullets and skills. Cover letters and interview feedback use simple templates. It's useful for development, but not what you'd sell.
 - **No `RESEND_API_KEY`:** emails are printed to the console, so you can click confirmation and reset links from there.
-- **No payment keys:** the billing page shows the plans, but buying a pass is off.
+- **No payment keys:** the billing page shows the plans, but subscribing is off.
 
 ## Environment variables
 
@@ -56,49 +56,43 @@ All of these are in `.env.example`, with comments.
 
 | Variable | Needed | What it's for |
 |---|---|---|
-| `DATABASE_URL` | Yes | Postgres connection string |
+| `MONGODB_URI` | Yes | MongoDB connection string |
+| `MONGODB_DB` | No | Database name inside that server. Default `shortlist` |
 | `APP_URL` | Yes in production | Public URL, used in email links and payment return URLs |
+| `TRUSTED_PROXY_HOPS` | No | How many proxies sit in front of the app, to find the real client IP for rate limits. Default `1`. Use `0` when nothing is in front, and the IP header is ignored |
 | `CRON_JOB_SECRET` | For reminders | Protects `/api/cron-job/*`. Make it long and random: `openssl rand -hex 32` |
-| `LEGAL_OPERATOR_NAME`, `LEGAL_COUNTRY`, `SUPPORT_EMAIL` | Before launch | Shown on Terms, Privacy and Refund. Paddle checks these pages |
-| `ANTHROPIC_API_KEY` | For the real product | Claude reads CVs and job posts, and writes changes, letters and feedback |
-| `AI_READ_MODEL`, `AI_WRITE_MODEL` | No | Override the models. Defaults: `claude-haiku-5-5` for reading, `claude-opus-5-5` for writing |
+| `LEGAL_OPERATOR_NAME`, `LEGAL_COUNTRY`, `SUPPORT_EMAIL` | Before launch | Shown on Terms, Privacy and Refund. Payment providers may review these pages |
+| `OPENROUTER_API_KEY` | For the real product | OpenRouter reads CVs and job posts, and writes changes, letters and feedback |
+| `AI_READ_MODEL`, `AI_WRITE_MODEL` | No | Any OpenRouter model id that supports structured outputs. Both default to `openrouter/free`; set explicit models to override |
+| `OPENROUTER_BASE_URL` | No | Only to point at another OpenAI-compatible endpoint |
 | `RESEND_API_KEY`, `EMAIL_FROM` | For email | Confirmations, password resets and follow-up reminders |
-| `PADDLE_ENV`, `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, `PADDLE_WEBHOOK_SECRET` | For card payments | Paddle sells the passes in USD |
-| `NEXT_PUBLIC_PADDLE_PRICE_30`, `NEXT_PUBLIC_PADDLE_PRICE_90` | For card payments | The two one-time price ids |
-| `KHALTI_ENV`, `KHALTI_SECRET_KEY` | For Nepal | Khalti sells the passes in NPR |
-| `KHALTI_PASS_30_NPR`, `KHALTI_PASS_90_NPR` | No | Khalti prices in rupees. Defaults: 1500 and 3500 |
+| `FREEMIUS_MODE` | For card payments | `sandbox` (default) or `production`. Production refuses sandbox purchases |
+| `FREEMIUS_PRODUCT_ID`, `FREEMIUS_API_KEY`, `FREEMIUS_SECRET_KEY`, `FREEMIUS_PUBLIC_KEY` | For card payments | From the Freemius Developer Dashboard. **Server secrets**: never put them in a `NEXT_PUBLIC_` variable |
+| `FREEMIUS_PLAN_ID`, `FREEMIUS_PRICING_ID_MONTHLY`, `FREEMIUS_PRICING_ID_YEARLY` | For card payments | The paid plan and its monthly and yearly pricing records |
+| `BILLING_GRACE_DAYS`, `BILLING_SUSPENDED_ACCESS` | No | Access kept after a failed renewal (default 3 days), and what a suspended subscription gets (`none` or `grace`) |
+| `BILLING_PRICE_LABEL_MONTHLY`, `BILLING_PRICE_LABEL_YEARLY` | No | Display text for the pricing page, e.g. `USD 9 / month` (avoid a bare `$` in `.env`: it is expanded like a variable) |
 
 ## Going live
 
 ### 1. Hosting and database
 
-Deploy to Vercel (or anywhere that runs Next.js), with any hosted Postgres. Run `npm run db:migrate` against the production database once, and again after each schema change.
+Deploy to Vercel (or anywhere that runs Next.js), with MongoDB Atlas or any MongoDB 5.0+. Set `MONGODB_URI`; indexes are created on first connect, and `npm run db:setup` does it ahead of time. If the app sits behind a proxy that rewrites the `Host` header, list your public host under `experimental.serverActions.allowedOrigins` in `next.config.ts`, or form submissions will be refused as cross-origin.
 
 ### 2. Email (Resend)
 
 1. Create an account at resend.com and verify your sending domain.
 2. Set `RESEND_API_KEY`, and set `EMAIL_FROM` to an address on that domain.
 
-### 3. Card payments (Paddle)
+### 3. Card payments (Freemius)
 
-Paddle is the Merchant of Record. Buyers pay Paddle, Paddle handles sales tax, and pays you out. You never hold anyone's money.
+Freemius sells monthly and yearly subscriptions and acts as the seller of record. The full guide is in [docs/billing-freemius.md](docs/billing-freemius.md); in short:
 
-1. Get approved by Paddle. They check the site, the Terms, Privacy and Refund pages, and that the product matches the description.
-2. Create a product named "Job-hunt pass" with **two one-time prices** (not subscriptions): $15 and $35. Put their ids in `NEXT_PUBLIC_PADDLE_PRICE_30` and `NEXT_PUBLIC_PADDLE_PRICE_90`.
-3. Copy the client-side token into `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`.
-4. Add a notification destination for `https://YOUR_DOMAIN/api/webhooks/paddle` with the `transaction.completed` event. Put its secret key in `PADDLE_WEBHOOK_SECRET`.
-5. Set `PADDLE_ENV=production` when you switch from sandbox.
+1. Create the product and a paid plan with a monthly and a yearly pricing record in the Freemius Developer Dashboard.
+2. Set the `FREEMIUS_*` variables. Start with `FREEMIUS_MODE=sandbox`.
+3. Add a webhook listener for `https://YOUR_DOMAIN/api/webhooks/freemius`. Paid access only ever starts from a signature-verified webhook or a call to Freemius's API, never from the browser's success message.
+4. Switch to `FREEMIUS_MODE=production` only after a full sandbox run.
 
-The webhook works out the number of days from the price id that was actually paid. It never trusts the checkout's custom data for that, so a buyer can't turn a 30-day payment into 90 days.
-
-### 4. Nepal payments (Khalti)
-
-1. Get a merchant account at khalti.com and set `KHALTI_SECRET_KEY`.
-2. Set `KHALTI_ENV=production` when you go live.
-
-Payments are confirmed with Khalti's lookup API on the return URL. Each payment can only add days once, even if the callback arrives twice at the same moment.
-
-### 5. Daily reminders (cron-job.org)
+### 4. Daily reminders (cron-job.org)
 
 Follow-up emails are sent by `/api/cron-job/daily`. Anything that can call a URL once a day will do. With cron-job.org:
 
@@ -115,9 +109,10 @@ Each person gets at most one email a day, listing every application that's due.
 
 ## How it's built
 
-- **Next.js 16** App Router with server actions, Postgres with **Drizzle**, Tailwind 4.
+- **Next.js 16** App Router with server actions, **MongoDB** (official driver, no ORM), Tailwind 4.
 - **Accounts:** email and password, with database sessions in httpOnly cookies, email confirmation, password reset, data export and account deletion.
-- **AI:** the Anthropic SDK with structured outputs (`src/lib/ai.ts`). Every AI feature has a plain-code fallback.
+- **AI:** OpenRouter's chat API with JSON-schema structured outputs (`src/lib/ai.ts`). Requests ask for providers that don't keep prompts. Every answer is validated against its schema again in code, and every AI feature has a plain-code fallback.
+- **Data:** each collection and its indexes are defined in `src/db/` (`types.ts`, `indexes.ts`, `mongo.ts`). Everything that reads or writes goes through `src/lib/services/`.
 
 Where things live:
 
@@ -127,19 +122,27 @@ Where things live:
 | `src/lib/jobs/` | Fetching job links safely and reading job posts (JSON-LD first, then the page text) |
 | `src/lib/match/` | The match score and keyword highlighting. Plain code, no AI |
 | `src/lib/tailor/` | Tailoring, cover letters, interview questions and feedback, follow-up messages, and the fact check |
-| `src/lib/export/docx.ts` | Word export. PDF comes from the print page (`/app/print/cv/[id]`) |
-| `src/lib/services/` | Database reads and writes |
-| `src/lib/billing/` | Paddle and Khalti |
+| `src/lib/export/` | Redesigned PDF and Word exports; browser print follows the chosen template |
+| `src/db/` | MongoDB connection, collection types and indexes |
+| `src/lib/services/` | Database reads and writes, and rate limits |
+| `src/lib/billing/` | Freemius: checkout, webhooks, access policy |
 | `src/app/app/` | The signed-in app |
+| `src/components/` | UI: `ui.tsx` primitives, `toast.tsx`, the sidebar, and the command palette (`command-palette.tsx`) |
 
 ## Security and privacy
 
+PDF imports retain their original bytes after the review is confirmed. **Original PDF** is the default on the CV workbench and profile download: it preserves the uploaded document exactly, without applying AI suggestions or profile edits. **Tailored version** is an explicit alternative and includes the full saved content by default; shortening is opt-in. Earlier imports need their source file uploaded again to preserve formatting. Pending import reviews stay private and expire after one hour; replacing a CV with pasted text removes its previous original file. Source files are included in the Settings export and removed on account deletion.
+
 - CVs are personal data. They're stored in the user's account only, can be downloaded as JSON from Settings, and are deleted with the account. They aren't used to train models. The Privacy page says so.
-- Every job, document and download is checked against the signed-in user. The tests try to open another person's pages and downloads.
-- Job links are fetched with `safeFetch`, which refuses private and internal addresses (also after redirects), limits size and time, and never sends cookies.
+- Every job, document and download is checked against the signed-in user, in the query itself (`{ _id, userId }`). The tests try to open another person's pages and downloads.
+- **Injection:** there is no SQL. Database values only ever come from typed server code; ids from requests are coerced to strings, and every id or email from a signed webhook payload must be a plain string or number before it reaches a query. React escapes everything it renders, email HTML is escaped, and a nonce-based Content-Security-Policy (set in `src/proxy.ts`) blocks inline scripts and styles even if markup ever slipped through. The one page that relaxes style rules, and allows Freemius's checkout iframe, is billing; that exception has not been confirmed against a full live checkout (see the billing guide).
+- **CSRF:** the session cookie is `SameSite=Lax` and httpOnly (`Secure` in production); every mutation is a Next.js server action, which refuses requests whose `Origin` doesn't match the host. The only GET routes with side effects take an unguessable one-time token.
+- **Rate limits:** sign-ups and password resets are limited per IP, adding jobs per user, and account deletion per user, with counters in MongoDB (`rate_limits`, cleared by a TTL index). The client IP is read from the right end of `X-Forwarded-For` (the part our own proxy wrote, controlled by `TRUSTED_PROXY_HOPS`), never from what a client sends itself. **Login is deliberately plain** (email and password, scrypt-hashed, no lockout) because Google sign-in is planned; add attempt limits back if password login stays.
+- Job links are fetched with `safeFetch`, which refuses private and internal addresses in every spelling (including IPv6-wrapped IPv4), re-checks every redirect, limits size and time, and never sends cookies.
 - CV and job text is passed to the model as quoted data, with instructions to ignore any instructions inside it.
 - Monthly allowances are counted with a single atomic database update, so parallel requests can't go past the limit. A failed AI call gives the allowance back.
-- Webhook signatures are verified, and payment amounts are taken from the payment provider, not from the browser.
+- Webhook signatures are verified (Freemius events by the official SDK, HMAC-SHA256), each event is processed once however often it is delivered, and payment amounts come from the payment provider, not from the browser.
+- **Sign-up is instant, and says so when an address is taken.** That is a deliberate product choice (no extra step before people can use the app); the cost is that the form can confirm an address has an account. It is limited per IP, and an unconfirmed email shows a banner until the person presses the button on the confirmation page. Confirmation links open a page and a button press (a POST) uses them up, so mail scanners that fetch links can't burn them. If you ever want sign-up that reveals nothing, create the account only when an emailed link is confirmed.
 
 ## Limits worth knowing
 
@@ -151,4 +154,19 @@ Where things live:
 
 ## Tests
 
-`npm run test:all` runs lint, typecheck, unit, integration (real Postgres) and browser tests. See [TESTING.md](TESTING.md).
+```bash
+npm test                  # unit tests: matching, fact check, security helpers
+npm run test:integration  # the services and AI client against a real MongoDB
+npm run test:e2e          # a browser through the whole product
+npm run test:all          # lint, typecheck, and all of the above
+```
+
+The integration and browser tests start a throwaway `mongod` themselves (downloaded once by `mongodb-memory-server`), so nothing needs installing. To use a MongoDB you run instead, set `TEST_MONGODB_URI`; **those tests wipe the database they are given**, so never point it at real data.
+
+## Navigation
+
+The sidebar is an icon rail. Hover it, or tab into it, and it opens over the page (the content never moves). Below the `lg` breakpoint it becomes a drawer.
+
+## Keyboard
+
+`Cmd K` (or `Ctrl K`, or `/`) searches pages, actions and jobs. `C` adds a job, `G` then `T`, `J`, `C`, `P`, `S` or `B` jumps to a page, `?` lists them all. `Cmd S` saves the profile and cover letter, `Cmd Enter` submits a note, an answer or a job description.

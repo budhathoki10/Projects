@@ -1,67 +1,54 @@
 "use client";
 
-import { useActionState } from "react";
+import { ActionToast } from "@/components/toast";
+import { useActionState, useState } from "react";
 import { practiseAnswer } from "@/app/actions/tailor";
 import type { AnswerFeedback } from "@/lib/model/types";
-import { Button, FormMessage, inputClass } from "./ui";
+import { inputClass, Kbd } from "./ui";
+import { FormSubmit } from "./form-submit";
 import { keepInputOnSubmit } from "./use-keep-input";
+import { InterviewFeedback } from "./interview-feedback";
 
-export function PracticeAnswer({ jobId, questionId, answer, feedback }: { jobId: string; questionId: string; answer: string; feedback: AnswerFeedback | null }) {
+export function PracticeAnswer({ jobId, questionId, answer, feedback, draft, onDraftChange }: { jobId: string; questionId: string; answer: string; feedback: AnswerFeedback | null; draft?: string; onDraftChange?: (value: string) => void }) {
   const [state, action, pending] = useActionState(practiseAnswer, undefined);
+  const [text, setText] = useState(draft ?? answer);
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
   return (
     <div className="space-y-3">
-      <form onSubmit={keepInputOnSubmit(action)} className="space-y-2">
+      <form method="post" onSubmit={keepInputOnSubmit(action)} className="space-y-3">
         <input type="hidden" name="jobId" value={jobId} />
         <input type="hidden" name="questionId" value={questionId} />
         <textarea
           name="answer"
           aria-label="Your answer"
-          defaultValue={answer}
-          rows={6}
-          className={inputClass}
-          placeholder="Write it as you'd say it. A real example works best: what was going on, what you did, what changed."
+          value={text}
+          onChange={(e) => { setText(e.target.value); onDraftChange?.(e.target.value); }}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+              e.preventDefault();
+              e.currentTarget.form?.requestSubmit();
+            }
+          }}
+          rows={7}
+          className={`${inputClass} leading-relaxed`}
+          placeholder="Start with what you know. Even one sentence is enough to get coaching. Describe the situation, your action, and what happened."
         />
-        <Button type="submit" variant="secondary" disabled={pending} className="py-1.5">
-          {pending ? "Reading your answer…" : answer ? "Get feedback again" : "Get feedback"}
-        </Button>
-        <FormMessage error={state?.error} />
-      </form>
-      {feedback && (
-        <div className="space-y-3 rounded-md border border-border bg-background p-4 text-sm">
-          <p className="font-medium">
-            <span className="font-mono">{feedback.score}/5</span>
-            <span className="ml-2 text-muted">
-              {feedback.score >= 4 ? "Strong answer" : feedback.score === 3 ? "Good, with room to sharpen" : "Needs a concrete example"}
-            </span>
-          </p>
-          {feedback.strengths.length > 0 && (
-            <div>
-              <p className="text-[13px] font-medium text-money">Working</p>
-              <ul className="ml-5 list-disc text-[13px]">
-                {feedback.strengths.map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {feedback.improve.length > 0 && (
-            <div>
-              <p className="text-[13px] font-medium">To improve</p>
-              <ul className="ml-5 list-disc text-[13px]">
-                {feedback.improve.map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {feedback.rewrite && (
-            <details>
-              <summary className="cursor-pointer text-[13px] font-medium">A tighter version</summary>
-              <p className="mt-2 whitespace-pre-line text-[13px] leading-relaxed">{feedback.rewrite}</p>
-            </details>
-          )}
+        <div className="flex flex-wrap items-center gap-3">
+          <FormSubmit variant="secondary" size="sm" loading={pending}>
+            {pending ? "Reading your answer…" : answer ? "Get feedback again" : "Get feedback"}
+          </FormSubmit>
+          <span className="hidden items-center gap-1 text-xs text-muted sm:flex">
+            <Kbd>⌘</Kbd>
+            <Kbd>Enter</Kbd>
+          </span>
+          <span className="ml-auto text-xs tabular-nums text-muted">
+            {words} word{words === 1 ? "" : "s"} · {words < 40 ? "a starting point is enough" : `about ${Math.max(1, Math.round(words / 130 * 60))} seconds spoken`}
+          </span>
         </div>
-      )}
+        <ActionToast state={state} only="error" />
+      </form>
+      {feedback && text !== answer && <p className="text-xs text-muted">You’ve changed your answer. Get feedback again to review this version.</p>}
+      {feedback && text === answer && <InterviewFeedback review={{ ...feedback, improvements: feedback.improve, improvedAnswer: feedback.rewrite, corrections: feedback.corrections ?? [], modelAnswer: feedback.modelAnswer ?? "", rubric: feedback.rubric ?? [] }} />}
     </div>
   );
 }

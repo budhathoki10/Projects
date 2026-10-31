@@ -36,23 +36,53 @@ export function isPrivateAddress(ip: string): boolean {
       a >= 224
     );
   }
-  if (net.isIPv6(ip)) {
-    const lower = ip.toLowerCase();
-    const mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    if (mapped) return isPrivateAddress(mapped[1]);
-    return (
-      lower === "::" ||
-      lower === "::1" ||
-      lower.startsWith("fc") ||
-      lower.startsWith("fd") ||
-      lower.startsWith("fe8") ||
-      lower.startsWith("fe9") ||
-      lower.startsWith("fea") ||
-      lower.startsWith("feb") ||
-      lower.startsWith("ff")
-    );
-  }
+  if (net.isIPv6(ip)) return isPrivateIPv6(ip);
   return true;
+}
+
+/** The eight 16-bit groups of an IPv6 address, or null if it can't be read. Handles "::" and a trailing dotted IPv4. */
+function ipv6Groups(ip: string): number[] | null {
+  let s = ip.toLowerCase().split("%")[0];
+  const dotted = s.match(/(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (dotted) {
+    const [a, b, c, d] = dotted.slice(1).map(Number);
+    s = `${s.slice(0, -dotted[0].length)}${((a << 8) | b).toString(16)}:${((c << 8) | d).toString(16)}`;
+  }
+  const halves = s.split("::");
+  if (halves.length > 2) return null;
+  const head = halves[0] ? halves[0].split(":") : [];
+  const tail = halves.length === 2 && halves[1] ? halves[1].split(":") : [];
+  const fill = 8 - head.length - tail.length;
+  if (halves.length === 1 ? head.length !== 8 : fill < 1) return null;
+  const groups = [...head, ...Array<string>(halves.length === 2 ? fill : 0).fill("0"), ...tail].map((g) => parseInt(g, 16));
+  return groups.length === 8 && groups.every((g) => g >= 0 && g <= 0xffff) ? groups : null;
+}
+
+const v4From = (hi: number, lo: number) => `${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`;
+
+/**
+ * IPv6 forms that carry an IPv4 address (mapped, compatible, NAT64, 6to4) are judged by the IPv4
+ * inside them: "::ffff:a9fe:a9fe" is 169.254.169.254, the cloud metadata address, however it's written.
+ */
+function isPrivateIPv6(ip: string): boolean {
+  const g = ipv6Groups(ip);
+  if (!g) return true;
+  const [g0, g1, g2, g3, g4, g5, g6, g7] = g;
+  const zeros = (...xs: number[]) => xs.every((x) => x === 0);
+  if (zeros(g0, g1, g2, g3, g4, g5, g6) && g7 <= 1) return true; // :: and ::1
+  if (zeros(g0, g1, g2, g3, g4) && g5 === 0xffff) return isPrivateAddress(v4From(g6, g7)); // ::ffff:a.b.c.d
+  if (zeros(g0, g1, g2, g3) && g4 === 0xffff && g5 === 0) return isPrivateAddress(v4From(g6, g7)); // ::ffff:0:a.b.c.d
+  if (zeros(g0, g1, g2, g3, g4, g5)) return isPrivateAddress(v4From(g6, g7)); // ::a.b.c.d
+  if (g0 === 0x64 && g1 === 0xff9b) return g2 !== 0 || !zeros(g3, g4, g5) || isPrivateAddress(v4From(g6, g7)); // NAT64
+  if (g0 === 0x2002) return isPrivateAddress(v4From(g1, g2)); // 6to4
+  return (
+    (g0 === 0x2001 && (g1 === 0 || g1 === 0xdb8)) || // Teredo, documentation
+    (g0 === 0x100 && zeros(g1, g2, g3)) || // discard-only
+    (g0 & 0xfe00) === 0xfc00 || // unique local
+    (g0 & 0xffc0) === 0xfe80 || // link-local
+    (g0 & 0xffc0) === 0xfec0 || // site-local
+    g0 >> 8 === 0xff // multicast
+  );
 }
 
 function allowPrivate() {

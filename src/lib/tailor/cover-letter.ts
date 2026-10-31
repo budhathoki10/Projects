@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { aiEnabled, AiUnavailableError, quoted, structured } from "@/lib/ai";
 import type { JobPost, Match, Profile } from "@/lib/model/types";
-import { unsupportedFacts } from "./fact-check";
+import { unsupportedExperienceClaims, unsupportedFacts } from "./fact-check";
 
 const Letter = z.object({ text: z.string().describe("The full letter, plain text, paragraphs separated by a blank line.") });
 
@@ -41,7 +41,7 @@ function basicLetter(profile: Profile, post: JobPost, match: Match): string {
 }
 
 /** A cover letter plus any facts in it the profile and job post don't support, for the user to check. */
-export async function writeCoverLetter(profile: Profile, post: JobPost, match: Match): Promise<{ text: string; flags: string[]; method: "ai" | "basic" }> {
+export async function writeCoverLetter(profile: Profile, post: JobPost, match: Match, companyContext = ""): Promise<{ text: string; flags: string[]; method: "ai" | "basic" }> {
   const allowed = JSON.stringify(post);
   if (aiEnabled()) {
     try {
@@ -53,10 +53,16 @@ export async function writeCoverLetter(profile: Profile, post: JobPost, match: M
           quoted("profile", JSON.stringify(profile)),
           quoted("job_post", allowed),
           quoted("match", JSON.stringify(match.keywords)),
+          quoted("verified_company_excerpts", companyContext),
         ].join("\n\n"),
         schema: Letter,
       });
-      return { text: text.trim(), flags: unsupportedFacts(text, profile, allowed), method: "ai" };
+      const claimFlags = unsupportedExperienceClaims(text, profile);
+      if (claimFlags.length) {
+        const safe = basicLetter(profile, post, match);
+        return { text: safe, flags: unsupportedExperienceClaims(safe, profile), method: "basic" };
+      }
+      return { text: text.trim(), flags: unsupportedFacts(text, profile, `${allowed}\n${companyContext}`), method: "ai" };
     } catch (err) {
       if (!(err instanceof AiUnavailableError)) console.error("AI cover letter failed", err);
     }

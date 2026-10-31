@@ -1,7 +1,19 @@
 import type { NextConfig } from "next";
 
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), usb=(), interest-cohort=()" },
+  // Only meaningful over HTTPS; browsers ignore it on http://localhost.
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+];
+
 const nextConfig: NextConfig = {
-  // Pitchcraft is almost entirely per-user, request-time UI, so it uses the
+  distDir: process.env.SHORTLIST_BUILD_DIR || ".next",
+  serverExternalPackages: ["pdfkit"],
+  experimental: { serverActions: { bodySizeLimit: "6mb" }, turbopackFileSystemCacheForBuild: process.env.SHORTLIST_BUILD_CACHE !== "0" },
+  // Shortlist is almost entirely per-user, request-time UI, so it uses the
   // classic dynamic rendering model instead of Cache Components.
   turbopack: {
     rules: {
@@ -12,6 +24,13 @@ const nextConfig: NextConfig = {
     },
   },
   poweredByHeader: false,
+  async headers() {
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Signed-in pages and downloads hold personal data: never keep a copy in a shared cache.
+      { source: "/app/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
+    ];
+  },
 };
 
 export default nextConfig;
