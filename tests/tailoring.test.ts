@@ -139,10 +139,12 @@ describe("applying changes", () => {
 });
 
 describe("without an AI key", () => {
-  it("tailoring only reorders, so it can't invent anything", async () => {
+  it("tailoring rebuilds around the job using only the person's own words", async () => {
     const { changes, method } = await proposeChanges(profile, post, scoreMatch(profile, post));
     expect(method).toBe("basic");
-    expect(changes.every((c) => c.kind === "bullet-order" || c.kind === "skills-order")).toBe(true);
+    expect(changes.every((c) => c.flags.length === 0)).toBe(true);
+    const own = [profile.summary, ...profile.experience.flatMap((e) => e.bullets)].join(" ");
+    for (const c of changes) if (c.kind === "summary") for (const sentence of c.after.split(/(?<=\.)\s+/)) expect(own).toContain(sentence.replace(/\.$/, ""));
     const cv = applyChanges(profile, changes);
     expect(cv.experience[0].bullets[0]).toMatch(/Zendesk/);
     expect(cv.skills[0]).toBe("Zendesk");

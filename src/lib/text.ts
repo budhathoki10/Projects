@@ -47,6 +47,8 @@ const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * "Java" match "JavaScript" or "R" match "React".
  */
 export function containsTerm(text: string, term: string): boolean {
+  // One-letter languages (C, R) only count as capitals standing alone: not "c" in a list, "R&D" or "C++" for C.
+  if (term.trim().length === 1) return new RegExp(`(^|[^A-Za-z0-9+#])${escape(term.trim().toUpperCase())}(?![A-Za-z0-9+#&]|\\.[a-z])`).test(text);
   const hay = text.toLowerCase();
   return spellings(term).some((s) => new RegExp(`(^|[^a-z0-9+#])${escape(s)}(?![a-z0-9+#])`, "i").test(hay));
 }
