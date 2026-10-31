@@ -33,7 +33,7 @@ export async function setUpJobSeeker(page: Page, address: string) {
   await expect(page.getByRole("status").filter({ hasText: "CV imported" })).toBeVisible({ timeout: 20_000 });
 }
 
-/** Add the fixture job by link and land on its Match tab. */
+/** Add the fixture job by link and land on its Fit tab. */
 export async function addFixtureJob(page: Page, fixtureBase: string) {
   await page.goto("/app/jobs");
   await page.getByLabel("Link to the job post").fill(`${fixtureBase}/jobs/northwind.html`);

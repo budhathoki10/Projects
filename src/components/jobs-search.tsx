@@ -24,7 +24,7 @@ export function JobsSearch() {
   };
 
   return (
-    <div className="relative w-full sm:max-w-xs">
+    <div className="relative w-full min-w-0 sm:w-auto sm:max-w-xs sm:flex-1">
       <label htmlFor="jobs-search" className="sr-only">
         Search your jobs
       </label>
@@ -48,8 +48,41 @@ export function JobsSearch() {
           }
         }}
         aria-busy={pending}
-        className={`${inputClass} pl-9`}
+        className={`${inputClass} h-9 pl-9 max-sm:h-11`}
       />
     </div>
+  );
+}
+
+/** Status filter as one compact dropdown. Like the search, it lives in the URL (?status=). */
+export function JobsStatusFilter({ value, options }: { value: string; options: { value: string; label: string; count: number }[] }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const [pending, startTransition] = useTransition();
+  return (
+    <>
+      <label htmlFor="jobs-status" className="sr-only">
+        Filter by status
+      </label>
+      <select
+        id="jobs-status"
+        value={value}
+        aria-busy={pending}
+        onChange={(e) => {
+          const next = new URLSearchParams(params.toString());
+          if (e.target.value) next.set("status", e.target.value);
+          else next.delete("status");
+          startTransition(() => router.replace(next.size ? `${pathname}?${next}` : pathname, { scroll: false }));
+        }}
+        className="h-9 rounded border border-strong-border bg-surface px-2.5 text-sm transition-colors duration-150 hover:border-faint focus-visible:outline-2 focus-visible:outline-accent/30 max-sm:h-11 max-sm:text-base"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label} · {o.count}
+          </option>
+        ))}
+      </select>
+    </>
   );
 }

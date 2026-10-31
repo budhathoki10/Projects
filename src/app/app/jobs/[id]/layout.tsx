@@ -3,13 +3,27 @@ import { notFound } from "next/navigation";
 import { JobTabs } from "@/components/job-tabs";
 import { StatusControl } from "@/components/status-control";
 import { requireUser } from "@/lib/auth/session";
+import { listMockSessions } from "@/lib/services/career";
+import { getCoverLetter, getInterview, getTailoredCv } from "@/lib/services/documents";
 import { isStatus, ownedJob } from "@/lib/services/jobs";
 
 export default async function JobLayout({ children, params }: LayoutProps<"/app/jobs/[id]">) {
   const user = await requireUser();
   const { id } = await params;
-  const job = await ownedJob(user.id, id);
+  const [job, cv, letter, interview, mocks] = await Promise.all([
+    ownedJob(user.id, id),
+    getTailoredCv(user.id, id),
+    getCoverLetter(user.id, id),
+    getInterview(user.id, id),
+    listMockSessions(user.id, id),
+  ]);
   if (!job) notFound();
+  // A step counts as done once there's something real to show for it.
+  const done = {
+    cv: !!cv?.cv,
+    letter: !!letter?.text?.trim(),
+    interview: !!interview?.questions.some((q) => q.answer) || mocks.some((m) => m.status === "complete"),
+  };
   const facts = [job.post.company, job.post.location, job.post.salary].filter(Boolean);
   return (
     <div className="space-y-6">
@@ -25,7 +39,7 @@ export default async function JobLayout({ children, params }: LayoutProps<"/app/
           <StatusControl jobId={job.id} status={isStatus(job.status) ? job.status : "saved"} />
         </div>
       </div>
-      <JobTabs jobId={job.id} />
+      <JobTabs jobId={job.id} done={done} />
       {children}
     </div>
   );

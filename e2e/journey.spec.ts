@@ -69,10 +69,12 @@ test("a job seeker goes from CV to application to follow-up, without anything in
   await expect(pdfPage).toHaveTitle("asha-gurung-cv-customer-success-lead");
   await pdfPage.close();
 
-  // Word is part of the pass.
   // Free plan: no Word button, and no upsell line in its place.
   await expect(page.getByRole("link", { name: "Download Word" })).toHaveCount(0);
   await expect(page.getByText("Word download is included in paid plans")).toHaveCount(0);
+
+  // The tab shows the step is done.
+  await expect(page.getByRole("navigation", { name: "This job" }).getByRole("link", { name: "Tailored CV (done)" })).toBeVisible();
 
   // 5. Cover letter: drafted from the CV, edited, saved, nothing unsupported.
   await page.getByRole("link", { name: "Cover letter" }).click();
@@ -85,7 +87,7 @@ test("a job seeker goes from CV to application to follow-up, without anything in
   await expect(page.getByText("Cover letter saved.")).toBeVisible();
 
   // 6. Interview prep, with feedback on a typed answer.
-  await page.getByRole("link", { name: "Interview prep" }).click();
+  await page.getByRole("link", { name: "Interview", exact: true }).click();
   await page.getByRole("button", { name: "Get my questions" }).click();
   await expect(page.getByRole("navigation", { name: "Interview questions" }).getByRole("button", { name: /HubSpot/ }).first()).toBeVisible();
   const first = page.getByRole("region", { name: "Current interview question" });

@@ -251,8 +251,9 @@ test.describe("on a phone", () => {
     await page.goto("/app/jobs");
     for (const control of [page.getByRole("button", { name: "Add job" }), page.getByRole("button", { name: "Open menu" })]) {
       const box = await control.boundingBox();
-      expect(box!.height, "tap target height").toBeGreaterThanOrEqual(44);
-      expect(box!.width, "tap target width").toBeGreaterThanOrEqual(44);
+      // Rounded to whole pixels: an entry animation can leave a sub-pixel offset (43.99998 for a 44px button).
+      expect(Math.round(box!.height), "tap target height").toBeGreaterThanOrEqual(44);
+      expect(Math.round(box!.width), "tap target width").toBeGreaterThanOrEqual(44);
     }
   });
 });

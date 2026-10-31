@@ -1,12 +1,17 @@
 import { AppNav } from "@/components/app-nav";
 import { KeyboardLayer } from "@/components/command-palette";
 import { MobileNav } from "@/components/mobile-nav";
+import { after } from "next/server";
 import { requireUser } from "@/lib/auth/session";
+import { recheckRenewals } from "@/lib/billing/renewal-check";
+import { billingConfigured } from "@/lib/billing/config";
 import { isPaid } from "@/lib/plans";
 import { dueFollowUpCount, listJobs } from "@/lib/services/jobs";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
+  // If a renewal webhook was lost, re-read Freemius around the renewal date, after the page is sent.
+  if (billingConfigured()) after(() => recheckRenewals(user.id).catch(() => {}));
   const [followUps, jobs] = await Promise.all([dueFollowUpCount(user.id), listJobs(user.id)]);
   const paid = isPaid(user);
   return (

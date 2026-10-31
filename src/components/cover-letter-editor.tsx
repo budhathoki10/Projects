@@ -62,6 +62,17 @@ export function CoverLetterEditor({ jobId, initial, flags, email, role, recipien
             {saving ? "Saving…" : "Save"}
           </FormSubmit>
           <CopyButton text={text} label="Copy text" what="Letter copied" />
+          {/* The PDF is made from the saved letter, so unsaved edits have to be saved first. */}
+          <a
+            href={dirty ? undefined : `/app/print/letter/${jobId}`}
+            target="_blank"
+            rel="noopener"
+            aria-disabled={dirty}
+            title={dirty ? "Save your edits first" : "In the same look as your CV"}
+            className={buttonClass("ghost", "md", dirty ? "pointer-events-none opacity-50" : "")}
+          >
+            Download PDF
+          </a>
           <span className="hidden items-center gap-1 text-xs text-muted sm:flex">
             <Kbd>⌘</Kbd>
             <Kbd>S</Kbd> to save

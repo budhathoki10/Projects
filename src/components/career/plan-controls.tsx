@@ -6,15 +6,44 @@ import { prepareApplicationPlan, saveLearningTask } from "@/app/actions/career";
 import type { LearningProgress } from "@/lib/career/types";
 import { Button, inputClass } from "../ui";
 
-export function PlanBuilder({ jobId, exists, companyUrl = "" }: { jobId: string; exists: boolean; companyUrl?: string }) {
+/**
+ * Builds (or refreshes) the full analysis. On its own it's a compact card; `bare` drops the card
+ * for use inside a panel that already has a title.
+ */
+export function PlanBuilder({ jobId, exists, companyUrl = "", bare = false }: { jobId: string; exists: boolean; companyUrl?: string; bare?: boolean }) {
   const [state, action, pending] = useActionState(prepareApplicationPlan, undefined);
-  return <form action={action} className="space-y-4 rounded-lg border border-border bg-surface p-5">
-    <input type="hidden" name="jobId" value={jobId} />
-    <div><h2 className="font-semibold">{exists ? "Refresh the application plan" : "Understand this job before applying"}</h2><p className="mt-1 text-sm leading-relaxed text-muted">Map the complete description to your CV, check essential gaps and prepare a focused learning plan. Uses one tailoring allowance.</p></div>
-    <div className="space-y-1.5"><label htmlFor="company-website" className="text-sm font-medium">Company website <span className="font-normal text-muted">(optional)</span></label><input id="company-website" name="companyUrl" type="url" defaultValue={companyUrl} placeholder="https://company.example" maxLength={2000} className={inputClass} /><p className="text-xs text-muted">Use the employer’s own website. We read its homepage and up to two linked company pages; without it, company details stay unverified.</p></div>
-    <Button type="submit" loading={pending}>{pending ? "Reading the job, CV and company sources…" : exists ? "Refresh plan" : "Build application plan"}</Button>
-    <ActionToast state={state} />
-  </form>;
+  return (
+    <form action={action} className={bare ? "space-y-3" : "space-y-3 rounded-lg border border-border bg-surface px-5 py-4"}>
+      <input type="hidden" name="jobId" value={jobId} />
+      {!bare && (
+        <div>
+          <h2 className="text-sm font-semibold">{exists ? "Refresh the full analysis" : "Full analysis"}</h2>
+          <p className="mt-0.5 text-[13px] text-muted">Every requirement checked against your CV, a plan for the gaps and draft application answers. Uses one tailoring.</p>
+        </div>
+      )}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1 space-y-1">
+          <label htmlFor={`company-website-${jobId}`} className="text-[13px] font-medium">
+            Company website <span className="font-normal text-muted">(optional)</span>
+          </label>
+          <input
+            id={`company-website-${jobId}`}
+            name="companyUrl"
+            type="url"
+            defaultValue={companyUrl}
+            placeholder="https://company.example"
+            maxLength={2000}
+            className={inputClass}
+            title="We read its homepage and up to two linked company pages. Without it, company details stay unverified."
+          />
+        </div>
+        <Button type="submit" loading={pending} className="shrink-0">
+          {pending ? "Analysing…" : exists ? "Refresh analysis" : "Build full analysis"}
+        </Button>
+      </div>
+      <ActionToast state={state} />
+    </form>
+  );
 }
 
 export function LearningTaskForm({ jobId, taskId, progress }: { jobId: string; taskId: string; progress?: LearningProgress[string] }) {

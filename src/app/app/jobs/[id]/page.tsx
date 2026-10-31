@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { followUpAction, removeJob } from "@/app/actions/jobs";
+import { PlanBuilder } from "@/components/career/plan-controls";
+import { PlanView } from "@/components/career/plan-view";
 import { ConfirmAction } from "@/components/confirm-action";
 import { CopyButton } from "@/components/copy-button";
 import { JobDescriptionEditor } from "@/components/job-description-editor";
@@ -10,15 +12,17 @@ import { NotesField } from "@/components/notes-field";
 import { SubmitButton } from "@/components/submit-button";
 import { ButtonLink, EmptyState, Eyebrow, inputClass } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
+import { careerFingerprint } from "@/lib/career/evidence";
 import { formatDay } from "@/lib/dates";
 import { highlight } from "@/lib/match/highlight";
 import { scoreLabel, scoreMatch } from "@/lib/match/score";
 import { today } from "@/lib/plans";
+import { getCareerPlan } from "@/lib/services/career";
 import { ownedJob } from "@/lib/services/jobs";
 import { getProfile, profileReady } from "@/lib/services/profile";
 import { followUpMessage } from "@/lib/tailor/follow-up";
 
-export const metadata: Metadata = { title: "Match" };
+export const metadata: Metadata = { title: "Fit" };
 
 /** Status is spelled out in words as well as colour, so it doesn't depend on seeing the colour. */
 const STATUS_COPY = {
@@ -27,14 +31,19 @@ const STATUS_COPY = {
   missing: { label: "Not in your CV", cls: "text-danger", mark: "✕" },
 } as const;
 
-export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) {
+/**
+ * The Fit tab: the instant keyword check, or the full analysis once it's built and still matches your CV and the job.
+ * Only one of the two shows, so there is never more than one score on screen.
+ */
+export default async function FitTab({ params }: PageProps<"/app/jobs/[id]">) {
   const user = await requireUser();
   const { id } = await params;
-  const [job, profile] = await Promise.all([ownedJob(user.id, id), getProfile(user.id)]);
+  const [job, profile, planRow] = await Promise.all([ownedJob(user.id, id), getProfile(user.id), getCareerPlan(user.id, id)]);
   if (!job) notFound();
   const ready = profileReady(profile);
   // Scored live, so edits to the profile show up straight away. It's plain code and fast.
   const match = ready && jobHasCriteria(job.post) ? scoreMatch(profile, job.post) : null;
+  const planCurrent = !!planRow && !!match && planRow.plan.fingerprint === careerFingerprint({ profile: profile!, post: job.post, postText: job.postText });
   const due = job.status === "applied" && job.followUpOn && job.followUpOn <= today();
   const nudge = followUpMessage({ name: profile?.name || user.name, title: job.post.title, company: job.post.company, appliedOn: job.appliedOn });
   const nudgeText = `${nudge.subject}\n\n${nudge.body}`;
@@ -51,6 +60,10 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
           </EmptyState>
         ) : (
           <>
+            {planCurrent ? (
+              <PlanView jobId={job.id} row={planRow!} />
+            ) : (
+              <>
             <section className="flex flex-wrap items-end gap-x-8 gap-y-4 border-b border-border pb-6">
               <div>
                 <p className="font-mono text-5xl font-medium leading-none tabular-nums tracking-tight" data-testid="match-score">
@@ -102,6 +115,15 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
                 </ol>
               )}
             </section>
+
+            {planRow && (
+              <p role="alert" className="rounded-md bg-warning-soft px-4 py-2.5 text-sm text-warning">
+                Your CV or the job changed since the full analysis. Refresh it below.
+              </p>
+            )}
+            <PlanBuilder jobId={job.id} exists={!!planRow} companyUrl={planRow?.plan.company.sources[0]?.url} />
+              </>
+            )}
 
             <details className="group rounded-md border border-border bg-surface">
               <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">

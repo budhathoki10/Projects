@@ -20,7 +20,7 @@ export function AddJobForm() {
 
   return (
     <form method="post" onSubmit={keepInputOnSubmit(action)} className="space-y-3">
-      <label htmlFor="job-url" className="t-label block">
+      <label htmlFor="job-url" className="sr-only">
         Link to the job post
       </label>
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -33,7 +33,7 @@ export function AddJobForm() {
           autoComplete="off"
           spellCheck={false}
           defaultValue={state?.url}
-          placeholder="https://"
+          placeholder="Paste a link to a job post"
           className={inputClass}
         />
         {!showText && (

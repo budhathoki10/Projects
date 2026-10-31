@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from "motion/react";
+import { m, useReducedMotion, useScroll, useTransform, type MotionValue } from "motion/react";
 import { useRef } from "react";
 import { useMounted } from "./use-mounted";
 
@@ -9,7 +9,7 @@ function Word({ word, index, total, progress, on }: { word: string; index: numbe
   const opacity = useTransform(progress, [start, Math.min(1, start + 2.5 / total)], [0.25, 1]);
   return (
     <>
-      <motion.span style={on ? { opacity } : undefined}>{word}</motion.span>{" "}
+      <m.span style={on ? { opacity } : undefined}>{word}</m.span>{" "}
     </>
   );
 }

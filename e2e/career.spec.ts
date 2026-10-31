@@ -15,9 +15,8 @@ test("a candidate without Python gets an honest plan, records practice and compl
   await expect(page).toHaveURL(/\/app\/jobs\/[0-9a-f-]{36}$/);
   const jobUrl = page.url();
   const jobId = jobUrl.split("/").pop()!;
-  await page.getByRole("link", { name: "Application plan", exact: true }).click();
   await page.getByLabel("Company website", { exact: false }).fill(`${FIXTURE_BASE}/company`);
-  await page.getByRole("button", { name: "Build application plan", exact: true }).click();
+  await page.getByRole("button", { name: "Build full analysis", exact: true }).click();
   // The summary row: the score explains (on hover) that it is evidence coverage, not a hiring probability.
   const fit = page.getByRole("region", { name: "Fit" });
   await expect(fit.locator("[title*='not a hiring probability']")).toHaveCount(1);

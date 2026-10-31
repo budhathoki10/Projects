@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { HeroPreview } from "@/components/landing/hero-preview";
 import { HowItWorks } from "@/components/landing/how-it-works";
+import { MotionFeatures } from "@/components/landing/motion-features";
 import { Reveal } from "@/components/landing/reveal";
 import { ScrollWords } from "@/components/landing/scroll-words";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
@@ -80,6 +81,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   return (
     <>
       <SiteHeader />
+      <MotionFeatures>
       <main id="main" className="flex-1">
         <FlashToast message={deleted === "1" ? "Account deleted. Everything in it has been removed." : null} clear={["deleted"]} />
 
@@ -243,6 +245,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           </Reveal>
         </section>
       </main>
+      </MotionFeatures>
       <SiteFooter />
     </>
   );
