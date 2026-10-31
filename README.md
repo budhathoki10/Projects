@@ -1,13 +1,13 @@
 # Shortlist
 
-A job-hunt helper for anyone applying for jobs. You add your CV once, then for each job you paste:
+A job-hunt helper for anyone applying for jobs. You add your CV once, then each job you paste gets four steps (one tab each, ticked off as you finish them):
 
-1. **Match check.** Which requirements your CV already shows, which ones are only in your skills list, and which you're missing.
-2. **Tailored CV.** The summary and bullets are rewritten for the job. You accept or reject each change, and any change that adds a fact not in your CV is blocked.
-3. **Cover letter**, written from your real experience and editable.
-4. **Interview prep.** Likely questions, including the gaps, with feedback on your typed answers.
-5. **Tracker.** Saved, Applied, Interviewing, Offer, Closed. A week after you apply with no answer, Today and a daily email remind you, with a polite follow-up message ready to copy.
-6. **Progress.** Applications this week, replies, interviews and response rate.
+1. **Fit.** An instant keyword check: which requirements your CV shows, which are only in your skills list, and which are missing. Optionally, a full analysis maps every requirement to evidence, plans the gaps and drafts application answers.
+2. **Tailored CV.** The summary and bullets are rewritten for the job. You accept or reject each change, and any change that adds a fact not in your CV is blocked. For skills the job wants that your CV doesn't mention, **I have this** lets you add them in your own words.
+3. **Cover letter**, written from your real experience, editable, and downloadable as a PDF in the same look as your CV.
+4. **Interview.** Likely questions, including the gaps, with feedback on your typed answers, and a full mock interview.
+
+Around them: a **tracker** (Saved, Applied, Interviewing, Offer, Closed, with follow-up reminders on Today and by email), **progress** stats, and **100 CV templates** you can customise and download as a PDF.
 
 The rule everything follows: **Shortlist only uses what's in your profile.** The AI can reword and reorder. It can't add an employer, title, degree, number or skill you don't have. A plain-code check (`src/lib/tailor/fact-check.ts`) catches anything that slips through, so it doesn't rely on the model behaving.
 
@@ -123,6 +123,8 @@ Where things live:
 | `src/lib/match/` | The match score and keyword highlighting. Plain code, no AI |
 | `src/lib/tailor/` | Tailoring, cover letters, interview questions and feedback, follow-up messages, and the fact check |
 | `src/lib/export/` | Redesigned PDF and Word exports; browser print follows the chosen template |
+| `src/lib/templates/` | The 100 CV templates (a spec each) and the rules that keep a spec valid |
+| `src/app/app/print/` | Print pages for saving as PDF: a job's CV (`cv/[id]`), its cover letter (`letter/[id]`), and your own CV in any template (`profile`) |
 | `src/db/` | MongoDB connection, collection types and indexes |
 | `src/lib/services/` | Database reads and writes, and rate limits |
 | `src/lib/billing/` | Freemius: checkout, webhooks, access policy |
@@ -149,6 +151,8 @@ PDF imports retain their original bytes after the review is confirmed. **Origina
 - Many job boards, LinkedIn especially, block automated reading or need a login. When that happens Shortlist asks the user to paste the text, which always works.
 - Scanned (image-only) PDFs have no text to read. Users get a message asking for a DOCX or pasted text.
 - The match score is keyword and word-overlap matching, not a judgement of the person. It's labelled as a guide.
+- Some job boards embed the description as escaped HTML. It's converted to plain text when read, and leftover tags are stripped again when a saved job is shown (`src/lib/jobs/html.ts`).
+- If Freemius's renewal webhook is ever lost, the app re-reads the license from Freemius around the renewal date (at most hourly, after the page is sent), so a paying customer isn't dropped to free (`src/lib/billing/renewal-check.ts`).
 - English only for now.
 - Shortlist doesn't apply to jobs for anyone. Auto-applying breaks most job sites' terms and gets accounts banned.
 
@@ -168,5 +172,7 @@ The integration and browser tests start a throwaway `mongod` themselves (downloa
 The sidebar is an icon rail. Hover it, or tab into it, and it opens over the page (the content never moves). Below the `lg` breakpoint it becomes a drawer.
 
 ## Keyboard
+
+Results of actions appear as toasts in the top right (full width at the top on phones).
 
 `Cmd K` (or `Ctrl K`, or `/`) searches pages, actions and jobs. `C` adds a job, `G` then `T`, `J`, `C`, `P`, `S` or `B` jumps to a page, `?` lists them all. `Cmd S` saves the profile and cover letter, `Cmd Enter` submits a note, an answer or a job description.

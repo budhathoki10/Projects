@@ -1,13 +1,15 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { collections, isDuplicateKey } from "@/db/mongo";
+import { stripHtmlDeep } from "@/lib/jobs/html";
 import type { ApplicationPlan, CareerQuestion, LearningProgress, MockFeedback, MockSessionDoc } from "@/lib/career/types";
 import { mockReport, nextDifficulty } from "@/lib/career/mock";
 import { adaptQuestion } from "@/lib/career/questions";
 import { ownedJob } from "./jobs";
 
 export async function getCareerPlan(userId: string, jobId: string) {
-  return (await collections()).careerPlans.findOne({ _id: String(jobId), userId: String(userId) });
+  const row = await (await collections()).careerPlans.findOne({ _id: String(jobId), userId: String(userId) });
+  return row ? stripHtmlDeep(row) : null;
 }
 export async function saveCareerPlan(userId: string, jobId: string, plan: ApplicationPlan) {
   if (!(await ownedJob(userId, jobId))) return false;
@@ -26,7 +28,7 @@ export async function updateLearningProgress(userId: string, jobId: string, task
   return result.matchedCount === 1;
 }
 export async function listCareerPlans(userId: string) {
-  return (await collections()).careerPlans.find({ userId: String(userId) }).toArray();
+  return (await (await collections()).careerPlans.find({ userId: String(userId) }).toArray()).map(stripHtmlDeep);
 }
 export async function listMockSessions(userId: string, jobId: string) {
   return (await collections()).mockSessions.find({ userId: String(userId), jobId: String(jobId) }, { projection: { queue: 0 } }).sort({ createdAt: -1 }).limit(10).toArray();

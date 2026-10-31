@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { followUpAction, removeJob } from "@/app/actions/jobs";
+import { PlanBuilder } from "@/components/career/plan-controls";
+import { PlanView } from "@/components/career/plan-view";
 import { ConfirmAction } from "@/components/confirm-action";
 import { CopyButton } from "@/components/copy-button";
 import { JobDescriptionEditor } from "@/components/job-description-editor";
@@ -10,15 +12,17 @@ import { NotesField } from "@/components/notes-field";
 import { SubmitButton } from "@/components/submit-button";
 import { ButtonLink, EmptyState, Eyebrow, inputClass } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
+import { careerFingerprint } from "@/lib/career/evidence";
 import { formatDay } from "@/lib/dates";
 import { highlight } from "@/lib/match/highlight";
 import { scoreLabel, scoreMatch } from "@/lib/match/score";
 import { today } from "@/lib/plans";
+import { getCareerPlan } from "@/lib/services/career";
 import { ownedJob } from "@/lib/services/jobs";
 import { getProfile, profileReady } from "@/lib/services/profile";
 import { followUpMessage } from "@/lib/tailor/follow-up";
 
-export const metadata: Metadata = { title: "Match" };
+export const metadata: Metadata = { title: "Fit" };
 
 /** Status is spelled out in words as well as colour, so it doesn't depend on seeing the colour. */
 const STATUS_COPY = {
@@ -27,14 +31,19 @@ const STATUS_COPY = {
   missing: { label: "Not in your CV", cls: "text-danger", mark: "✕" },
 } as const;
 
-export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) {
+/**
+ * The Fit tab: the instant keyword check, or the full analysis once it's built and still matches your CV and the job.
+ * Only one of the two shows, so there is never more than one score on screen.
+ */
+export default async function FitTab({ params }: PageProps<"/app/jobs/[id]">) {
   const user = await requireUser();
   const { id } = await params;
-  const [job, profile] = await Promise.all([ownedJob(user.id, id), getProfile(user.id)]);
+  const [job, profile, planRow] = await Promise.all([ownedJob(user.id, id), getProfile(user.id), getCareerPlan(user.id, id)]);
   if (!job) notFound();
   const ready = profileReady(profile);
   // Scored live, so edits to the profile show up straight away. It's plain code and fast.
   const match = ready && jobHasCriteria(job.post) ? scoreMatch(profile, job.post) : null;
+  const planCurrent = !!planRow && !!match && planRow.plan.fingerprint === careerFingerprint({ profile: profile!, post: job.post, postText: job.postText });
   const due = job.status === "applied" && job.followUpOn && job.followUpOn <= today();
   const nudge = followUpMessage({ name: profile?.name || user.name, title: job.post.title, company: job.post.company, appliedOn: job.appliedOn });
   const nudgeText = `${nudge.subject}\n\n${nudge.body}`;
@@ -44,15 +53,18 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
-      <div className="min-w-0 space-y-10">
-        {ready && jobHasCriteria(job.post) && <section className="space-y-3 rounded-lg border border-border bg-surface p-5"><h2 className="text-base font-semibold">Go beyond the keyword check</h2><p className="text-sm text-muted">Map required and preferred skills, qualifications, experience and responsibilities to CV evidence. Review company sources and prepare the most important gaps.</p><ButtonLink href={`/app/jobs/${job.id}/plan`} size="sm">Build your application plan</ButtonLink></section>}
+      <div className="min-w-0 space-y-8">
         {!jobHasCriteria(job.post) ? <JobDescriptionEditor jobId={job.id} /> : !match ? (
           <EmptyState title="Add your CV to see how well you match" action={<ButtonLink href="/app/profile">Add your CV</ButtonLink>}>
             The match check compares this post with what’s in your CV, so it needs one to start from.
           </EmptyState>
         ) : (
           <>
-            <section className="flex flex-wrap items-end gap-x-10 gap-y-4 border-b border-border pb-8">
+            {planCurrent ? (
+              <PlanView jobId={job.id} row={planRow!} />
+            ) : (
+              <>
+            <section className="flex flex-wrap items-end gap-x-8 gap-y-4 border-b border-border pb-6">
               <div>
                 <p className="font-mono text-5xl font-medium leading-none tabular-nums tracking-tight" data-testid="match-score">
                   {match.score}
@@ -65,23 +77,22 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
                 </div>
               </div>
               <div className="min-w-0 flex-1 basis-64">
-                <p className="text-xs text-muted">Initial keyword guide · not a hiring probability</p><p className="t-title">{scoreLabel(match.score)}</p>
+                <p className="t-title" title="A keyword guide, not a hiring probability">{scoreLabel(match.score)}</p>
                 <p className="mt-1 text-sm text-muted">
-                  {missing > 0 ? `${missing} mapped must-have${missing === 1 ? "" : "s"} not in your CV. ` : "No missing keywords found in this initial check. Verify qualifications, duration and eligibility in the application plan. "}
-                  {listed > 0 ? `${listed} only appear${listed === 1 ? "s" : ""} in your skills list, which is weaker than showing where you used ${listed === 1 ? "it" : "them"}.` : ""}
+                  {[missing > 0 ? `${missing} must-have${missing === 1 ? "" : "s"} missing` : "No must-haves missing", listed > 0 ? `${listed} only in your skills list` : ""].filter(Boolean).join(" · ")}
                 </p>
               </div>
               <ButtonLink href={`/app/jobs/${job.id}/cv`}>Tailor my CV</ButtonLink>
             </section>
 
             <section>
-              <h2 className="mb-3 text-base font-semibold">What they ask for</h2>
+              <h2 className="mb-2 text-sm font-semibold">What they ask for</h2>
               {match.requirements.length === 0 ? (
                 <p className="text-sm text-muted">We couldn’t find a clear list of requirements in this post. The highlighted words below are what we matched on.</p>
               ) : (
                 <ol className="divide-y divide-border border-y border-border">
                   {match.requirements.map((r, i) => (
-                    <li key={i} className="grid gap-1 py-3 sm:grid-cols-[minmax(0,1fr)_12rem] sm:gap-4">
+                    <li key={i} className="grid gap-1 py-2.5 sm:grid-cols-[minmax(0,1fr)_10rem] sm:gap-4">
                       <div className="min-w-0">
                         <p className="text-sm">
                           {r.text}
@@ -105,13 +116,27 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
               )}
             </section>
 
-            <section>
-              <h2 className="mb-1 text-base font-semibold">The post</h2>
-              <p className="mb-3 text-[13px] text-muted">
+            {planRow && (
+              <p role="alert" className="rounded-md bg-warning-soft px-4 py-2.5 text-sm text-warning">
+                Your CV or the job changed since the full analysis. Refresh it below.
+              </p>
+            )}
+            <PlanBuilder jobId={job.id} exists={!!planRow} companyUrl={planRow?.plan.company.sources[0]?.url} />
+              </>
+            )}
+
+            <details className="group rounded-md border border-border bg-surface">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
+                Show the full post
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-faint transition-transform duration-150 group-open:rotate-90">
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </summary>
+              <p className="border-t border-border px-4 pt-3 text-[13px] text-muted">
                 <span className="hl-shown">Highlighted</span>: you show it. <span className="hl-listed">Dotted</span>: only in your skills list. <span className="hl-missing">Red wave</span>: not
                 in your CV.
               </p>
-              <div className="max-h-[36rem] overflow-y-auto whitespace-pre-line rounded-md border border-border bg-surface p-4 text-sm leading-relaxed sm:p-5">
+              <div className="max-h-[28rem] overflow-y-auto whitespace-pre-line px-4 pb-4 pt-3 text-sm leading-relaxed">
                 {highlight(job.postText, match.keywords).map((s, i) =>
                   s.mark === "shown" ? (
                     <mark key={i} className="hl-shown">
@@ -130,12 +155,12 @@ export default async function MatchTab({ params }: PageProps<"/app/jobs/[id]">) 
                   ),
                 )}
               </div>
-            </section>
+            </details>
           </>
         )}
       </div>
 
-      <aside className="space-y-8 lg:border-l lg:border-border lg:pl-8">
+      <aside className="space-y-6 lg:border-l lg:border-border lg:pl-8">
         {due && (
           <section className="space-y-2 rounded-md border border-accent/30 bg-accent-soft p-4">
             <Eyebrow>Follow up</Eyebrow>

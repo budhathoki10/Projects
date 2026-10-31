@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { m, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useRef, type PointerEvent, type ReactNode } from "react";
 import { useMounted } from "./use-mounted";
 
@@ -37,8 +37,8 @@ export function Parallax({ children, distance = 26, className = "" }: { children
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], [distance, -distance]);
   return (
-    <motion.div ref={ref} style={on ? { y } : undefined} className={className}>
+    <m.div ref={ref} style={on ? { y } : undefined} className={className}>
       {children}
-    </motion.div>
+    </m.div>
   );
 }

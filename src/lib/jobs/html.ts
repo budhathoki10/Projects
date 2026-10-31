@@ -12,8 +12,26 @@ export function decodeEntities(s: string): string {
   });
 }
 
-/** Readable text from HTML, keeping list items and paragraphs on their own lines. */
+/** Tags that only ever appear in job text when HTML leaked in (escaped or not). */
+const TAG = /<\/?(?:li|ul|ol|p|br|div|span|strong|b|em|i|u|h[1-6]|section|article|table|tr|td)\b[^>]*>/i;
+const ESCAPED_TAG = /&lt;\/?(?:li|ul|ol|p|br|div|span|strong|b|em|h[1-6])\b/i;
+
+/** True when text carries HTML markup (real tags, or tags escaped as &lt;li&gt;). */
+export function looksLikeHtml(s: string): boolean {
+  return TAG.test(s) || ESCAPED_TAG.test(s);
+}
+
+/**
+ * Readable text from HTML, keeping list items and paragraphs on their own lines.
+ * Job boards often embed the description as escaped HTML (&lt;li&gt;), which only becomes tags once the entities are
+ * decoded, so a result that still contains markup gets one more pass.
+ */
 export function htmlToText(html: string): string {
+  const once = convert(html);
+  return TAG.test(once) ? convert(once) : once;
+}
+
+function convert(html: string): string {
   return decodeEntities(
     html
       .replace(/<(script|style|noscript|svg|head|nav|footer|header|form)[\s\S]*?<\/\1>/gi, " ")
@@ -82,4 +100,22 @@ export function jobPostingFromHtml(html: string): string | null {
       .trim();
   }
   return null;
+}
+
+/** One line of plain text: for fields that should never span lines (a requirement, a title). */
+function plainLine(s: string): string {
+  return htmlToText(s).replace(/\n•\s*/g, " · ").replace(/^•\s*/, "").replace(/\s*\n\s*/g, " ").trim();
+}
+
+/**
+ * Strips leaked HTML from every string inside a saved job or plan, so records written before the reader was fixed
+ * still read cleanly. Multi-line strings keep their line breaks; everything else becomes one line.
+ */
+export function stripHtmlDeep<T>(value: T): T {
+  if (typeof value === "string") return (looksLikeHtml(value) ? (value.includes("\n") ? htmlToText(value) : plainLine(value)) : value) as T;
+  if (Array.isArray(value)) return value.map(stripHtmlDeep) as T;
+  if (value && typeof value === "object" && !(value instanceof Date)) {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, stripHtmlDeep(v)])) as T;
+  }
+  return value;
 }

@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { webUrl } from "@/lib/cv/links";
 import type { Profile } from "@/lib/model/types";
 import { fontStack } from "@/lib/templates/fonts";
 import { hasSidebar, PAGE_MM, SECTION_LABELS, type SectionId, type TemplateSpec } from "@/lib/templates/spec";
@@ -52,7 +53,7 @@ function Heading({ id, children }: { id: SectionId; children: ReactNode }) {
   );
 }
 
-function Entry({ title, sub, place, when, children }: { title: string; sub?: string; place?: string; when: string; children?: ReactNode }) {
+function Entry({ title, sub, place, when, children }: { title: string; sub?: ReactNode; place?: string; when: string; children?: ReactNode }) {
   return (
     <div className="cv-entry">
       {when && <p className="cv-when">{when}</p>}
@@ -112,7 +113,7 @@ function Section({ id, cv, spec }: { id: SectionId; cv: Profile; spec: TemplateS
         ));
       case "projects":
         return cv.projects.map((p) => (
-          <Entry key={p.id} title={p.name} sub={p.link} when="">
+          <Entry key={p.id} title={p.name} sub={p.link ? <CvLink value={p.link} /> : undefined} when="">
             <Bullets items={p.bullets} />
           </Entry>
         ));
@@ -144,10 +145,26 @@ function Contact({ cv }: { cv: Profile }) {
   return (
     <ul className="cv-contact">
       {items.map((c, i) => (
-        <li key={i}>{breakable(c)}</li>
+        <li key={i}>
+          <CvLink value={c} />
+        </li>
       ))}
     </ul>
   );
+}
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * An email or web address, as a real link (clickable in the saved PDF too), shown short: "linkedin.com/in/asha", not
+ * "https://www.linkedin.com/in/asha/". Anything else stays plain text.
+ */
+function CvLink({ value }: { value: string }) {
+  if (EMAIL.test(value)) return <a href={`mailto:${value}`}>{breakable(value)}</a>;
+  const url = webUrl(value);
+  if (!url) return <>{breakable(value)}</>;
+  const shown = url.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "");
+  return <a href={url}>{breakable(shown)}</a>;
 }
 
 /** Lets long emails and links wrap at "@" and "/" in narrow columns instead of mid-word. */

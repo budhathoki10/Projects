@@ -15,22 +15,24 @@ test("a candidate without Python gets an honest plan, records practice and compl
   await expect(page).toHaveURL(/\/app\/jobs\/[0-9a-f-]{36}$/);
   const jobUrl = page.url();
   const jobId = jobUrl.split("/").pop()!;
-  await page.getByRole("link", { name: "Application plan", exact: true }).click();
   await page.getByLabel("Company website", { exact: false }).fill(`${FIXTURE_BASE}/company`);
-  await page.getByRole("button", { name: "Build application plan", exact: true }).click();
-  const fit = page.getByRole("region", { name: "Evidence-based fit" });
-  await expect(fit).toContainText("not a hiring probability");
-  await expect(page.getByRole("heading", { name: "Every requirement and its evidence" })).toBeVisible();
+  await page.getByRole("button", { name: "Build full analysis", exact: true }).click();
+  // The summary row: the score explains (on hover) that it is evidence coverage, not a hiring probability.
+  const fit = page.getByRole("region", { name: "Fit" });
+  await expect(fit.locator("[title*='not a hiring probability']")).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: /^Requirements/ })).toBeVisible();
   const requirement = page.getByRole("listitem").filter({ has: page.locator("p", { hasText: "Python programming and automated testing." }) }).first();
-  await expect(requirement).toContainText("Not evidenced in CV");
-  await expect(page.getByRole("heading", { name: "Company research", exact: true })).toBeVisible();
+  await expect(requirement).toContainText("Missing");
+  // Company research is folded away until opened.
+  await page.getByText("Company research", { exact: true }).click();
   await expect(page.getByText("Our engineering team builds Python services", { exact: false })).toBeVisible();
 
-  const learning = page.getByRole("article").filter({ has: page.getByRole("heading", { name: "Python", exact: true }) }).first();
+  const learning = page.locator("section[aria-labelledby=learning-roadmap] li").filter({ hasText: "Python" }).first();
+  await learning.locator("summary").click();
   await learning.getByLabel("What you completed and checked").fill("I wrote a small practice tracker, checked invalid input and documented the limitations. This was practice, not professional experience.");
   await learning.getByLabel("I completed these practice checks").check();
   await learning.getByRole("button", { name: "Save learning progress" }).click();
-  await expect(learning.getByText("Progress saved.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Progress saved" })).toBeVisible();
   const savedProfile = await withDb(async (db) => {
     const user = await db.collection("users").findOne({ email });
     return db.collection("profiles").findOne({ _id: user!._id });
@@ -96,7 +98,7 @@ test("a candidate without Python gets an honest plan, records practice and compl
     await db.collection("profiles").updateOne({ _id: user!._id }, { $set: { "data.summary": "Updated source facts." } });
   });
   await page.goto(`${jobUrl}/plan`);
-  await expect(page.getByRole("alert").filter({ hasText: "Your CV or job description has changed" })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "Your CV or the job changed" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save learning progress" })).toHaveCount(0);
   expect(errors).toEqual([]);
   expect(jobId).toMatch(/^[0-9a-f-]{36}$/);

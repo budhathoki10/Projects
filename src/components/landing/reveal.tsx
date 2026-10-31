@@ -1,12 +1,12 @@
 "use client";
 
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { m, useInView, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /** The one easing curve the whole site uses for entrances: fast out, long soft settle, no overshoot. */
 export const EASE = [0.16, 1, 0.3, 1] as const;
 
-const TAGS = { div: motion.div, li: motion.li, p: motion.p, section: motion.section, tr: motion.tr } as const;
+const TAGS = { div: m.div, li: m.li, p: m.p, section: m.section, tr: m.tr } as const;
 
 /**
  * Fades and lifts its content in once, as it scrolls into view.

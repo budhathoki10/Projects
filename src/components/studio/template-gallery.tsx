@@ -82,6 +82,9 @@ function AppActions({ t, mode }: { t: BuiltinTemplate; mode: Extract<Mode, { kin
         <Link href={`/app/studio/edit/${t.id}`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-strong-border bg-surface px-4 text-sm font-medium hover:border-strong-border">
           <Icon name="sparkle" size={16} /> Customise
         </Link>
+        <a href={`/app/print/profile?template=${t.id}`} target="_blank" rel="noopener" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-strong-border bg-surface px-4 text-sm font-medium hover:bg-surface-hover">
+          <Icon name="download" size={16} /> Download PDF
+        </a>
       </div>
       <ActionToast state={defState} />
       {mode.jobs.length > 0 && (

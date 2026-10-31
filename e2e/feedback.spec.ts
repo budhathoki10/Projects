@@ -13,7 +13,8 @@ test("login feedback is actionable, keeps input and clears when the candidate ed
   await expect(message).toContainText("Incorrect email or password.");
   const after = await loginButton.boundingBox();
   expect(Math.abs(after!.y - before!.y), "The login button stays in place when an error appears").toBeLessThanOrEqual(1);
-  await expect(message.getByRole("link", { name: "Reset password" })).toHaveAttribute("href", "/forgot-password");
+  // The form already links to "Forgot password?", so the toast carries no reset action.
+  await expect(message.getByRole("link")).toHaveCount(0);
   // Both fields are marked, so it is clear what to change.
   await expect(page.getByLabel("Email", { exact: true })).toHaveAttribute("aria-invalid", "true");
   await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute("aria-invalid", "true");
@@ -36,8 +37,6 @@ test("login feedback is actionable, keeps input and clears when the candidate ed
   await expect(page.getByLabel("Password", { exact: true })).not.toHaveAttribute("aria-invalid", "true");
   await page.getByRole("button", { name: "Log in", exact: true }).click();
   await expect(message).toContainText("Unable to log in");
-  await message.getByRole("link", { name: "Reset password" }).click();
-  await expect(page).toHaveURL(/\/forgot-password$/);
 });
 
 test("signup validation identifies the field and preserves the remaining details", async ({ page }) => {

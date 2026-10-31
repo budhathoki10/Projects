@@ -1,5 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { stripHtmlDeep } from "@/lib/jobs/html";
 import { collections, fromDoc } from "@/db/mongo";
 import type { Job } from "@/db/types";
 import { addDays } from "@/lib/dates";
@@ -26,12 +27,12 @@ export async function createJob(userId: string, input: { url: string | null; pos
 export async function ownedJob(userId: string, jobId: string): Promise<Job | null> {
   if (!/^[0-9a-f-]{36}$/i.test(jobId)) return null;
   const doc = await (await collections()).jobs.findOne({ _id: jobId, userId: String(userId) });
-  return doc ? fromDoc<Job>(doc) : null;
+  return doc ? stripHtmlDeep(fromDoc<Job>(doc)) : null;
 }
 
 export async function listJobs(userId: string): Promise<Job[]> {
   const docs = await (await collections()).jobs.find({ userId: String(userId) }).sort({ updatedAt: -1 }).toArray();
-  return docs.map((d) => fromDoc<Job>(d));
+  return docs.map((d) => stripHtmlDeep(fromDoc<Job>(d)));
 }
 
 export async function setMatch(jobId: string, match: Match) {
@@ -87,7 +88,7 @@ const dueFilter = (userId: string, day: string) => ({ userId: String(userId), st
 
 export async function dueFollowUps(userId: string, day = today()): Promise<Job[]> {
   const docs = await (await collections()).jobs.find(dueFilter(userId, day)).sort({ followUpOn: 1 }).toArray();
-  return docs.map((d) => fromDoc<Job>(d));
+  return docs.map((d) => stripHtmlDeep(fromDoc<Job>(d)));
 }
 
 export async function dueFollowUpCount(userId: string, day = today()) {
@@ -122,6 +123,6 @@ export async function allDueFollowUps(day = today()) {
   const byId = new Map(owners.map((u) => [u._id, u]));
   return docs.flatMap((d) => {
     const owner = byId.get(d.userId);
-    return owner ? [{ job: fromDoc<Job>(d), email: owner.email, name: owner.name }] : [];
+    return owner ? [{ job: stripHtmlDeep(fromDoc<Job>(d)), email: owner.email, name: owner.name }] : [];
   });
 }

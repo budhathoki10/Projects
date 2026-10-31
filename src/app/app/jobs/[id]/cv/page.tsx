@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { tailorCv } from "@/app/actions/tailor";
 import { AiActionButton } from "@/components/ai-action-button";
 import { CvWorkbench } from "@/components/cv-workbench";
+import { GapCloser } from "@/components/gap-closer";
 import type { LookOption } from "@/components/studio/job-cv-look";
 import { ButtonLink, EmptyState } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
@@ -15,6 +16,7 @@ import { listMyTemplates, resolveCvStyle } from "@/lib/services/templates";
 import { recommendTemplates } from "@/lib/templates/registry";
 import { usageThisMonth } from "@/lib/services/usage";
 import { jobHasCriteria } from "@/lib/jobs/quality";
+import { scoreMatch } from "@/lib/match/score";
 
 export const metadata: Metadata = { title: "Tailored CV" };
 
@@ -34,20 +36,30 @@ export default async function CvTab({ params }: PageProps<"/app/jobs/[id]/cv">) 
   }
   const limits = limitsFor(user);
   const left = Math.max(0, limits.tailor - usage.tailor);
+  // What the post asks for that your CV doesn't mention at all. Scored live, so an addition disappears at once.
+  const gaps = scoreMatch(profile, job.post)
+    .keywords.filter((k) => k.where === "missing")
+    .map((k) => k.keyword)
+    .slice(0, 8);
+  const roles = profile.experience.map((e) => ({ id: e.id, label: [e.title, e.company].filter(Boolean).join(", ") || "Untitled role" }));
+  const gapCloser = <GapCloser gaps={gaps} roles={roles} />;
 
   if (!doc || doc.sourceNeedsReview) {
-    return (
+    const intro = (
       <div className="max-w-2xl space-y-4 rounded-md border border-border bg-surface p-5 sm:p-6">
         <h2 className="t-title">Tailor your CV for this job</h2>
-        {doc?.sourceNeedsReview && <p className="rounded-md bg-warning-soft p-3 text-sm text-warning">Your source CV has been corrected. Generate fresh suggestions so this application uses the updated facts.</p>}
-        <p className="text-sm text-muted">
-          We’ll suggest rewording and reordering so your most relevant experience comes first, in the words this employer uses. You check each change. Anything that isn’t already in your CV is blocked, so
-          nothing made up can slip through.
-        </p>
+        {doc?.sourceNeedsReview && <p className="rounded-md bg-warning-soft p-3 text-sm text-warning">Your CV changed. Suggest changes again so this job uses the latest version.</p>}
+        <p className="text-sm text-muted">We reword and reorder what’s already in your CV to match this job. You approve each change, and nothing new can be added.</p>
         <AiActionButton action={tailorCv} jobId={job.id} label="Suggest changes" pendingLabel="Reading the job and your CV…" />
         <p className="text-xs text-muted">
           {left} of {limits.tailor} this month{limits.tailor < 100 ? " on the free plan" : ""}.
         </p>
+      </div>
+    );
+    return (
+      <div className="max-w-2xl space-y-6">
+        {intro}
+        {gapCloser}
       </div>
     );
   }
@@ -69,6 +81,7 @@ export default async function CvTab({ params }: PageProps<"/app/jobs/[id]/cv">) 
       look={{ photoUrl: photo, current: { id: style.template.id, name: style.template.name }, spec: style.spec, fitted: Boolean(style.fit), fitKey: JSON.stringify(style.fit), options }}
       action={
         <>
+          <div className="mb-5 empty:hidden">{gapCloser}</div>
           <AiActionButton action={tailorCv} jobId={job.id} label="Suggest again" pendingLabel="Working…" variant="secondary" />
           <p className="mt-1.5 text-xs text-muted">Uses one of your {left} tailorings left this month. Replaces the suggestions above.</p>
         </>

@@ -14,6 +14,7 @@ import { getProfile, saveProfile } from "@/lib/services/profile";
 import { discardCvImport, getCvImport, stageCvImport } from "@/lib/services/cv-imports";
 import { refundAllowance, spendAllowance } from "@/lib/services/usage";
 import { cleanText, localId } from "@/lib/text";
+import { withSkillEvidence } from "@/lib/cv/skill-evidence";
 
 export type ProfileState = { error?: string; success?: string; preview?: Profile; method?: "ai" | "basic"; source?: string; importId?: string; originalType?: string } | undefined;
 
@@ -95,6 +96,27 @@ export async function updateProfile(_: ProfileState, formData: FormData): Promis
   await rescoreAll(user.id, profile);
   revalidatePath("/app", "layout");
   return { success: "Profile saved. Your job matches have been updated. New application documents will use this version." };
+}
+
+/**
+ * "I have this": the candidate confirms a skill the job asks for and, optionally, says where they used it
+ * in their own words. Only what they typed is saved: the skill joins the skills list, and the sentence
+ * becomes a bullet under the role they picked. Nothing is generated, so nothing can be invented.
+ */
+export async function addSkillEvidence(_: ProfileState, formData: FormData): Promise<ProfileState> {
+  const user = await requireUser();
+  const profile = await getProfile(user.id);
+  if (!profile) return { error: "Add your CV first." };
+  const result = withSkillEvidence(profile, {
+    skill: cleanText(String(formData.get("skill") ?? "")),
+    experienceId: String(formData.get("experienceId") ?? ""),
+    sentence: cleanText(String(formData.get("sentence") ?? "")),
+  });
+  if ("error" in result) return { error: result.error };
+  await saveProfile(user.id, result.profile);
+  await rescoreAll(user.id, result.profile);
+  revalidatePath("/app", "layout");
+  return { success: "Added to your CV. Suggest changes again to use it." };
 }
 
 /** Download everything we hold in the profile, as JSON. */

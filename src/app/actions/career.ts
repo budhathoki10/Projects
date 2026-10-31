@@ -43,14 +43,14 @@ export async function prepareApplicationPlan(_: CareerState, form: FormData): Pr
   } catch { await refundAllowance(user.id, "tailor"); return { error: "The application plan could not be saved. Your allowance was returned; try again." }; }
   revalidatePath(`/app/jobs/${job.id}`, "layout");
   revalidatePath("/app/strategy");
-  return { success: "Application plan ready. Check the evidence, then work through the highest-priority gaps." };
+  return { success: "Full analysis ready. Start with the required gaps." };
 }
 
 export async function saveLearningTask(_: CareerState, form: FormData): Promise<CareerState> {
   const { user, job, context } = await contextFor(form);
   const row = await getCareerPlan(user.id, job.id);
   const fingerprint = careerFingerprint(context);
-  if (!row || row.plan.fingerprint !== fingerprint) return { error: "Your CV or job changed. Refresh the application plan before recording new progress." };
+  if (!row || row.plan.fingerprint !== fingerprint) return { error: "Your CV or the job changed. Refresh the analysis before recording progress." };
   const taskId = String(form.get("taskId") ?? "");
   const notes = String(form.get("notes") ?? "").trim().slice(0, 2000);
   const url = String(form.get("evidenceUrl") ?? "").trim();
@@ -59,7 +59,7 @@ export async function saveLearningTask(_: CareerState, form: FormData): Promise<
   const completed = form.get("completed") === "on";
   if (completed && !evidenceUrl && notes.length < 40) return { error: "Record a work sample URL or at least a short explanation of what you completed and checked." };
   if (!(await updateLearningProgress(user.id, job.id, taskId, fingerprint, { completed, notes, evidenceUrl: evidenceUrl || "", updatedAt: new Date().toISOString() }))) return { error: "This learning task changed. Reload the plan." };
-  revalidatePath(`/app/jobs/${job.id}/plan`);
+  revalidatePath(`/app/jobs/${job.id}`);
   revalidatePath("/app/strategy");
   return { success: "Progress saved. Your CV and evidence score are unchanged; add only demonstrated work to your profile after reviewing it." };
 }
@@ -67,7 +67,7 @@ export async function saveLearningTask(_: CareerState, form: FormData): Promise<
 export async function startMockInterview(_: CareerState, form: FormData): Promise<CareerState> {
   const { user, job, context } = await contextFor(form);
   const row = await getCareerPlan(user.id, job.id);
-  if (!row || row.plan.fingerprint !== careerFingerprint(context)) return { error: "Prepare or refresh this job’s application plan first." };
+  if (!row || row.plan.fingerprint !== careerFingerprint(context)) return { error: "Build or refresh this job’s full analysis first." };
   const sessions = await listMockSessions(user.id, job.id);
   const active = sessions.find((s) => s.status === "active");
   if (active) redirect(`/app/jobs/${job.id}/interview/mock/${active._id}`);

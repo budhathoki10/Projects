@@ -64,7 +64,8 @@ test("confirming email, resetting a password and exporting data work", async ({ 
   await page.getByLabel("New password", { exact: true }).fill("a-brand-new-password");
   await page.getByLabel("Type it again").fill("a-brand-new-password");
   await page.getByRole("button", { name: "Save new password" }).click();
-  await expect(page).toHaveURL(/\/app\?reset=1/);
+  await expect(page.getByRole("status").filter({ hasText: "Password changed" })).toBeVisible();
+  await expect(page).toHaveURL(/\/app$/);
 });
 
 test("the daily reminder job needs its secret", async ({ request }) => {
@@ -82,7 +83,7 @@ test("deleting the account removes everything", async ({ page }) => {
   await page.goto("/app/settings");
   await page.getByLabel("Confirm with your password").fill(PASSWORD);
   await page.getByRole("button", { name: "Delete my account" }).click();
-  await expect(page.getByText("Your account and everything in it has been deleted.")).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Account deleted" })).toBeVisible();
   const left = await withDb(async (db) => ({
     jobs: await db.collection("jobs").countDocuments({ userId: id }),
     profiles: await db.collection("profiles").countDocuments({ _id: id as never }),

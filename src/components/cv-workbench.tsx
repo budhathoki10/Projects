@@ -205,39 +205,42 @@ export function CvWorkbench({
               Download PDF
             </a>
             <Link href={`/app/print/cv/${jobId}?layout=${layout}&content=${content}`} target="_blank" className={buttonClass("ghost", "sm")}>Print preview</Link>
-            {layout === "redesigned" && (docx ? (
+            {layout === "redesigned" && docx && (
               <a href={`/app/download/cv/${jobId}?layout=redesigned&content=${content}`} className={buttonClass("secondary", "sm")}>
                 Download Word
               </a>
-            ) : (
-              <Link href="/app/billing" className="text-[13px] text-muted underline underline-offset-4 hover:text-foreground">
-                Word download is included in paid plans
-              </Link>
-            ))}
+            )}
           </div>
         </div>
-        <div role="group" aria-label="CV format" className="flex flex-wrap gap-1 rounded-lg border border-border bg-surface p-1">
-          <button type="button" disabled={!hasOriginalPdf} aria-pressed={layout === "original"} onClick={() => setLayout("original")} className={`rounded-md px-3 py-2 text-sm font-medium disabled:opacity-50 ${layout === "original" ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-hover"}`}>Original PDF</button>
-          <button type="button" aria-pressed={layout === "redesigned"} onClick={() => setLayout("redesigned")} className={`rounded-md px-3 py-2 text-sm font-medium ${layout === "redesigned" ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-hover"}`}>Tailored version</button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div role="group" aria-label="CV format" className="flex gap-0.5 rounded-lg border border-border bg-surface p-0.5">
+            <button type="button" disabled={!hasOriginalPdf} aria-pressed={layout === "original"} onClick={() => setLayout("original")} title={hasOriginalPdf ? "Your uploaded PDF, exactly as it is" : "Upload your original PDF on Your CV to use it here"} className={`rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 disabled:opacity-50 ${layout === "original" ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-hover hover:text-foreground"}`}>
+              Original PDF
+            </button>
+            <button type="button" aria-pressed={layout === "redesigned"} onClick={() => setLayout("redesigned")} title="Your CV with the changes you accepted, in the look below" className={`rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 disabled:opacity-50 ${layout === "redesigned" ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-hover hover:text-foreground"}`}>
+              Tailored version
+            </button>
+          </div>
+          {layout === "redesigned" && (
+            <div role="group" aria-label="CV content length" className="flex gap-0.5 rounded-lg border border-border bg-surface p-0.5">
+              {(["focused", "full"] as const).map((mode) => (
+                <button key={mode} type="button" aria-pressed={content === mode} onClick={() => setContent(mode)} title={mode === "focused" ? "Shorter: key project highlights and a short summary" : "Everything saved in your CV"} className={`rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 disabled:opacity-50 ${content === mode ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-hover hover:text-foreground"}`}>
+                  {mode === "focused" ? "Focused" : "Full"}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        {!hasOriginalPdf && <p className="text-sm text-muted"><Link href="/app/profile" className="underline underline-offset-4">Upload your original PDF</Link> to keep its exact formatting. Previous imports saved extracted text only.</p>}
         {layout === "original" ? (
           <div className="space-y-3 rounded-lg border border-border bg-surface p-4">
-            <p className="text-sm font-medium">Your uploaded PDF, unchanged</p>
-            <p className="text-sm leading-relaxed text-muted">Fonts, spacing, section order, all pages and embedded links are preserved. Accepted AI suggestions apply only to the separate tailored version.</p>
-            {original && !original.matchesProfile && <p className="text-sm text-warning">You have edited your profile since this upload. Those edits are not in the original PDF.</p>}
-            <p className="break-all text-xs text-muted">{original?.name}</p>
-            <Link href="/app/download/original?inline=1" target="_blank" className={buttonClass("secondary", "sm")}>Open original PDF</Link>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="min-w-0 truncate text-sm font-medium" title={original?.name}>{original?.name ?? "Your uploaded PDF"}</p>
+              <Link href="/app/download/original?inline=1" target="_blank" className={buttonClass("secondary", "sm")}>Open</Link>
+            </div>
+            {original && !original.matchesProfile && <p className="text-xs text-warning">You edited your CV after this upload; those edits aren&apos;t in this PDF.</p>}
             <OriginalPdfPreview />
           </div>
         ) : (<>
-        <div className="space-y-2 rounded-lg border border-border bg-surface p-3">
-          <div role="group" aria-label="CV content length" className="flex gap-1">{(["focused", "full"] as const).map((mode) => <button key={mode} type="button" aria-pressed={content === mode} onClick={() => setContent(mode)} className={`rounded-md px-3 py-2 text-xs font-medium ${content === mode ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-hover"}`}>{mode === "focused" ? "Focused CV" : "Full source"}</button>)}</div>
-          <p className="text-xs leading-relaxed text-muted">{content === "focused" ? "Selected project highlights and a shorter summary, copied from your profile. Review the preview before downloading. Your complete source remains saved." : "Includes every saved description and highlight. Long source descriptions will make a longer document."}</p>
-        </div>
-        <p className="text-xs leading-relaxed text-muted">
-          Print preview and the Word file follow the look chosen below. The PDF download uses a simple, single-column layout.
-        </p>
         <JobCvLook
           key={`${look.current.id}-${look.fitKey}`}
           jobId={jobId}
