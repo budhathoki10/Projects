@@ -14,7 +14,6 @@ import { ButtonLink, EmptyState, Eyebrow, inputClass } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 import { careerFingerprint } from "@/lib/career/evidence";
 import { formatDay } from "@/lib/dates";
-import { highlight } from "@/lib/match/highlight";
 import { scoreLabel, scoreMatch } from "@/lib/match/score";
 import { today } from "@/lib/plans";
 import { getCareerPlan } from "@/lib/services/career";
@@ -88,7 +87,7 @@ export default async function FitTab({ params }: PageProps<"/app/jobs/[id]">) {
             <section>
               <h2 className="mb-2 text-sm font-semibold">What they ask for</h2>
               {match.requirements.length === 0 ? (
-                <p className="text-sm text-muted">We couldn’t find a clear list of requirements in this post. The highlighted words below are what we matched on.</p>
+                <p className="text-sm text-muted">We couldn’t find a clear list of requirements in this post.</p>
               ) : (
                 <ol className="divide-y divide-border border-y border-border">
                   {match.requirements.map((r, i) => (
@@ -125,37 +124,6 @@ export default async function FitTab({ params }: PageProps<"/app/jobs/[id]">) {
               </>
             )}
 
-            <details className="group rounded-md border border-border bg-surface">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
-                Show the full post
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-faint transition-transform duration-150 group-open:rotate-90">
-                  <path d="M9 6l6 6-6 6" />
-                </svg>
-              </summary>
-              <p className="border-t border-border px-4 pt-3 text-[13px] text-muted">
-                <span className="hl-shown">Highlighted</span>: you show it. <span className="hl-listed">Dotted</span>: only in your skills list. <span className="hl-missing">Red wave</span>: not
-                in your CV.
-              </p>
-              <div className="max-h-[28rem] overflow-y-auto whitespace-pre-line px-4 pb-4 pt-3 text-sm leading-relaxed">
-                {highlight(job.postText, match.keywords).map((s, i) =>
-                  s.mark === "shown" ? (
-                    <mark key={i} className="hl-shown">
-                      {s.text}
-                    </mark>
-                  ) : s.mark === "listed" ? (
-                    <span key={i} className="hl-listed">
-                      {s.text}
-                    </span>
-                  ) : s.mark === "missing" ? (
-                    <span key={i} className="hl-missing">
-                      {s.text}
-                    </span>
-                  ) : (
-                    <span key={i}>{s.text}</span>
-                  ),
-                )}
-              </div>
-            </details>
           </>
         )}
       </div>

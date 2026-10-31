@@ -9,6 +9,7 @@ export const ProfileSchema = z.object({
   skills: z.array(str(200)).max(200),
   projects: z.array(z.object({ id: str(60), name: str(300), link: str(1000), bullets: z.array(str(5000)).max(60) })).max(40),
   certifications: z.array(str(3000)).max(60), languages: z.array(str(200)).max(30),
+  linkLabels: z.record(z.string().max(1000), str(40)).refine((r) => Object.keys(r).length <= 60).optional(),
 });
 
 export function profileError(issues: z.core.$ZodIssue[]): string {

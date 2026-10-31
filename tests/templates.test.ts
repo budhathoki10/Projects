@@ -124,6 +124,30 @@ describe("the 100 built-in templates", () => {
     expect(out).toContain('href="https://linkedin.com/in/ashagurung"');
   });
 
+  it("link the same words as the original CV: LinkedIn, GitHub, Live, Certificate", () => {
+    const cv: Profile = {
+      ...SAMPLE_PROFILE,
+      links: ["https://www.linkedin.com/in/maya/", "https://github.com/maya"],
+      projects: [{ id: "p1", name: "FeedWatch", link: "https://feedwatch.example.com/", bullets: ["Finds leads."] }],
+      certifications: ["Backend Developer – Herald College Certificate (https://cert.example.com/a.jpg)"],
+      linkLabels: {
+        "https://www.linkedin.com/in/maya/": "LinkedIn",
+        "https://github.com/maya": "GitHub",
+        "https://feedwatch.example.com/": "Live",
+        "https://cert.example.com/a.jpg": "Certificate",
+      },
+    };
+    for (const t of BUILTIN_TEMPLATES) {
+      const out = html(t.spec, cv);
+      expect(out, t.id).toContain('<a href="https://www.linkedin.com/in/maya/">LinkedIn</a>');
+      expect(out, t.id).toContain('<a href="https://github.com/maya">GitHub</a>');
+      expect(out, t.id).toContain('<a href="https://feedwatch.example.com/">Live</a>');
+      expect(out, t.id).toContain('<a href="https://cert.example.com/a.jpg">Certificate</a>');
+      // The raw addresses never show as text.
+      expect(text(out), t.id).not.toMatch(/linkedin\.com|cert\.example\.com|feedwatch\.example\.com/);
+    }
+  });
+
   it("keep the reading order: name, then work, then the side panel", () => {
     for (const t of BUILTIN_TEMPLATES) {
       const out = text(html(t.spec, SAMPLE_PROFILE));

@@ -20,7 +20,7 @@ import {
   WidthType,
   type ParagraphChild,
 } from "docx";
-import { linkLabel, webUrl } from "@/lib/cv/links";
+import { labelFor, linkLabel, linkParts, webUrl } from "@/lib/cv/links";
 import type { Profile } from "@/lib/model/types";
 import { FONTS } from "@/lib/templates/fonts";
 import { DEFAULT_SPEC, hasSidebar, PAGE_MM, SECTION_LABELS, type SectionId, type TemplateSpec } from "@/lib/templates/spec";
@@ -40,6 +40,8 @@ const BULLET_CHAR = { disc: "•", square: "▪", dash: "–", arrow: "›", non
 
 type Ctx = {
   spec: TemplateSpec;
+  /** The words links sat on in the original CV (see Profile.linkLabels). */
+  labels?: Record<string, string>;
   size: number; // half-points
   ink: string;
   muted: string;
@@ -60,7 +62,13 @@ function run(ctx: Ctx, text: string, opts: { bold?: boolean; size?: number; colo
 function linkRun(ctx: Ctx, value: string, opts: { size?: number } = {}): ParagraphChild {
   const url = webUrl(value);
   if (!url) return run(ctx, value, opts);
-  return new ExternalHyperlink({ link: url, children: [run(ctx, linkLabel(url), { ...opts, color: ctx.accent })] });
+  return new ExternalHyperlink({ link: url, children: [run(ctx, labelFor(url, ctx.labels) ?? linkLabel(url), { ...opts, color: ctx.accent })] });
+}
+
+/** Text with addresses in brackets, with each address as a link on its word (see linkParts). */
+function linkedRuns(ctx: Ctx, text: string): ParagraphChild[] {
+  if (!text.includes("://")) return [run(ctx, text)];
+  return linkParts(text, ctx.labels).map((p) => (p.url ? new ExternalHyperlink({ link: p.url, children: [run(ctx, p.text, { color: ctx.accent })] }) : run(ctx, p.text)));
 }
 
 /** Contact details on one line, separated by dots, with the links clickable. */
@@ -104,18 +112,18 @@ function heading(ctx: Ctx, id: SectionId | "contact", index: number) {
 }
 
 function bullet(ctx: Ctx, text: string, indentLeft = 0) {
-  if (ctx.spec.bullets === "none") return new Paragraph({ spacing: { after: 30 }, indent: indentLeft ? { left: indentLeft } : undefined, children: [run(ctx, text)] });
+  if (ctx.spec.bullets === "none") return new Paragraph({ spacing: { after: 30 }, indent: indentLeft ? { left: indentLeft } : undefined, children: linkedRuns(ctx, text) });
   return new Paragraph({
     numbering: { reference: "cv-bullets", level: 0 },
     spacing: { after: 30 },
     indent: indentLeft ? { left: indentLeft + 300, hanging: 220 } : undefined,
-    children: [run(ctx, text)],
+    children: linkedRuns(ctx, text),
   });
 }
 
 function entry(ctx: Ctx, title: string, sub: string, place: string, when: string, bullets: string[], subIsLink = false) {
   const left: ParagraphChild[] = [run(ctx, title, { bold: true })];
-  if (sub) left.push(...(subIsLink ? [run(ctx, title ? ", " : ""), linkRun(ctx, sub)] : [run(ctx, `${title ? ", " : ""}${sub}`)]));
+  if (sub) left.push(...(subIsLink ? [run(ctx, title ? (labelFor(sub, ctx.labels) ? "  " : ", ") : ""), linkRun(ctx, sub)] : [run(ctx, `${title ? ", " : ""}${sub}`)]));
   if (place) left.push(run(ctx, `, ${place}`, { color: ctx.muted }));
   const small = Math.round(ctx.size * 0.92);
   const style = ctx.onPanel ? "under" : ctx.spec.dateStyle;
@@ -255,6 +263,7 @@ export function cvDocument(cv: Profile, spec: TemplateSpec = DEFAULT_SPEC, photo
     accent: hex(spec.palette.accent),
     onPanel: false,
     width: usable,
+    labels: cv.linkLabels,
   };
   const sections = cv.sectionOrder ? [...spec.sections].sort((a, b) => cv.sectionOrder!.indexOf(a.id) - cv.sectionOrder!.indexOf(b.id)) : spec.sections;
   const shown = sections.filter((s) => s.visible && hasContent(cv, s.id));

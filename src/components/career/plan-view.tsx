@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { LearningTaskForm, PlanBuilder } from "@/components/career/plan-controls";
-import { CopyButton } from "@/components/copy-button";
+import { LearningTaskForm, RefreshAnalysis } from "@/components/career/plan-controls";
 import { Badge, ButtonLink } from "@/components/ui";
 import type { getCareerPlan } from "@/lib/services/career";
 
@@ -182,22 +181,9 @@ export function PlanView({ jobId, row }: { jobId: string; row: PlanRow }) {
         )}
       </section>
 
-      {/* Everything else, folded away. */}
+      {/* Everything else, folded away, and only when there is something in it. */}
+      {(plan.expectations.length > 0 || plan.company.facts.length > 0) && (
       <section aria-label="More about this application" className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
-        {plan.applicationAnswers.length > 0 && (
-          <More title="Application answers" count={plan.applicationAnswers.length}>
-            <p className="text-xs text-muted">Starting drafts. Fill every bracket with your own facts before sending.</p>
-            {plan.applicationAnswers.map((a) => (
-              <article key={a.question} className="rounded-md border border-border p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-[13px] font-medium">{a.question}</h3>
-                  <CopyButton text={a.answer} />
-                </div>
-                <p className="mt-2 whitespace-pre-line text-[13px] leading-5 text-muted">{a.answer}</p>
-              </article>
-            ))}
-          </More>
-        )}
         {plan.expectations.length > 0 && (
           <More title="Expectations to clarify" count={plan.expectations.length}>
             {plan.expectations.map((e, i) => (
@@ -208,12 +194,10 @@ export function PlanView({ jobId, row }: { jobId: string; row: PlanRow }) {
             ))}
           </More>
         )}
-        <More title="Company research" count={plan.company.facts.length}>
-          {plan.company.warning && <p className="text-xs text-muted">{plan.company.warning}</p>}
-          {plan.company.facts.length === 0 ? (
-            <p className="text-[13px] text-muted">No company sources yet. Add the company website under “Refresh the analysis”.</p>
-          ) : (
-            plan.company.facts.map((fact, index) => {
+        {plan.company.facts.length > 0 && (
+          <More title="Company research" count={plan.company.facts.length}>
+            {plan.company.warning && <p className="text-xs text-muted">{plan.company.warning}</p>}
+            {plan.company.facts.map((fact, index) => {
               const source = plan.company.sources.find((s) => s.id === fact.sourceId);
               return (
                 <blockquote key={index} className="border-l-2 border-border pl-3 text-[13px] leading-5">
@@ -225,20 +209,17 @@ export function PlanView({ jobId, row }: { jobId: string; row: PlanRow }) {
                   )}
                 </blockquote>
               );
-            })
-          )}
-        </More>
-        <More title="Refresh the analysis">
-          <PlanBuilder jobId={jobId} exists companyUrl={plan.company.sources[0]?.url} bare />
-        </More>
+            })}
+          </More>
+        )}
       </section>
+      )}
 
-      <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-        <span>{plan.method === "ai" ? "AI-assisted, quotes checked against the post" : "Basic analysis: AI was unavailable"}</span>
+      <RefreshAnalysis jobId={jobId} companyUrl={plan.company.sources[0]?.url} note={plan.method === "ai" ? "AI-assisted, quotes checked against the post" : "Basic analysis: AI was unavailable"}>
         <Link href="/app/strategy" className="text-accent hover:underline">
           Compare saved jobs
         </Link>
-      </p>
+      </RefreshAnalysis>
     </div>
   );
 }
