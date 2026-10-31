@@ -38,6 +38,8 @@ export type Profile = {
   projects: Project[];
   certifications: string[];
   languages: string[];
+  /** The word each link sat on in the original CV ("LinkedIn", "Live"), keyed by address. Display only. */
+  linkLabels?: Record<string, string>;
   /** Presentation of an accepted tailored version; never new candidate facts. */
   sectionOrder?: CvSection[];
 };

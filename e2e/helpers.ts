@@ -28,8 +28,6 @@ export async function setUpJobSeeker(page: Page, address: string) {
   await signUp(page, address);
   await page.locator("input[type=file][name=file]").setInputFiles(CV_PDF);
   await page.getByRole("button", { name: "Read my CV" }).click();
-  await expect(page.getByLabel("CV import review")).toBeVisible({ timeout: 20_000 });
-  await page.getByRole("button", { name: "Use this CV" }).click();
   await expect(page.getByRole("status").filter({ hasText: "CV imported" })).toBeVisible({ timeout: 20_000 });
 }
 

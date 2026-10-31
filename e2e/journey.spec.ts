@@ -42,9 +42,7 @@ test("a job seeker goes from CV to application to follow-up, without anything in
   const reqs = page.getByRole("heading", { name: "What they ask for" }).locator("xpath=..");
   await expect(reqs.getByRole("listitem").filter({ hasText: "Experience with Zendesk and HubSpot" })).toContainText("Not in your CV");
   await expect(reqs.getByRole("listitem").filter({ hasText: "Experience reducing churn" })).toContainText("You show this");
-  await page.getByText("Show the full post", { exact: true }).click();
-  await expect(page.locator("mark.hl-shown", { hasText: "Zendesk" }).first()).toBeVisible();
-  await expect(page.locator(".hl-missing", { hasText: "HubSpot" }).first()).toBeVisible();
+  await expect(page.getByText("Show the full post")).toHaveCount(0);
 
   // 4. Tailored CV: suggestions, preview, PDF.
   await page.getByRole("link", { name: "Tailor my CV" }).click();

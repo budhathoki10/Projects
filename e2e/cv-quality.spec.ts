@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { FIXTURE_BASE } from "../playwright.config";
-import { addFixtureJob, setUpJobSeeker, signUp, withDb } from "./helpers";
+import { addFixtureJob, setUpJobSeeker, signUp } from "./helpers";
 
 test("short answers get useful coaching and email drafts use the current letter", async ({ page }) => {
   const email = `coaching-${Date.now()}@example.com`;
@@ -68,7 +68,7 @@ test("short answers get useful coaching and email drafts use the current letter"
   await page.screenshot({ path: "tmp/cv-audit/ui/cover-mobile.png", fullPage: true });
 });
 
-test("the supplied original CV survives upload, review, editing and PDF download", async ({ page }) => {
+test("the supplied original CV survives upload, editing and PDF download", async ({ page }) => {
   mkdirSync("tmp/cv-audit/ui", { recursive: true });
   const file = process.env.CV_QUALITY_FILE;
   test.skip(!file, "Set CV_QUALITY_FILE to verify the supplied original CV locally.");
@@ -76,11 +76,6 @@ test("the supplied original CV survives upload, review, editing and PDF download
   await signUp(page, email);
   await page.locator("input[type=file][name=file]").setInputFiles(file!);
   await page.getByRole("button", { name: "Read my CV" }).click();
-  const review = page.getByLabel("CV import review");
-  await expect(review).toBeVisible();
-  const user = await withDb((db) => db.collection("users").findOne({ email }));
-  expect(await withDb((db) => db.collection("profiles").findOne({ _id: user!._id }))).toBeNull();
-  await review.getByRole("button", { name: "Use this CV" }).click();
   await expect(page.getByLabel("Full name")).toHaveValue("KUSHAL BUDHATHOKI");
   await expect(page.getByLabel("Links", { exact: true })).toHaveValue(/linkedin\.com.*\ngithub|linkedin\.com[\s\S]*github\.com/);
   await page.screenshot({ path: "tmp/cv-audit/ui/profile-desktop.png", fullPage: true });

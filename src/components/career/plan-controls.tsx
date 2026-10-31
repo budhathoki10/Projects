@@ -1,7 +1,7 @@
 "use client";
 
 import { ActionToast } from "@/components/toast";
-import { useActionState } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import { prepareApplicationPlan, saveLearningTask } from "@/app/actions/career";
 import type { LearningProgress } from "@/lib/career/types";
 import { Button, inputClass } from "../ui";
@@ -43,6 +43,27 @@ export function PlanBuilder({ jobId, exists, companyUrl = "", bare = false }: { 
       </div>
       <ActionToast state={state} />
     </form>
+  );
+}
+
+/** The analysis footer: what made it, plus a small "Refresh" link that opens the builder in place. */
+export function RefreshAnalysis({ jobId, companyUrl, note, children }: { jobId: string; companyUrl?: string; note: string; children?: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-3">
+      <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+        <span>{note}</span>
+        {children}
+        <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="rounded text-accent hover:underline focus-visible:outline-2 focus-visible:outline-accent/40 max-sm:min-h-10">
+          {open ? "Cancel refresh" : "Refresh"}
+        </button>
+      </p>
+      {open && (
+        <div className="rounded-lg border border-border bg-surface px-4 py-3">
+          <PlanBuilder jobId={jobId} exists companyUrl={companyUrl} bare />
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { webUrl } from "@/lib/cv/links";
+import { labelFor, linkParts, shortUrl, webUrl } from "@/lib/cv/links";
 import type { Profile } from "@/lib/model/types";
 import { fontStack } from "@/lib/templates/fonts";
 import { hasSidebar, PAGE_MM, SECTION_LABELS, type SectionId, type TemplateSpec } from "@/lib/templates/spec";
@@ -53,14 +53,14 @@ function Heading({ id, children }: { id: SectionId; children: ReactNode }) {
   );
 }
 
-function Entry({ title, sub, place, when, children }: { title: string; sub?: ReactNode; place?: string; when: string; children?: ReactNode }) {
+function Entry({ title, sub, subJoin = ", ", place, when, children }: { title: string; sub?: ReactNode; subJoin?: string; place?: string; when: string; children?: ReactNode }) {
   return (
     <div className="cv-entry">
       {when && <p className="cv-when">{when}</p>}
       <div className="cv-entry-body">
         <p className="cv-entry-title">
           <strong>{title}</strong>
-          {sub && <span className="cv-sub">{title ? ", " : ""}{sub}</span>}
+          {sub && <span className="cv-sub">{title ? subJoin : ""}{sub}</span>}
           {place && <span className="cv-place">, {place}</span>}
         </p>
         {children}
@@ -69,12 +69,14 @@ function Entry({ title, sub, place, when, children }: { title: string; sub?: Rea
   );
 }
 
-function Bullets({ items }: { items: string[] }) {
+function Bullets({ items, labels }: { items: string[]; labels?: Record<string, string> }) {
   if (!items.length) return null;
   return (
     <ul className="cv-list">
       {items.map((b, i) => (
-        <li key={i}>{b}</li>
+        <li key={i}>
+          <LinkedText text={b} labels={labels} />
+        </li>
       ))}
     </ul>
   );
@@ -113,7 +115,7 @@ function Section({ id, cv, spec }: { id: SectionId; cv: Profile; spec: TemplateS
         ));
       case "projects":
         return cv.projects.map((p) => (
-          <Entry key={p.id} title={p.name} sub={p.link ? <CvLink value={p.link} /> : undefined} when="">
+          <Entry key={p.id} title={p.name} sub={p.link ? <CvLink value={p.link} labels={cv.linkLabels} /> : undefined} subJoin={labelFor(p.link, cv.linkLabels) ? " " : ", "} when="">
             <Bullets items={p.bullets} />
           </Entry>
         ));
@@ -128,7 +130,7 @@ function Section({ id, cv, spec }: { id: SectionId; cv: Profile; spec: TemplateS
       case "languages":
         return <Words items={cv.languages} style={spec.skillsStyle === "tags" ? "tags" : "inline"} />;
       case "certifications":
-        return <Bullets items={cv.certifications} />;
+        return <Bullets items={cv.certifications} labels={cv.linkLabels} />;
     }
   })();
   return (
@@ -146,7 +148,7 @@ function Contact({ cv }: { cv: Profile }) {
     <ul className="cv-contact">
       {items.map((c, i) => (
         <li key={i}>
-          <CvLink value={c} />
+          <CvLink value={c} labels={cv.linkLabels} />
         </li>
       ))}
     </ul>
@@ -156,15 +158,32 @@ function Contact({ cv }: { cv: Profile }) {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * An email or web address, as a real link (clickable in the saved PDF too), shown short: "linkedin.com/in/asha", not
- * "https://www.linkedin.com/in/asha/". Anything else stays plain text.
+ * An email or web address, as a real link (clickable in the saved PDF too). It shows the word the link sat on in the
+ * original CV ("LinkedIn", "Live") when one was recorded, otherwise the short address ("linkedin.com/in/asha").
  */
-function CvLink({ value }: { value: string }) {
+function CvLink({ value, labels }: { value: string; labels?: Record<string, string> }) {
   if (EMAIL.test(value)) return <a href={`mailto:${value}`}>{breakable(value)}</a>;
   const url = webUrl(value);
   if (!url) return <>{breakable(value)}</>;
-  const shown = url.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "");
-  return <a href={url}>{breakable(shown)}</a>;
+  return <a href={url}>{labelFor(url, labels) ?? breakable(shortUrl(url))}</a>;
+}
+
+/** Text with addresses in brackets ("… Certificate (https://…)"), shown with those addresses as links. */
+function LinkedText({ text, labels }: { text: string; labels?: Record<string, string> }) {
+  if (!text.includes("://")) return <>{text}</>;
+  return (
+    <>
+      {linkParts(text, labels).map((part, i) =>
+        part.url ? (
+          <a key={i} href={part.url}>
+            {part.text}
+          </a>
+        ) : (
+          <span key={i}>{part.text}</span>
+        ),
+      )}
+    </>
+  );
 }
 
 /** Lets long emails and links wrap at "@" and "/" in narrow columns instead of mid-word. */

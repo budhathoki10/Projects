@@ -3,15 +3,23 @@ import mammoth from "mammoth";
 import { getDocumentProxy } from "unpdf";
 import { cleanText } from "@/lib/text";
 import { decodeEntities, htmlToText } from "@/lib/jobs/html";
-import { webUrl } from "./links";
+import { cleanLinkLabel, webUrl } from "./links";
 
 export const MAX_CV_BYTES = 5 * 1024 * 1024;
 
 export class UnreadableFileError extends Error {}
 
-/** Plain text from an uploaded CV. Scanned PDFs (images only) have no text to read. */
-export async function cvFileToText(file: { name: string; type: string; bytes: Uint8Array }): Promise<string> {
+/**
+ * Plain text from an uploaded CV, plus the word each link sat on ("LinkedIn", "Live"), keyed by address,
+ * so a redesigned CV can link the same words. Scanned PDFs (images only) have no text to read.
+ */
+export async function readCvFile(file: { name: string; type: string; bytes: Uint8Array }): Promise<{ text: string; linkLabels: Record<string, string> }> {
   const name = file.name.toLowerCase();
+  const linkLabels: Record<string, string> = {};
+  const remember = (url: string, raw: string) => {
+    const label = cleanLinkLabel(raw);
+    if (label && !linkLabels[url]) linkLabels[url] = label;
+  };
   let text = "";
   try {
     if (file.type === "application/pdf" || name.endsWith(".pdf")) {
@@ -29,12 +37,16 @@ export async function cvFileToText(file: { name: string; type: string; bytes: Ui
             const [x1, y1, x2, y2] = annotation.rect;
             // Link annotations are separate from visible text. Attach the URI to its actual
             // label/line, so three different "Live" labels keep the correct project URL.
-            let last = -1;
+            const under: number[] = [];
             items.forEach((item, i) => {
               const x = item.transform[4], y = item.transform[5];
-              if (item.str.trim() && x < x2 + 2 && x + item.width > x1 - 2 && y >= y1 - 3 && y <= y2 + 3) last = i;
+              if (item.str.trim() && x < x2 + 2 && x + item.width > x1 - 2 && y >= y1 - 3 && y <= y2 + 3) under.push(i);
             });
-            if (last >= 0) linksAt.set(last, [...(linksAt.get(last) ?? []), url]);
+            const last = under.at(-1) ?? -1;
+            if (last >= 0) {
+              linksAt.set(last, [...(linksAt.get(last) ?? []), url]);
+              remember(url, under.map((i) => items[i].str).join(""));
+            }
           }
           pages.push(items.map((item, i) => `${item.str}${(linksAt.get(i) ?? []).map((url) => ` (${url})`).join("")}${item.hasEOL ? "\n" : ""}`).join(""));
         }
@@ -46,6 +58,7 @@ export async function cvFileToText(file: { name: string; type: string; bytes: Ui
       const html = (await mammoth.convertToHtml({ buffer: Buffer.from(file.bytes) })).value;
       text = htmlToText(html.replace(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (_, href: string, label: string) => {
         const url = webUrl(decodeEntities(href));
+        if (url) remember(url, htmlToText(label));
         return `${label}${url ? ` (${url})` : ""}`;
       }));
     } else if (name.endsWith(".txt") || name.endsWith(".md") || file.type.startsWith("text/")) {
@@ -61,5 +74,10 @@ export async function cvFileToText(file: { name: string; type: string; bytes: Ui
   if (clean.length < 80) {
     throw new UnreadableFileError("No readable CV text was found. This may be a scanned document. Upload a text-based PDF, or paste your CV text instead.");
   }
-  return clean;
+  return { text: clean, linkLabels };
+}
+
+/** Plain text from an uploaded CV. Scanned PDFs (images only) have no text to read. */
+export async function cvFileToText(file: { name: string; type: string; bytes: Uint8Array }): Promise<string> {
+  return (await readCvFile(file)).text;
 }
