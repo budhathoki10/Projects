@@ -42,6 +42,7 @@ test("a job seeker goes from CV to application to follow-up, without anything in
   const reqs = page.getByRole("heading", { name: "What they ask for" }).locator("xpath=..");
   await expect(reqs.getByRole("listitem").filter({ hasText: "Experience with Zendesk and HubSpot" })).toContainText("Not in your CV");
   await expect(reqs.getByRole("listitem").filter({ hasText: "Experience reducing churn" })).toContainText("You show this");
+  await page.getByText("Show the full post", { exact: true }).click();
   await expect(page.locator("mark.hl-shown", { hasText: "Zendesk" }).first()).toBeVisible();
   await expect(page.locator(".hl-missing", { hasText: "HubSpot" }).first()).toBeVisible();
 
@@ -69,7 +70,9 @@ test("a job seeker goes from CV to application to follow-up, without anything in
   await pdfPage.close();
 
   // Word is part of the pass.
-  await expect(page.getByRole("link", { name: "Word download is included in paid plans" })).toBeVisible();
+  // Free plan: no Word button, and no upsell line in its place.
+  await expect(page.getByRole("link", { name: "Download Word" })).toHaveCount(0);
+  await expect(page.getByText("Word download is included in paid plans")).toHaveCount(0);
 
   // 5. Cover letter: drafted from the CV, edited, saved, nothing unsupported.
   await page.getByRole("link", { name: "Cover letter" }).click();
@@ -130,7 +133,7 @@ test("the free allowance runs out, and a Freemius subscription lifts it and unlo
     await expect(page.getByText(/suggested change/)).toBeVisible();
   }
   await page.getByRole("button", { name: "Suggest again" }).click();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("You’ve reached your monthly allowance");
+  await expect(page.getByRole("alert").filter({ hasText: "You’ve reached your monthly allowance" })).toBeVisible();
 
   // Subscribing: checkout opens, then Freemius (not the browser) confirms the purchase by webhook.
   await page.goto("/app/billing");
@@ -164,12 +167,12 @@ test("a pasted job works when the site blocks reading", async ({ page }) => {
   await page.goto("/app/jobs");
   await page.getByLabel("Link to the job post").fill(`${FIXTURE_BASE}/jobs/login-wall`);
   await page.getByRole("button", { name: "Add job" }).click();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("This website restricts access");
+  await expect(page.getByRole("alert").filter({ hasText: "This website restricts access" })).toBeVisible();
   await page.getByLabel("Job description").fill(
     "Staff Nurse\nCompany: City Hospital\nLocation: Lalitpur\n\nRequirements\n- BLS certificate\n- 2 years of ward experience\n- Patient Care\n- Excellent written communication in English",
   );
   await page.getByRole("button", { name: "Add job" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Staff Nurse");
-  await expect(page.getByText("3 mapped must-haves not in your CV.")).toBeVisible();
+  await expect(page.getByText(/3 must-haves missing/)).toBeVisible();
   await expect(page.getByRole("listitem").filter({ hasText: "BLS certificate" })).toContainText("Not in your CV");
 });

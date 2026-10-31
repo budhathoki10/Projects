@@ -23,7 +23,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
           title={profile ? "Your CV" : "Start with your CV"}
           eyebrow={welcome === "1" ? "Step 1 of 2" : "Your application foundation"}
           description="Your experience, in one place. Review each section once, then use it for every application."
-          actions={ready && !profileNeedsRepair(profile) ? <a href="/app/download/profile" className={buttonClass("secondary")}>{row?.original?.type === "application/pdf" ? "Download original PDF" : "Download CV"}</a> : undefined}
+          actions={ready && !profileNeedsRepair(profile) ? <a href={row?.original?.type === "application/pdf" ? "/app/download/profile" : "/app/print/profile"} target={row?.original?.type === "application/pdf" ? undefined : "_blank"} className={buttonClass("secondary")}>{row?.original?.type === "application/pdf" ? "Download original PDF" : "Download CV"}</a> : undefined}
         />
         <FlashToast
           message={imported === "ai" ? "CV imported. Review each section below before using it in your applications." : imported ? "CV imported with the basic reader. AI extraction was unavailable, so check each section for missing details or misplaced content." : null}

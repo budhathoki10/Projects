@@ -31,7 +31,7 @@ function useAuthFeedback(serverAction: (state: AuthState, data: FormData) => Pro
       tone: "error",
       message: state.title ?? "That didn't work",
       description: credentials ? "Incorrect email or password." : state.error,
-      action: state.recovery ? { label: credentials ? "Reset password" : state.recovery.label, href: state.recovery.href } : undefined,
+      action: state.recovery ? { label: state.recovery.label, href: state.recovery.href } : undefined,
     });
   }, [state, result, toast]);
   const dismissError = () => {

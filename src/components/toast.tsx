@@ -193,9 +193,7 @@ export function FlashToast({ message, tone = "success", clear }: { message: stri
 function split(text: string, title?: string): Pick<ToastInput, "message" | "description"> {
   if (title) return { message: title, description: text };
   const parts = text.match(/^(.+?[.!?])\s+([\s\S]+)$/);
-  // Titles read like labels: no closing full stop (questions and exclamations keep theirs).
-  const label = (t: string) => t.replace(/\.$/, "");
-  return parts ? { message: label(parts[1]), description: parts[2] } : { message: label(text) };
+  return parts ? { message: parts[1], description: parts[2] } : { message: text };
 }
 
 type Outcome = { error?: string | null; success?: string | null } | null | undefined;

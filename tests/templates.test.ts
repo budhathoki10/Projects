@@ -110,8 +110,18 @@ describe("the 100 built-in templates", () => {
     const expected = facts(cv);
     for (const t of BUILTIN_TEMPLATES) {
       const out = text(html(t.spec, cv, "/app/photo"));
-      for (const fact of expected) expect(out, `${t.id} is missing "${fact}"`).toContain(fact);
+      for (const fact of expected) {
+        // Web addresses are links now, shown short ("linkedin.com/in/x"); the full address is the link target.
+        const shown = /^https?:\/\//i.test(fact) ? fact.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "") : fact;
+        expect(out, `${t.id} is missing "${shown}"`).toContain(shown);
+      }
     }
+  });
+
+  it("make email and web addresses real links, so they work in the saved PDF", () => {
+    const out = html(BUILTIN_TEMPLATES[0].spec, real, undefined);
+    expect(out).toContain('href="mailto:asha.gurung@example.com"');
+    expect(out).toContain('href="https://linkedin.com/in/ashagurung"');
   });
 
   it("keep the reading order: name, then work, then the side panel", () => {

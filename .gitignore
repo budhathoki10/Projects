@@ -50,3 +50,7 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# Local editor settings and test-run screenshots
+/.vscode/
+/tmp/

@@ -495,6 +495,17 @@ export function TemplateEditor({
           <button type="button" onClick={redo} disabled={!canRedo} className={toolbarButton} aria-label="Redo">
             <Icon name="redo" size={15} />
           </button>
+          {!usingSample && (
+            <a
+              href={`/app/print/profile?spec=${encodeURIComponent(toBase64Url(JSON.stringify(spec)))}`}
+              target="_blank"
+              rel="noopener"
+              className={`${toolbarButton} gap-1.5`}
+              title="Your CV in this design, as a PDF"
+            >
+              <Icon name="download" size={15} /> Download PDF
+            </a>
+          )}
           {ownTemplate ? (
             <>
               <button type="submit" disabled={saving} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent px-4 text-[13px] font-medium text-on-accent hover:bg-accent-hover disabled:opacity-60">
@@ -572,4 +583,12 @@ export function TemplateEditor({
       </div>
     </div>
   );
+}
+
+/** URL-safe base64 of UTF-8 text (the editor's design, for the print page). */
+function toBase64Url(text: string) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }

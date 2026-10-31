@@ -30,7 +30,7 @@ export async function setUpJobSeeker(page: Page, address: string) {
   await page.getByRole("button", { name: "Read my CV" }).click();
   await expect(page.getByLabel("CV import review")).toBeVisible({ timeout: 20_000 });
   await page.getByRole("button", { name: "Use this CV" }).click();
-  await expect(page.getByText("CV imported.")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("status").filter({ hasText: "CV imported" })).toBeVisible({ timeout: 20_000 });
 }
 
 /** Add the fixture job by link and land on its Match tab. */

@@ -65,6 +65,13 @@
   font-size: 1.2em;
   color: var(--cv-accent);
 }
+.cv a {
+  color: inherit;
+  text-decoration: none;
+}
+.cv a:hover {
+  text-decoration: underline;
+}
 .cv-contact {
   flex: 1 1 100%;
   display: flex;

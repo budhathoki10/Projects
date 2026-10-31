@@ -64,7 +64,7 @@ export async function signup(_: AuthState, formData: FormData): Promise<AuthStat
 
   // The unique email index decides, so two sign-ups at once can't both win.
   const user = await createUser({ name, email, passwordHash: await hashPassword(password) });
-  if (!user) return { title: "This email is already registered", error: "Log in to your existing account, or reset your password if you need access.", recovery: { href: "/login", label: "Go to log in" } };
+  if (!user) return { title: "This email is already registered", error: "Log in to your existing account, or reset your password if you need access." };
   await createSession(user.id);
   try {
     await sendVerificationEmail(user);
@@ -79,7 +79,7 @@ export async function login(_: AuthState, formData: FormData): Promise<AuthState
   const parsed = LoginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return validationFeedback(parsed.error.issues);
   const user = await findUserByEmail(parsed.data.email);
-  if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) return { title: "Unable to log in", error: "The email and password don’t match. Check your details and try again.", recovery: { href: "/forgot-password", label: "Reset your password" } };
+  if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) return { title: "Unable to log in", error: "The email and password don’t match. Check your details and try again." };
   await createSession(user.id);
   redirect(safeRedirectPath(formData.get("next"), "/app"));
 }

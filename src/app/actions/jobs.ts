@@ -11,6 +11,7 @@ import { today } from "@/lib/plans";
 import { createJob, deleteJob, isStatus, ownedJob, setFollowUp, setNotes, setStatus } from "@/lib/services/jobs";
 import { getProfile, profileReady } from "@/lib/services/profile";
 import { overLimit } from "@/lib/services/rate-limit";
+import { htmlToText, looksLikeHtml } from "@/lib/jobs/html";
 import { cleanText } from "@/lib/text";
 import { isJobSearchPage, jobHasCriteria } from "@/lib/jobs/quality";
 import { collections } from "@/db/mongo";
@@ -30,7 +31,7 @@ export async function addJob(_: JobState, formData: FormData): Promise<JobState>
   // Reading a post fetches a web page and may call the AI model, so adding jobs has a ceiling of its own.
   if (await overLimit(`add-job:${user.id}`, 40, 60 * 60_000)) return { error: "You’ve reached the hourly limit for adding jobs. Please try again in an hour." };
   const url = String(formData.get("url") ?? "").trim().slice(0, 2000);
-  let text = cleanText(String(formData.get("text") ?? ""));
+  let text = cleanText(pastedText(formData));
   let source: string | null = null;
 
   if (!text && url) {
@@ -59,7 +60,7 @@ export async function addJob(_: JobState, formData: FormData): Promise<JobState>
 
 export async function updateJobDescription(_: JobState, formData: FormData): Promise<JobState> {
   const { user, job } = await requireJob(formData.get("jobId"));
-  const text = cleanText(String(formData.get("text") ?? "")).slice(0, 40_000);
+  const text = cleanText(pastedText(formData)).slice(0, 40_000);
   if (text.length < 120 || isJobSearchPage(text)) return { error: "Paste the description for this specific vacancy, including its responsibilities and requirements." };
   if (await overLimit(`add-job:${user.id}`, 40, 60 * 60_000)) return { error: "You’ve reached the hourly limit for reading job descriptions. Please try again in an hour." };
   const { post } = await extractJob(text);
@@ -105,4 +106,10 @@ export async function removeJob(formData: FormData) {
   await deleteJob(user.id, job.id);
   revalidatePath("/app", "layout");
   redirect("/app/jobs");
+}
+
+/** A pasted post can be the page's HTML (copied from source, or from a board that pastes markup): read it as text. */
+function pastedText(formData: FormData): string {
+  const raw = String(formData.get("text") ?? "");
+  return looksLikeHtml(raw) ? htmlToText(raw) : raw;
 }
