@@ -1,0 +1,182 @@
+import { FlashToast } from "@/components/toast";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { followUpAction } from "@/app/actions/jobs";
+import { SubmitButton } from "@/components/submit-button";
+import { ButtonLink, PageHeader } from "@/components/ui";
+import { JobMatchBadge } from "@/components/job-match-badge";
+import { jobHasCriteria } from "@/lib/jobs/quality";
+import { profileNeedsRepair } from "@/lib/cv/quality";
+import { requireUser } from "@/lib/auth/session";
+import { formatDay } from "@/lib/dates";
+import { limitsFor } from "@/lib/plans";
+import { dueFollowUps, isStatus, listJobs, progress, STATUS_LABELS } from "@/lib/services/jobs";
+import { getProfile, profileReady } from "@/lib/services/profile";
+import { usageThisMonth } from "@/lib/services/usage";
+
+export const metadata: Metadata = { title: "Today" };
+
+function Meter({ label, used, max }: { label: string; used: number; max: number }) {
+  const pct = Math.min(100, Math.round((used / Math.max(1, max)) * 100));
+  return (
+    <div className="min-w-0">
+      <div className="flex items-baseline justify-between gap-2 text-[13px]">
+        <span className="truncate text-muted">{label}</span>
+        <span className="tabular-nums">
+          {used} of {max}
+        </span>
+      </div>
+      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-sunken" role="img" aria-label={`${used} of ${max} ${label} used this month`}>
+        <div className={`h-full rounded-full ${pct >= 100 ? "bg-danger" : "bg-accent"}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+export default async function Today({ searchParams }: PageProps<"/app">) {
+  const user = await requireUser();
+  const [{ verified, reset }, profile, jobs, due, stats, usage] = await Promise.all([
+    searchParams,
+    getProfile(user.id),
+    listJobs(user.id),
+    dueFollowUps(user.id),
+    progress(user.id),
+    usageThisMonth(user.id),
+  ]);
+  const ready = profileReady(profile);
+  const limits = limitsFor(user);
+  const recent = jobs.filter((j) => j.status === "saved" || j.status === "interview").slice(0, 6);
+  const givenName = (profile?.name || user.name).split(" ")[0];
+  const firstName = givenName === givenName.toUpperCase() ? givenName.charAt(0) + givenName.slice(1).toLowerCase() : givenName;
+  const incomplete = jobs.find((j) => !jobHasCriteria(j.post));
+  const interview = recent.find((j) => j.status === "interview");
+  const nextJob = incomplete || due[0] || interview || recent[0];
+  const repair = !!profile && profileNeedsRepair(profile);
+  const next = repair || !ready ? { label: repair ? "Repair your CV import" : "Start with your experience", note: repair ? "Some descriptions were saved as project titles. Re-import your original CV to recover the structure and links." : "Upload your original CV, review what we read, and build a reliable foundation for every application.", href: "/app/profile", action: repair ? "Review your CV" : "Add your CV" }
+    : incomplete ? { label: "Finish reading this vacancy", note: `${incomplete.post.title} needs its actual job description before a match score or tailored application will be useful.`, href: `/app/jobs/${incomplete.id}#job-description`, action: "Add the description" }
+    : due[0] ? { label: "A good time to follow up", note: `You’re waiting to hear about ${due[0].post.title}. Your follow-up message is ready to review.`, href: `/app/jobs/${due[0].id}`, action: "Review follow-up" }
+    : interview ? { label: "Get ready for the conversation", note: `Practise for ${interview.post.title} at ${interview.post.company || "your next company"}, using examples from your own CV.`, href: `/app/jobs/${interview.id}/interview`, action: "Practise interview" }
+    : nextJob ? { label: "Turn a saved role into an application", note: `Review your fit for ${nextJob.post.title}, then prepare a focused CV and letter.`, href: `/app/jobs/${nextJob.id}`, action: "Continue application" }
+    : { label: "Find a role worth applying for", note: "Your CV is ready. Save a specific vacancy to see how your experience connects to what the employer needs.", href: "/app/jobs", action: "Add a job" };
+
+  return (
+    <div className="space-y-6">
+      <FlashToast
+        message={verified === "1" ? "Email confirmed." : reset === "1" ? "Password changed. You're logged in." : verified === "0" ? "That link has expired or was already used. Request a new one from Settings → Email address." : null}
+        tone={verified === "0" ? "error" : "success"}
+        clear={["verified", "reset"]}
+      />
+      <PageHeader
+        eyebrow={new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+        title={`Hi ${firstName}`}
+        description="A clear next step for your job search."
+        actions={
+          ready && (
+            <><ButtonLink href="/app/strategy" variant="secondary">Application strategy</ButtonLink><ButtonLink href="/app/jobs" variant="secondary">Add a job</ButtonLink></>
+          )
+        }
+      />
+
+      <section aria-label="Your next step" className="grid overflow-hidden rounded-xl border border-accent/25 bg-surface shadow-[0_12px_32px_-22px_rgb(47_91_234/0.4)] lg:grid-cols-[minmax(0,1fr)_19rem]">
+        <div className="bg-tint p-6 sm:p-7"><p className="t-label text-accent-strong">Your next step</p><h2 className="mt-2 text-xl font-semibold tracking-tight">{next.label}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">{next.note}</p><div className="mt-5"><ButtonLink href={next.href}>{next.action} <span aria-hidden="true">→</span></ButtonLink></div></div>
+        <div className="border-t border-border bg-background p-6 lg:border-l lg:border-t-0"><p className="text-sm font-medium">Your CV foundation</p>{profile ? <><p className="mt-2 text-xs leading-relaxed text-muted">{profile.headline || "Your experience, skills and projects"}</p><dl className="mt-4 grid grid-cols-3 gap-3">{[["Roles", profile.experience.length], ["Projects", profile.projects.length], ["Skills", profile.skills.length]].map(([label, count]) => <div key={label}><dt className="text-xs text-muted">{label}</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{count}</dd></div>)}</dl><Link href="/app/profile" className="mt-5 inline-flex text-xs font-medium text-accent hover:underline">Review profile & links ↗</Link></> : <p className="mt-2 text-sm leading-relaxed text-muted">Keep your projects, experience and links together. You’ll review the extraction before anything is saved.</p>}</div>
+      </section>
+
+      {due.length > 0 && (
+        <section aria-labelledby="follow-ups" className="space-y-3">
+          <h2 id="follow-ups" className="text-base font-semibold">
+            Worth a follow-up
+          </h2>
+          <ul className="divide-y divide-border rounded-md border border-border bg-surface">
+            {due.map((j) => (
+              <li key={j.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <Link href={`/app/jobs/${j.id}`} className="block truncate font-medium hover:underline" title={j.post.title}>
+                    {j.post.title || "Untitled job"}
+                  </Link>
+                  <p className="truncate text-[13px] text-muted">
+                    {j.post.company && `${j.post.company} · `}applied {j.appliedOn ? formatDay(j.appliedOn) : ""}, no answer yet
+                  </p>
+                </div>
+                <form action={followUpAction} className="flex items-center gap-2">
+                  <input type="hidden" name="jobId" value={j.id} />
+                  <ButtonLink href={`/app/jobs/${j.id}`} size="sm">
+                    See the message
+                  </ButtonLink>
+                  <SubmitButton name="op" value="done" variant="secondary" size="sm">
+                    Done
+                  </SubmitButton>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {ready && jobs.length > 0 && (
+        <dl aria-label="This week" className="grid grid-cols-2 overflow-hidden rounded-md border border-border bg-surface md:grid-cols-4">
+          {[
+            { id: "applied-week", label: "Applied this week", value: String(stats.appliedThisWeek) },
+            { id: "waiting", label: "Waiting to hear", value: String(stats.waiting) },
+            { id: "interviews", label: "Interviews", value: String(stats.interviews) },
+            { id: "response", label: "Response rate", value: stats.responseRate === null ? "–" : `${stats.responseRate}%` },
+          ].map((s, i) => (
+            <div key={s.id} className={`px-4 py-3.5 ${i % 2 ? "border-l border-border" : ""} ${i > 1 ? "border-t border-border md:border-t-0" : ""} ${i === 2 ? "md:border-l" : ""}`}>
+              <dt className="text-[13px] text-muted">{s.label}</dt>
+              <dd data-testid={`stat-${s.id}`} className="mt-1 text-2xl font-semibold tabular-nums">
+                {s.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {recent.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-base font-semibold">In progress</h2>
+            <Link href="/app/jobs" className="text-[13px] text-muted hover:text-foreground hover:underline">
+              All jobs
+            </Link>
+          </div>
+          <ul className="divide-y divide-border rounded-md border border-border bg-surface">
+            {recent.map((j) => (
+              <li key={j.id}>
+                <Link href={`/app/jobs/${j.id}`} className="flex min-h-14 items-center gap-3 px-4 py-2 transition-colors duration-150 hover:bg-surface-hover">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium" title={j.post.title}>
+                      {j.post.title || "Untitled job"}
+                    </p>
+                    <p className="truncate text-[13px] text-muted">{j.post.company || "Company not stated"}</p>
+                  </div>
+                  <span className="hidden text-[13px] text-muted sm:inline">{isStatus(j.status) ? STATUS_LABELS[j.status] : j.status}</span>
+                  <JobMatchBadge post={j.post} match={j.match} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {ready && (
+        <section aria-labelledby="usage" className="space-y-4 rounded-xl border border-border bg-surface p-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 id="usage" className="text-base font-semibold">
+              Plan usage this month
+            </h2>
+            {limits.tailor < 100 && (
+              <Link href="/app/billing" className="text-[13px] text-accent hover:underline">
+                See paid plans
+              </Link>
+            )}
+          </div>
+          <div className="grid gap-x-8 gap-y-4 sm:grid-cols-3">
+            <Meter label="Tailored CVs" used={usage.tailor} max={limits.tailor} />
+            <Meter label="Cover letters" used={usage.cover} max={limits.cover} />
+            <Meter label="Interview sessions" used={usage.interview} max={limits.interview} />
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}

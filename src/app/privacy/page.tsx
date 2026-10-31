@@ -19,14 +19,15 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Your CV:</strong> the file or text you upload and the profile made from it: contact details, work history, education, skills and
-          anything else you include. We keep the profile, not the uploaded file.
+          anything else you include. We keep the original file so you can download it with its formatting unchanged. Files awaiting import confirmation expire after one hour.
         </li>
         <li>
           <strong>Your job hunt:</strong> job posts you add, match results, tailored CVs, cover letters, interview questions and your practice answers,
           application statuses and notes.
+          This includes application plans, learning progress and work sample links, mock interview conversations, and coaching reports.
         </li>
         <li>
-          <strong>Payments:</strong> which pass you bought and when. Card details go to Paddle and Khalti; we never receive them.
+          <strong>Payments:</strong> your subscription, when you paid and how much. Card details go to Freemius; we never receive them.
         </li>
         <li>
           <strong>Security:</strong> a session cookie that keeps you logged in. No advertising or tracking cookies.
@@ -37,19 +38,19 @@ export default function PrivacyPage() {
       <ul>
         <li>Our hosting and database providers, to run the service.</li>
         <li>
-          Anthropic, which runs the AI models that read CVs and job posts and write suggestions. Your content is sent to them only to produce your
-          results; under Anthropic&apos;s commercial terms it isn&apos;t used to train their models.
+          OpenRouter, which passes your request to the AI model that reads CVs and job posts and writes suggestions. Your content is sent only to
+          produce your results, and we ask OpenRouter to use only model providers that don&apos;t store prompts or train on them.
         </li>
         <li>Job sites you link to, which we fetch once to read the post.</li>
         <li>Resend, to send account emails and follow-up reminders.</li>
-        <li>Paddle and Khalti, to take payments.</li>
+        <li>Freemius, to take payments.</li>
       </ul>
       <p>We don&apos;t sell or share your data with employers, recruiters or advertisers.</p>
 
       <h2>How long we keep it</h2>
       <p>
         As long as your account exists. When you delete your account, your profile, jobs, documents and everything else are deleted straight away.
-        Payment records may be kept by Paddle or Khalti as their laws require.
+        Payment records may be kept by Freemius as its laws require.
       </p>
 
       <h2>Your rights</h2>

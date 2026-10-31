@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { DeleteAccountForm } from "@/components/auth-forms";
+import { DeleteAccountForm, VerifyEmailBanner } from "@/components/auth-forms";
+import { buttonClass, PageHeader } from "@/components/ui";
 import { requireUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -7,27 +8,28 @@ export const metadata: Metadata = { title: "Settings" };
 export default async function SettingsPage() {
   const user = await requireUser();
   return (
-    <div className="max-w-3xl space-y-12">
-      <div>
-        <h1 className="font-serif text-4xl font-medium tracking-tight">Settings</h1>
-        <p className="mt-1.5 text-sm text-muted">
-          {user.name} · {user.email}
-        </p>
-      </div>
-      <section className="border-t border-border pt-8">
-        <h2 className="font-serif text-xl font-medium">Your data</h2>
-        <p className="mt-1 text-sm text-muted">
-          A copy of everything you&apos;ve given us: your profile, every job, tailored CV, cover letter and interview note, as one JSON file.
-        </p>
-        <a href="/app/settings/export" className="mt-3 inline-block text-sm font-medium underline underline-offset-4">
+    <div className="max-w-3xl space-y-10">
+      <PageHeader title="Settings" description={`${user.name} · ${user.email}`} />
+      <section aria-label="Email verification" className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+        <h2 className="text-base font-semibold">Email address</h2>
+        {user.emailVerifiedAt ? <p className="mt-2 text-sm text-success">Verified · {user.email}</p> : <VerifyEmailBanner email={user.email} />}
+      </section>
+
+      <section aria-labelledby="your-data" className="space-y-3 border-t border-border pt-8">
+        <h2 id="your-data" className="text-base font-semibold">
+          Your data
+        </h2>
+        <p className="text-sm text-muted">A copy of everything you’ve given us: your profile, every job, tailored CV, cover letter and interview note, as one JSON file.</p>
+        <a href="/app/settings/export" className={buttonClass("secondary")}>
           Download my data
         </a>
       </section>
-      <section className="border-t border-border pt-8">
-        <h2 className="font-serif text-xl font-medium">Delete account</h2>
-        <div className="mt-3">
-          <DeleteAccountForm />
-        </div>
+
+      <section aria-labelledby="danger" className="space-y-3 rounded-md border border-danger/30 p-5">
+        <h2 id="danger" className="text-base font-semibold text-danger">
+          Delete account
+        </h2>
+        <DeleteAccountForm />
       </section>
     </div>
   );

@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { FIXTURE_BASE } from "../playwright.config";
-import { addFixtureJob, logIn, query, setUpJobSeeker } from "./helpers";
+import { DAY, events, sign } from "../tests/support/freemius";
+import { addDays } from "../src/lib/dates";
+import { addFixtureJob, logIn, setUpJobSeeker, withDb } from "./helpers";
 
 const email = `asha-${Date.now()}@example.com`;
 
@@ -18,14 +20,16 @@ test("a job seeker goes from CV to application to follow-up, without anything in
   await setUpJobSeeker(page, email);
   await expect(page.getByLabel("Full name")).toHaveValue("Asha Gurung");
   await expect(page.getByLabel("Email")).toHaveValue("asha.gurung@example.com");
+  await page.getByRole("navigation", { name: "CV sections" }).getByRole("button", { name: /Experience/ }).click();
   await expect(page.getByLabel("Job title").first()).toHaveValue("Support Specialist");
   await expect(page.getByLabel("Employer").first()).toHaveValue("Brightdesk");
   await expect(page.getByLabel("What you did").first()).toHaveValue(/Onboarded 40 new business accounts/);
 
   // Fix something by hand, as a user would.
+  await page.getByRole("button", { name: "Personal details", exact: true }).click();
   await page.getByLabel("Headline").fill("Customer Support Specialist, 4 years");
   await page.getByRole("button", { name: "Save profile" }).click();
-  await expect(page.getByText("Saved.")).toBeVisible();
+  await expect(page.getByText("Profile saved.")).toBeVisible();
 
   // 2. A job by link: the page's structured data is read.
   const jobUrl = await addFixtureJob(page, FIXTURE_BASE);
@@ -38,15 +42,17 @@ test("a job seeker goes from CV to application to follow-up, without anything in
   const reqs = page.getByRole("heading", { name: "What they ask for" }).locator("xpath=..");
   await expect(reqs.getByRole("listitem").filter({ hasText: "Experience with Zendesk and HubSpot" })).toContainText("Not in your CV");
   await expect(reqs.getByRole("listitem").filter({ hasText: "Experience reducing churn" })).toContainText("You show this");
-  await expect(page.locator("mark.marker", { hasText: "Zendesk" }).first()).toBeVisible();
-  await expect(page.locator(".pen-mark", { hasText: "HubSpot" }).first()).toBeVisible();
+  await expect(page.locator("mark.hl-shown", { hasText: "Zendesk" }).first()).toBeVisible();
+  await expect(page.locator(".hl-missing", { hasText: "HubSpot" }).first()).toBeVisible();
 
   // 4. Tailored CV: suggestions, preview, PDF.
   await page.getByRole("link", { name: "Tailor my CV" }).click();
   await page.getByRole("button", { name: "Suggest changes" }).click();
   await expect(page.getByRole("heading", { name: "Suggested changes" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Original PDF", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Tailored version", exact: true }).click();
   const preview = page.getByLabel("CV preview");
-  await expect(preview.getByRole("listitem").first()).toContainText("Zendesk");
+  await expect(preview.getByRole("region", { name: "Experience", exact: true }).getByRole("listitem").first()).toContainText("Zendesk");
   await expect(preview).toContainText("Zendesk, Customer Success, Onboarding");
   await expect(preview).not.toContainText("HubSpot");
 
@@ -55,13 +61,15 @@ test("a job seeker goes from CV to application to follow-up, without anything in
   await skills.getByRole("button", { name: "Don't use this" }).click();
   await expect(skills.getByText("Not using")).toBeVisible();
 
-  const [pdfPage] = await Promise.all([page.waitForEvent("popup"), page.getByRole("link", { name: "Download PDF" }).click()]);
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Download PDF", exact: true }).click()]);
+  expect(download.suggestedFilename()).toBe("asha-gurung-cv-customer-success-lead.pdf");
+  const [pdfPage] = await Promise.all([page.waitForEvent("popup"), page.getByRole("link", { name: "Print preview" }).click()]);
   await expect(pdfPage.getByLabel("CV preview")).toContainText("Asha Gurung");
   await expect(pdfPage).toHaveTitle("asha-gurung-cv-customer-success-lead");
   await pdfPage.close();
 
   // Word is part of the pass.
-  await expect(page.getByRole("link", { name: "Word download comes with a pass" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Word download is included in paid plans" })).toBeVisible();
 
   // 5. Cover letter: drafted from the CV, edited, saved, nothing unsupported.
   await page.getByRole("link", { name: "Cover letter" }).click();
@@ -71,26 +79,28 @@ test("a job seeker goes from CV to application to follow-up, without anything in
   await expect(page.getByText("Check these before sending")).toHaveCount(0);
   await letter.fill(`${await letter.inputValue()}\n\nP.S. I can start in two weeks.`);
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByText("Saved.")).toBeVisible();
+  await expect(page.getByText("Cover letter saved.")).toBeVisible();
 
   // 6. Interview prep, with feedback on a typed answer.
   await page.getByRole("link", { name: "Interview prep" }).click();
   await page.getByRole("button", { name: "Get my questions" }).click();
-  await expect(page.getByRole("heading", { name: /This role uses HubSpot/ })).toBeVisible();
-  const first = page.getByRole("listitem").first();
+  await expect(page.getByRole("navigation", { name: "Interview questions" }).getByRole("button", { name: /HubSpot/ }).first()).toBeVisible();
+  const first = page.getByRole("region", { name: "Current interview question" });
   await first
     .getByLabel("Your answer")
     .fill("Our renewals were slipping, so I set up check-in calls two weeks before each renewal and tracked answers in the CRM. Over six months churn on my accounts fell under 3 percent, and the whole team started doing the same.");
   await first.getByRole("button", { name: "Get feedback" }).click();
-  await expect(page.getByText(/\d\/5/).first()).toBeVisible();
+  await expect(page.getByText("Guided practice · unscored")).toBeVisible();
   await expect(page.getByText("Practised 1 of")).toBeVisible();
 
   // 7. Apply, then a week passes with no answer.
   await page.getByLabel("Status").selectOption("applied");
   await expect(page.getByLabel("Status")).toHaveValue("applied");
   const jobId = jobUrl.split("/").pop()!;
-  await expect.poll(async () => (await query((sql) => sql`select status from jobs where id = ${jobId}`))[0]?.status).toBe("applied");
-  await query((sql) => sql`update jobs set applied_on = current_date - 8, follow_up_on = current_date - 1 where id = ${jobId}`);
+  const jobs = <T,>(run: (c: import("mongodb").Collection) => Promise<T>) => withDb((db) => run(db.collection("jobs")));
+  await expect.poll(async () => (await jobs((c) => c.findOne({ _id: jobId as never })))?.status).toBe("applied");
+  const day = new Date().toISOString().slice(0, 10);
+  await jobs((c) => c.updateOne({ _id: jobId as never }, { $set: { appliedOn: addDays(day, -8), followUpOn: addDays(day, -1) } }));
 
   await page.goto("/app");
   await expect(page.getByLabel("1 to follow up")).toBeVisible();
@@ -106,12 +116,13 @@ test("a job seeker goes from CV to application to follow-up, without anything in
   await expect(page.locator("dd").filter({ hasText: /^1$/ }).first()).toBeVisible();
 });
 
-test("the free allowance runs out, and a Khalti pass lifts it and unlocks Word downloads", async ({ page }) => {
+test("the free allowance runs out, and a Freemius subscription lifts it and unlocks Word downloads", async ({ page, request }) => {
   await logIn(page, email);
   await expect(page).toHaveURL(/\/app$/);
   await page.goto("/app/jobs");
   await page.getByRole("link", { name: /Customer Success Lead/ }).click();
   await page.getByRole("link", { name: "Tailored CV" }).click();
+  await page.getByRole("button", { name: "Tailored version", exact: true }).click();
 
   // One tailoring used already; two more reach the free limit of 3.
   for (let i = 0; i < 2; i++) {
@@ -119,14 +130,21 @@ test("the free allowance runs out, and a Khalti pass lifts it and unlocks Word d
     await expect(page.getByText(/suggested change/)).toBeVisible();
   }
   await page.getByRole("button", { name: "Suggest again" }).click();
-  await expect(page.getByText("That's this month's free allowance used.")).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("You’ve reached your monthly allowance");
 
+  // Subscribing: checkout opens, then Freemius (not the browser) confirms the purchase by webhook.
   await page.goto("/app/billing");
   await expect(page.getByTestId("current-plan")).toHaveText("Free");
-  await page.getByRole("button", { name: "NPR 1,500 for 30 days" }).click();
-  await expect(page).toHaveURL(/\/app\/billing\?status=success/);
-  await expect(page.getByTestId("current-plan")).toHaveText("Job-hunt pass");
-  await expect(page.getByText("Your pass is active.")).toBeVisible();
+  await page.getByRole("button", { name: "Subscribe monthly" }).click();
+  await expect(page.locator("iframe[src*='checkout.freemius.com']")).toBeAttached({ timeout: 20_000 });
+  const s = { email, licenseId: 880_001, subscriptionId: 880_002, freemiusUserId: 880_003, expiration: new Date(Date.now() + 30 * DAY) };
+  for (const e of [events.licenseCreated(s), events.subscriptionCreated(s)]) {
+    const body = JSON.stringify(e);
+    const res = await request.post("/api/webhooks/freemius", { data: body, headers: { "content-type": "application/json", "x-signature": sign(body) } });
+    expect(res.status()).toBe(200);
+  }
+  await page.goto("/app/billing");
+  await expect(page.getByTestId("current-plan")).toHaveText("Paid");
 
   await page.goto("/app/jobs");
   await page.getByRole("link", { name: /Customer Success Lead/ }).click();
@@ -134,6 +152,7 @@ test("the free allowance runs out, and a Khalti pass lifts it and unlocks Word d
   await page.getByRole("button", { name: "Suggest again" }).click();
   await expect(page.getByText(/suggested change/)).toBeVisible();
 
+  await page.getByRole("button", { name: "Tailored version", exact: true }).click();
   const download = await page.request.get((await page.getByRole("link", { name: "Download Word" }).getAttribute("href"))!);
   expect(download.headers()["content-disposition"]).toBe('attachment; filename="asha-gurung-cv-customer-success-lead.docx"');
   expect((await download.body()).subarray(0, 2).toString()).toBe("PK");
@@ -145,12 +164,12 @@ test("a pasted job works when the site blocks reading", async ({ page }) => {
   await page.goto("/app/jobs");
   await page.getByLabel("Link to the job post").fill(`${FIXTURE_BASE}/jobs/login-wall`);
   await page.getByRole("button", { name: "Add job" }).click();
-  await expect(page.getByText("That site doesn't let us read its pages.")).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText("This website restricts access");
   await page.getByLabel("Job description").fill(
     "Staff Nurse\nCompany: City Hospital\nLocation: Lalitpur\n\nRequirements\n- BLS certificate\n- 2 years of ward experience\n- Patient Care\n- Excellent written communication in English",
   );
   await page.getByRole("button", { name: "Add job" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Staff Nurse");
-  await expect(page.getByText("3 must-haves not in your CV.")).toBeVisible();
+  await expect(page.getByText("3 mapped must-haves not in your CV.")).toBeVisible();
   await expect(page.getByRole("listitem").filter({ hasText: "BLS certificate" })).toContainText("Not in your CV");
 });

@@ -1,9 +1,10 @@
 import { readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { db, schema } from "@/db";
+import { z } from "zod";
+import { collections } from "@/db/mongo";
+import { AiUnavailableError, structured } from "@/lib/ai";
 import { heuristicProfile } from "@/lib/cv/heuristic";
 import { addDays } from "@/lib/dates";
 import { fetchJobPost } from "@/lib/jobs/fetch-post";
@@ -11,12 +12,15 @@ import { heuristicJob } from "@/lib/jobs/heuristic";
 import { scoreMatch } from "@/lib/match/score";
 import { LIMITS, monthKey, today } from "@/lib/plans";
 import { deleteUser } from "@/lib/services/account";
-import { completePendingPayment, extendPass, recordPayment } from "@/lib/services/billing";
-import { getInterview, getTailoredCv, saveCoverLetter, saveInterview, saveTailoredCv } from "@/lib/services/documents";
-import { createJob, dueFollowUpCount, dueFollowUps, listJobs, ownedJob, progress, rescoreAll, setStatus } from "@/lib/services/jobs";
+import { paymentsForUser, recordPayment } from "@/lib/services/billing";
+import { getInterview, getTailoredCv, saveCoverLetter, saveInterview, savePracticeAnswer, saveTailoredCv, setAllChangesAccepted, setChangeAccepted } from "@/lib/services/documents";
+import { createJob, deleteJob, dueFollowUpCount, dueFollowUps, listJobs, ownedJob, progress, rescoreAll, setStatus } from "@/lib/services/jobs";
 import { getProfile, saveProfile } from "@/lib/services/profile";
+import { overLimit } from "@/lib/services/rate-limit";
 import { sendFollowUpDigests } from "@/lib/services/reminders";
 import { refundAllowance, spendAllowance, usageThisMonth } from "@/lib/services/usage";
+import { findUserById } from "@/lib/services/users";
+import { safeRedirectPath } from "@/lib/util";
 import { DAY, makeUser, resetDb } from "./helpers";
 
 const OUTBOX = path.join(os.tmpdir(), `shortlist-integration-outbox-${process.pid}.jsonl`);
@@ -39,7 +43,6 @@ beforeEach(async () => {
 });
 afterAll(() => rmSync(OUTBOX, { force: true }));
 
-const reload = async (id: string) => (await db.select().from(schema.users).where(eq(schema.users.id, id)))[0];
 const newJob = (userId: string) => createJob(userId, { url: null, postText, post, match: null });
 
 describe("monthly allowance", () => {
@@ -60,40 +63,57 @@ describe("monthly allowance", () => {
     expect(results.filter(Boolean)).toHaveLength(LIMITS.free.tailor);
   });
 
-  it("resets each month and is higher with a pass", async () => {
+  it("resets each month and is higher on a paid plan", async () => {
     const user = await makeUser();
     const lastMonth = new Date(Date.now() - 40 * DAY);
     for (let i = 0; i < LIMITS.free.tailor; i++) await spendAllowance(user, "tailor", lastMonth);
     expect(await spendAllowance(user, "tailor")).toBe(true);
     expect(monthKey(lastMonth)).not.toBe(monthKey());
 
-    const pass = await makeUser({ passUntil: new Date(Date.now() + 10 * DAY) });
-    for (let i = 0; i < LIMITS.free.tailor + 2; i++) expect(await spendAllowance(pass, "tailor")).toBe(true);
+    const paid = await makeUser({ subscriptionAccessUntil: new Date(Date.now() + 10 * DAY) });
+    for (let i = 0; i < LIMITS.free.tailor + 2; i++) expect(await spendAllowance(paid, "tailor")).toBe(true);
   });
 });
 
-describe("passes", () => {
-  it("start from today, and a second one adds to the end", async () => {
-    const user = await makeUser({ passUntil: new Date(Date.now() - 5 * DAY) });
-    await extendPass(user.id, 30);
-    const first = (await reload(user.id)).passUntil!;
-    expect(Math.round((first.getTime() - Date.now()) / DAY)).toBe(30);
-    await extendPass(user.id, 90);
-    expect(Math.round(((await reload(user.id)).passUntil!.getTime() - Date.now()) / DAY)).toBe(120);
+describe("payment records", () => {
+  const base = { status: "completed", amountMinor: 900, currency: "USD" };
+
+  it("records a payment once, however often or however many at once it is recorded", async () => {
+    const user = await makeUser();
+    const results = await Promise.all(Array.from({ length: 6 }, () => recordPayment({ ...base, userId: user.id, provider: "freemius", ref: "freemius:payment:1" })));
+    expect(results.filter(Boolean)).toHaveLength(1);
+    expect(await recordPayment({ ...base, userId: user.id, provider: "freemius", ref: "freemius:payment:1" })).toBe(false);
+    expect(await paymentsForUser(user.id)).toHaveLength(1);
   });
 
-  it("a Khalti payment completes once, even with simultaneous callbacks", async () => {
+  it("lists a person's payments newest first", async () => {
     const user = await makeUser();
-    await recordPayment({ userId: user.id, provider: "khalti", ref: "pidx_1", status: "pending", amountMinor: 150000, currency: "NPR", days: 30 });
-    expect(await recordPayment({ userId: user.id, provider: "khalti", ref: "pidx_1", status: "pending", amountMinor: 150000, currency: "NPR", days: 30 })).toBe(false);
-    const results = await Promise.all([completePendingPayment("khalti", "pidx_1"), completePendingPayment("khalti", "pidx_1")]);
-    const won = results.filter(Boolean);
-    expect(won).toHaveLength(1);
-    expect(won[0]!.days).toBe(30);
+    await recordPayment({ ...base, userId: user.id, provider: "freemius", ref: "freemius:payment:2", createdAt: new Date("2026-09-01") });
+    await recordPayment({ ...base, userId: user.id, provider: "freemius", ref: "freemius:payment:3", createdAt: new Date("2026-10-01") });
+    expect((await paymentsForUser(user.id)).map((p) => p.providerRef)).toEqual(["freemius:payment:3", "freemius:payment:2"]);
   });
 });
 
 describe("jobs", () => {
+  it("preserves earlier practice and saves different answers atomically without crossing accounts", async () => {
+    const owner = await makeUser();
+    const other = await makeUser();
+    const job = await newJob(owner.id);
+    const q = (id: string) => ({ id, question: "Explain one example.", why: "Your contribution", answer: "", feedback: null });
+    await saveInterview(owner.id, job.id, [q("old")]);
+    const feedback = { score: null, method: "checklist" as const, strengths: [], improve: ["Name your own action."], rewrite: "[Your actual example.]" };
+    expect(await savePracticeAnswer(other.id, job.id, "old", "Someone else", feedback)).toBe(false);
+    expect(await savePracticeAnswer(owner.id, job.id, "old", "My earlier answer", feedback)).toBe(true);
+    await saveInterview(owner.id, job.id, [q("one"), q("two")], { archive: true, questionVersion: 2 });
+    await Promise.all([savePracticeAnswer(owner.id, job.id, "one", "First answer", feedback), savePracticeAnswer(owner.id, job.id, "two", "Second answer", feedback)]);
+    const saved = await getInterview(owner.id, job.id);
+    expect(saved?.questionVersion).toBe(2);
+    expect(saved?.previousQuestions[0].answer).toBe("My earlier answer");
+    expect(saved?.questions.map((row) => row.answer)).toEqual(["First answer", "Second answer"]);
+    await (await collections()).interviews.updateOne({ _id: job.id }, { $set: { sourceNeedsReview: true } });
+    expect(await savePracticeAnswer(owner.id, job.id, "one", "Stale answer", feedback)).toBe(false);
+    expect((await getInterview(owner.id, job.id))?.questions[0].answer).toBe("First answer");
+  });
   it("applying sets a follow-up a week out; an answer clears it", async () => {
     const user = await makeUser();
     const job = await newJob(user.id);
@@ -132,6 +152,14 @@ describe("jobs", () => {
     expect((await ownedJob(user.id, job.id))!.match!.score).toBeGreaterThan(before);
   });
 
+  it("clears a legacy match when the saved job has no usable requirements", async () => {
+    const user = await makeUser();
+    const sparse = { ...post, requirements: [], keywords: ["Full Stack", "Software Engineer"] };
+    const job = await createJob(user.id, { url: null, postText: "Search results", post: sparse, match: { score: 0, keywords: [], requirements: [] } });
+    await rescoreAll(user.id, profile);
+    expect((await ownedJob(user.id, job.id))?.match).toBeNull();
+  });
+
   it("keeps everyone's jobs and documents private", async () => {
     const owner = await makeUser();
     const other = await makeUser();
@@ -143,9 +171,114 @@ describe("jobs", () => {
     expect(await listJobs(other.id)).toHaveLength(0);
     expect(await ownedJob(owner.id, "not-a-uuid")).toBeNull();
   });
+
+  it("deleting a job removes what was written for it, and only for its owner", async () => {
+    const owner = await makeUser();
+    const other = await makeUser();
+    const job = await newJob(owner.id);
+    await saveTailoredCv(owner.id, job.id, { changes: [] });
+    await saveCoverLetter(owner.id, job.id, "letter");
+    await saveInterview(owner.id, job.id, []);
+    await deleteJob(other.id, job.id);
+    expect(await ownedJob(owner.id, job.id)).not.toBeNull();
+    await deleteJob(owner.id, job.id);
+    const c = await collections();
+    expect(await ownedJob(owner.id, job.id)).toBeNull();
+    expect(await c.documents.countDocuments({ jobId: job.id })).toBe(0);
+    expect(await c.interviews.countDocuments({ _id: job.id })).toBe(0);
+  });
+});
+
+describe("database injection", () => {
+  it("treats operator-looking input as plain text that matches nothing", async () => {
+    const owner = await makeUser();
+    await newJob(owner.id);
+    expect(await ownedJob(owner.id, '{"$ne": null}')).toBeNull();
+    expect(await ownedJob({ $ne: "" } as never, "00000000-0000-0000-0000-000000000000")).toBeNull();
+    expect(await findUserById({ $ne: "" } as never)).toBeNull();
+    expect(await listJobs({ $ne: "" } as never)).toHaveLength(0);
+  });
+});
+
+describe("rate limits", () => {
+  it("lets the allowed number through, then blocks, counting parallel attempts exactly", async () => {
+    const results = await Promise.all(Array.from({ length: 12 }, () => overLimit("test:parallel", 5, 60_000)));
+    expect(results.filter((blocked) => !blocked)).toHaveLength(5);
+    expect(await overLimit("test:parallel", 5, 60_000)).toBe(true);
+    expect(await overLimit("test:other", 5, 60_000)).toBe(false);
+  });
+
+  it("starts a fresh count in the next window", async () => {
+    const t = Date.UTC(2026, 9, 29, 12, 0, 0);
+    for (let i = 0; i < 3; i++) await overLimit("test:window", 2, 60_000, t);
+    expect(await overLimit("test:window", 2, 60_000, t)).toBe(true);
+    expect(await overLimit("test:window", 2, 60_000, t + 61_000)).toBe(false);
+  });
+});
+
+describe("redirects after login", () => {
+  it("only follows paths on this site", () => {
+    expect(safeRedirectPath("/app/jobs", "/app")).toBe("/app/jobs");
+    for (const bad of ["//evil.com", "/\\evil.com", "https://evil.com", "javascript:alert(1)", "/app\nSet-Cookie: x", "", undefined, 5, `/${"a".repeat(600)}`]) {
+      expect(safeRedirectPath(bad, "/app")).toBe("/app");
+    }
+  });
+});
+
+describe("AI via OpenRouter", () => {
+  const last = async () => (await (await fetch(`${process.env.FIXTURE_BASE}/openrouter/_last`)).json()) as { headers: Record<string, string>; body: { model: string; messages: unknown; response_format: unknown; provider: unknown } };
+  const answer = z.object({ answer: z.string() });
+
+  it("asks for a JSON-schema answer from providers that support it, and returns only what validates", async () => {
+    // The fake wraps its reply in a code fence, as some models do.
+    expect(await structured({ task: "read", system: "sys", prompt: "hello", schema: answer })).toEqual({ answer: "ok" });
+    const sent = await last();
+    expect(sent.body.model).toBe("openrouter/free");
+    expect(sent.body.messages).toEqual([
+      { role: "system", content: "sys" },
+      { role: "user", content: "hello" },
+    ]);
+    expect(sent.body.response_format).toMatchObject({ type: "json_schema", json_schema: { strict: true, schema: { type: "object", additionalProperties: false } } });
+    expect(sent.body.provider).toEqual({ require_parameters: true, data_collection: "deny" });
+    expect(sent.headers.title).toBe("Shortlist");
+    await structured({ task: "write", system: "s", prompt: "p", schema: answer });
+    expect((await last()).body.model).toBe("openrouter/free");
+  });
+
+  it("raises AiUnavailableError for refusals, cut-off answers and answers of the wrong shape", async () => {
+    await expect(structured({ task: "read", system: "s", prompt: "p", schema: z.object({ refused: z.string() }) })).rejects.toThrow(AiUnavailableError);
+    await expect(structured({ task: "read", system: "s", prompt: "p", schema: z.object({ truncated: z.string() }) })).rejects.toThrow(AiUnavailableError);
+    await expect(structured({ task: "read", system: "s", prompt: "p", schema: z.object({ something: z.string() }) })).rejects.toThrow(AiUnavailableError);
+  });
+
+  it("keeps the CV out of error messages", async () => {
+    const key = process.env.OPENROUTER_API_KEY;
+    process.env.OPENROUTER_API_KEY = "wrong-key";
+    try {
+      await expect(structured({ task: "read", system: "s", prompt: "SECRET CV TEXT", schema: answer })).rejects.toThrow(/^OpenRouter request failed \(401, 401\)$/);
+    } finally {
+      process.env.OPENROUTER_API_KEY = key;
+    }
+  });
 });
 
 describe("documents", () => {
+  it("preserves old drafts but marks them for review when the profile is replaced", async () => {
+    const user = await makeUser();
+    await saveProfile(user.id, profile, "Original source text");
+    const job = await newJob(user.id);
+    await saveTailoredCv(user.id, job.id, { changes: [] });
+    await saveInterview(user.id, job.id, [{ id: "q", question: "Why this role?", why: "Motivation", answer: "My draft answer", feedback: null }]);
+    await saveProfile(user.id, { ...profile, headline: "Corrected headline" }, "Corrected source text");
+    expect((await getTailoredCv(user.id, job.id))?.sourceNeedsReview).toBe(true);
+    expect((await getInterview(user.id, job.id))?.sourceNeedsReview).toBe(true);
+    expect((await getInterview(user.id, job.id))?.questions[0].answer).toBe("My draft answer");
+    const stored = await (await collections()).profiles.findOne({ _id: user.id });
+    expect(stored?.previousData?.headline).toBe(profile.headline);
+    expect(stored?.sourceText).toBe("Corrected source text");
+    await saveTailoredCv(user.id, job.id, { changes: [] });
+    expect((await getTailoredCv(user.id, job.id))?.sourceNeedsReview).toBe(false);
+  });
   it("keeps one tailored CV, cover letter and interview per job, updated in place", async () => {
     const user = await makeUser();
     const job = await newJob(user.id);
@@ -153,13 +286,44 @@ describe("documents", () => {
     await saveTailoredCv(user.id, job.id, { changes: [{ id: "c", kind: "summary", before: "", after: "x", reason: "", flags: [], accepted: true }] });
     await saveCoverLetter(user.id, job.id, "one");
     await saveCoverLetter(user.id, job.id, "two");
-    const docs = await db.select().from(schema.documents).where(eq(schema.documents.jobId, job.id));
+    const docs = await (await collections()).documents.find({ jobId: job.id }).toArray();
     expect(docs).toHaveLength(2);
     expect((await getTailoredCv(user.id, job.id))!.cv!.changes).toHaveLength(1);
 
     await saveInterview(user.id, job.id, [{ id: "q1", question: "Why?", why: "", answer: "", feedback: null }]);
     await saveInterview(user.id, job.id, [{ id: "q1", question: "Why?", why: "", answer: "Because", feedback: null }]);
     expect((await getInterview(user.id, job.id))!.questions[0].answer).toBe("Because");
+  });
+});
+
+describe("suggested changes", () => {
+  const change = (id: string, flags: string[], accepted: boolean) => ({ id, kind: "summary" as const, before: "", after: id, reason: "", flags, accepted });
+  const accepted = async (userId: string, jobId: string) => (await getTailoredCv(userId, jobId))!.cv!.changes.map((c) => c.accepted);
+
+  it("toggles one suggestion at a time without overwriting the others, and never switches on a blocked one", async () => {
+    const user = await makeUser();
+    const job = await newJob(user.id);
+    await saveTailoredCv(user.id, job.id, { changes: [change("a", [], true), change("b", ["Salesforce"], false), change("c", [], true)] });
+
+    // Two quick toggles in flight at once both land.
+    await Promise.all([setChangeAccepted(user.id, job.id, "a", false), setChangeAccepted(user.id, job.id, "c", false)]);
+    expect(await accepted(user.id, job.id)).toEqual([false, false, false]);
+
+    await setChangeAccepted(user.id, job.id, "b", true);
+    expect(await accepted(user.id, job.id)).toEqual([false, false, false]);
+
+    await setAllChangesAccepted(user.id, job.id, true);
+    expect(await accepted(user.id, job.id)).toEqual([true, false, true]);
+  });
+
+  it("only changes the owner's document", async () => {
+    const owner = await makeUser();
+    const other = await makeUser();
+    const job = await newJob(owner.id);
+    await saveTailoredCv(owner.id, job.id, { changes: [change("a", [], true)] });
+    await setChangeAccepted(other.id, job.id, "a", false);
+    await setAllChangesAccepted(other.id, job.id, false);
+    expect(await accepted(owner.id, job.id)).toEqual([true]);
   });
 });
 
@@ -195,11 +359,15 @@ describe("accounts", () => {
     await saveCoverLetter(user.id, job.id, "letter");
     await saveInterview(user.id, job.id, []);
     await spendAllowance(user, "tailor");
-    await recordPayment({ userId: user.id, provider: "paddle", ref: "txn_x", status: "completed", amountMinor: 1500, currency: "USD", days: 30 });
+    await recordPayment({ userId: user.id, provider: "freemius", ref: "freemius:payment:77", status: "completed", amountMinor: 1500, currency: "USD" });
 
     await deleteUser(user.id);
-    for (const table of [schema.profiles, schema.jobs, schema.documents, schema.interviews, schema.usage, schema.payments] as const) {
-      expect(await db.select().from(table).where(eq(table.userId, user.id))).toHaveLength(0);
+    const c = await collections();
+    expect(await c.users.countDocuments({ _id: user.id })).toBe(0);
+    expect(await c.profiles.countDocuments({ _id: user.id })).toBe(0);
+    expect(await c.interviews.countDocuments({ _id: job.id })).toBe(0);
+    for (const coll of [c.jobs, c.documents, c.usage, c.payments, c.sessions, c.authTokens]) {
+      expect(await coll.countDocuments({ userId: user.id })).toBe(0);
     }
     expect(await getProfile(user.id)).toBeNull();
   });

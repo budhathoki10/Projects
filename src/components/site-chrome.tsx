@@ -1,51 +1,65 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/session";
+import { HeaderShell } from "./header-shell";
 import { ButtonLink, Logo } from "./ui";
+
+const navLink =
+  "relative h-9 items-center whitespace-nowrap rounded px-2.5 text-sm text-muted transition-colors duration-150 hover:text-foreground after:absolute after:inset-x-2.5 after:bottom-1.5 after:h-px after:origin-left after:scale-x-0 after:bg-accent after:transition-transform after:duration-200 after:ease-out hover:after:scale-x-100 focus-visible:after:scale-x-100";
 
 export async function SiteHeader() {
   const user = await getCurrentUser();
   return (
-    <header className="border-b border-border">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-        <Link href="/" aria-label="Shortlist home">
+    <HeaderShell>
+      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+        <Link href="/" aria-label="Shortlist home" className="rounded">
           <Logo />
         </Link>
-        <nav className="flex items-center gap-5 text-sm">
-          <Link href="/#how" className="hidden text-muted hover:text-foreground sm:inline">
+        <nav aria-label="Site" className="flex items-center gap-1">
+          <Link href="/#how" className={`${navLink} hidden sm:inline-flex`}>
             How it works
           </Link>
-          <Link href="/#pricing" className="hidden text-muted hover:text-foreground sm:inline">
+          <Link href="/templates" className={`${navLink} hidden sm:inline-flex`}>
+            Templates
+          </Link>
+          <Link href="/#pricing" className={`${navLink} hidden sm:inline-flex`}>
             Pricing
           </Link>
           {user ? (
-            <ButtonLink href="/app">Go to your job hunt</ButtonLink>
+            <ButtonLink href="/app" size="sm">
+              Go to your job hunt
+            </ButtonLink>
           ) : (
             <>
-              <Link href="/login" className="text-muted hover:text-foreground">
+              <Link href="/login" className={`inline-flex ${navLink}`}>
                 Log in
               </Link>
-              <ButtonLink href="/signup">Start free</ButtonLink>
+              <ButtonLink href="/signup" size="sm">
+                Start free
+              </ButtonLink>
             </>
           )}
         </nav>
       </div>
-    </header>
+    </HeaderShell>
   );
 }
 
 export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-border">
-      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-5 py-8 text-[13px] text-muted sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-8 text-[13px] text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <span>© {new Date().getFullYear()} Shortlist</span>
-        <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-1">
-          <Link href="/terms" className="hover:text-foreground">
+        <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-1">
+          <Link href="/templates" className="py-1 hover:text-foreground">
+            Templates
+          </Link>
+          <Link href="/terms" className="py-1 hover:text-foreground">
             Terms
           </Link>
-          <Link href="/privacy" className="hover:text-foreground">
+          <Link href="/privacy" className="py-1 hover:text-foreground">
             Privacy
           </Link>
-          <Link href="/refund" className="hover:text-foreground">
+          <Link href="/refund" className="py-1 hover:text-foreground">
             Refunds
           </Link>
         </nav>

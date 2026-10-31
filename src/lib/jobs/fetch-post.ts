@@ -2,6 +2,7 @@ import "server-only";
 import { FetchBlockedError, safeFetch } from "@/lib/safe-fetch";
 import { cleanText } from "@/lib/text";
 import { htmlToText, jobPostingFromHtml } from "./html";
+import { isJobSearchPage } from "./quality";
 
 export type FetchedPost = { ok: true; text: string; url: string } | { ok: false; reason: "blocked" | "unreachable" | "login" | "too_short" };
 
@@ -21,6 +22,7 @@ export async function fetchJobPost(input: string): Promise<FetchedPost> {
   }
   if (res.status >= 400) return { ok: false, reason: "unreachable" };
   const text = cleanText(jobPostingFromHtml(res.body) ?? htmlToText(res.body));
+  if (isJobSearchPage(text)) return { ok: false, reason: "too_short" };
   if (text.length < 200) return { ok: false, reason: LOGIN_WALLS.test(host) ? "login" : "too_short" };
   return { ok: true, text: text.slice(0, 40_000), url: res.finalUrl };
 }

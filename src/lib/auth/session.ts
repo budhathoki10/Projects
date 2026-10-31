@@ -3,9 +3,9 @@ import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { and, eq, gt } from "drizzle-orm";
-import { db, schema } from "@/db";
-import type { User } from "@/db/schema";
+import { collections, fromDoc } from "@/db/mongo";
+import type { User } from "@/db/types";
+import { accessUntilForUser } from "@/lib/services/subscriptions";
 
 export const SESSION_COOKIE = "pc_session";
 const SESSION_DAYS = 30;
@@ -15,7 +15,7 @@ export const hashToken = (token: string) => createHash("sha256").update(token).d
 export async function createSession(userId: string) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
-  await db.insert(schema.sessions).values({ id: hashToken(token), userId, expiresAt });
+  await (await collections()).sessions.insertOne({ _id: hashToken(token), userId, expiresAt });
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -28,7 +28,7 @@ export async function createSession(userId: string) {
 export async function destroySession() {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
-  if (token) await db.delete(schema.sessions).where(eq(schema.sessions.id, hashToken(token)));
+  if (token) await (await collections()).sessions.deleteOne({ _id: hashToken(token) });
   store.delete(SESSION_COOKIE);
 }
 
@@ -36,13 +36,15 @@ export async function destroySession() {
 export const getCurrentUser = cache(async (): Promise<User | null> => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const [row] = await db
-    .select({ user: schema.users })
-    .from(schema.sessions)
-    .innerJoin(schema.users, eq(schema.users.id, schema.sessions.userId))
-    .where(and(eq(schema.sessions.id, hashToken(token)), gt(schema.sessions.expiresAt, new Date())))
-    .limit(1);
-  return row?.user ?? null;
+  const { sessions, users } = await collections();
+  const session = await sessions.findOne({ _id: hashToken(token), expiresAt: { $gt: new Date() } });
+  if (!session) return null;
+  const doc = await users.findOne({ _id: session.userId });
+  if (!doc) return null;
+  const user = fromDoc<User>(doc);
+  // Paid access from a subscription is worked out here, on the server, from what Freemius confirmed. It is never read from a request.
+  user.subscriptionAccessUntil = await accessUntilForUser(user.id);
+  return user;
 });
 
 export async function requireUser(): Promise<User> {

@@ -10,21 +10,26 @@ import { scoreMatch } from "@/lib/match/score";
 import { today } from "@/lib/plans";
 import { createJob, deleteJob, isStatus, ownedJob, setFollowUp, setNotes, setStatus } from "@/lib/services/jobs";
 import { getProfile, profileReady } from "@/lib/services/profile";
+import { overLimit } from "@/lib/services/rate-limit";
 import { cleanText } from "@/lib/text";
+import { isJobSearchPage, jobHasCriteria } from "@/lib/jobs/quality";
+import { collections } from "@/db/mongo";
 
-export type JobState = { error?: string; needText?: boolean; url?: string } | undefined;
+export type JobState = { error?: string; success?: string; needText?: boolean; url?: string } | undefined;
 
 const FETCH_ERRORS = {
-  login: "That site only shows job posts to signed-in users, so we can't read it. Copy the job description from the page and paste it below.",
-  blocked: "That site doesn't let us read its pages. Copy the job description and paste it below.",
-  unreachable: "We couldn't open that link. Check it, or paste the job description below.",
-  too_short: "We couldn't find a job description on that page. Paste it below instead.",
+  login: "This website requires a login to view the vacancy. Copy the full job description and paste it below.",
+  blocked: "This website restricts access to its pages. Copy the full job description and paste it below to continue.",
+  unreachable: "Unable to open this link. Check the address, or paste the full job description below.",
+  too_short: "No complete job description was found on this page. Copy the description and paste it below.",
 } as const;
 
 /** Add a job from a link or pasted text, read it, and check it against the profile. */
 export async function addJob(_: JobState, formData: FormData): Promise<JobState> {
   const user = await requireUser();
-  const url = String(formData.get("url") ?? "").trim();
+  // Reading a post fetches a web page and may call the AI model, so adding jobs has a ceiling of its own.
+  if (await overLimit(`add-job:${user.id}`, 40, 60 * 60_000)) return { error: "You’ve reached the hourly limit for adding jobs. Please try again in an hour." };
+  const url = String(formData.get("url") ?? "").trim().slice(0, 2000);
   let text = cleanText(String(formData.get("text") ?? ""));
   let source: string | null = null;
 
@@ -36,9 +41,11 @@ export async function addJob(_: JobState, formData: FormData): Promise<JobState>
   } else if (url) {
     source = url;
   }
-  if (text.length < 120) return { error: "Paste the full job description: the title, what you'd do and what they're looking for.", needText: true, url };
+  if (text.length < 120) return { error: "Paste the full job description, including the title, responsibilities and requirements.", needText: true, url };
+  if (isJobSearchPage(text)) return { error: "This is a job search results page. Open one vacancy and paste its full description, including responsibilities and requirements.", needText: true, url };
 
   const { post } = await extractJob(text.slice(0, 40_000));
+  if (!jobHasCriteria(post)) return { error: "We found a title, but not enough job requirements to assess a match. Paste the full description below.", needText: true, url };
   const profile = await getProfile(user.id);
   const job = await createJob(user.id, {
     url: source && /^https?:\/\//i.test(source) ? source.slice(0, 2000) : null,
@@ -48,6 +55,21 @@ export async function addJob(_: JobState, formData: FormData): Promise<JobState>
   });
   revalidatePath("/app", "layout");
   redirect(`/app/jobs/${job.id}`);
+}
+
+export async function updateJobDescription(_: JobState, formData: FormData): Promise<JobState> {
+  const { user, job } = await requireJob(formData.get("jobId"));
+  const text = cleanText(String(formData.get("text") ?? "")).slice(0, 40_000);
+  if (text.length < 120 || isJobSearchPage(text)) return { error: "Paste the description for this specific vacancy, including its responsibilities and requirements." };
+  if (await overLimit(`add-job:${user.id}`, 40, 60 * 60_000)) return { error: "You’ve reached the hourly limit for reading job descriptions. Please try again in an hour." };
+  const { post } = await extractJob(text);
+  if (!jobHasCriteria(post)) return { error: "The description still has no clear requirements. Include the skills and experience the employer asks for." };
+  const profile = await getProfile(user.id);
+  await (await collections()).jobs.updateOne({ _id: job.id, userId: user.id }, { $set: { postText: text, post, match: profileReady(profile) ? scoreMatch(profile, post) : null, updatedAt: new Date() } });
+  await (await collections()).documents.updateMany({ userId: user.id, jobId: job.id }, { $set: { sourceNeedsReview: true } });
+  await (await collections()).interviews.updateOne({ _id: job.id, userId: user.id }, { $set: { sourceNeedsReview: true } });
+  revalidatePath("/app", "layout");
+  return { success: "Job description updated. The match now uses this vacancy’s actual requirements." };
 }
 
 async function requireJob(jobId: FormDataEntryValue | null) {

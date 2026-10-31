@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { FIXTURE_BASE } from "../playwright.config";
-import { addFixtureJob, query, setUpJobSeeker } from "./helpers";
+import { addDays } from "../src/lib/dates";
+import { addFixtureJob, setUpJobSeeker, withDb } from "./helpers";
 
 // Regenerates docs/screenshots. Run with SCREENSHOTS=1 npx playwright test screenshots.
 test.skip(!process.env.SCREENSHOTS, "Set SCREENSHOTS=1 to regenerate docs/screenshots");
@@ -23,8 +24,11 @@ test("screenshots", async ({ page, browser }) => {
   await page.screenshot(shot("match"));
 
   // Example suggestions in the shape the AI returns, including one the fact check blocks.
-  const [{ data }] = await query((sql) => sql`select p.data from profiles p join jobs j on j.user_id = p.user_id where j.id = ${jobId}`);
-  const profile = data as { summary: string; experience: { id: string; bullets: string[] }[] };
+  const owned = await withDb((db) => db.collection("jobs").findOne({ _id: jobId as never }));
+  const userId = String(owned!.userId);
+  const day = new Date().toISOString().slice(0, 10);
+  const stored = await withDb((db) => db.collection("profiles").findOne({ _id: userId as never }));
+  const profile = stored!.data as { summary: string; experience: { id: string; bullets: string[] }[] };
   const exp = profile.experience[0];
   const changes = [
     {
@@ -60,8 +64,9 @@ test("screenshots", async ({ page, browser }) => {
     },
     { id: "c4", kind: "bullet-order", experienceId: exp.id, order: [1, 2, 0, 3], reason: "Puts onboarding and churn first", flags: [], accepted: true },
   ];
-  await query((sql) => sql`insert into documents (user_id, job_id, kind, cv) select user_id, id, 'cv', ${sql.json(changes)} from jobs where id = ${jobId}`);
-  await query((sql) => sql`update documents set cv = jsonb_build_object('changes', cv) where job_id = ${jobId} and kind = 'cv'`);
+  await withDb((db) =>
+    db.collection("documents").insertOne({ _id: crypto.randomUUID() as never, userId, jobId, kind: "cv", cv: { changes }, text: null, createdAt: new Date(), updatedAt: new Date() }),
+  );
   await page.goto(`${jobUrl}/cv`);
   await expect(page.getByRole("heading", { name: "Suggested changes" })).toBeVisible();
   await page.screenshot(shot("tailored-cv"));
@@ -73,7 +78,7 @@ test("screenshots", async ({ page, browser }) => {
 
   await page.goto(`${jobUrl}/interview`);
   await page.getByRole("button", { name: "Get my questions" }).click();
-  const first = page.getByRole("listitem").first();
+  const first = page.getByRole("region", { name: "Current interview question" });
   await first
     .getByLabel("Your answer")
     .fill("Our renewals were slipping, so I set up check-in calls two weeks before each renewal and tracked the answers in the CRM. Over six months churn on my accounts fell under 3 percent, and the rest of the team started doing the same calls.");
@@ -87,14 +92,24 @@ test("screenshots", async ({ page, browser }) => {
     ["Customer Experience Manager", "Daraz", "interview"],
     ["Account Manager", "Fonepay", "saved"],
   ]) {
-    await query(
-      (sql) => sql`insert into jobs (user_id, post_text, post, status, applied_on, match)
-        select user_id, 'x', ${sql.json({ title, company, location: "Kathmandu", salary: "", summary: "", requirements: [], keywords: [] })}, ${status},
-          case when ${status} = 'saved' then null else current_date - 5 end, ${sql.json({ score: 64, keywords: [], requirements: [] })}
-        from jobs where id = ${jobId}`,
+    await withDb((db) =>
+      db.collection("jobs").insertOne({
+        _id: crypto.randomUUID() as never,
+        userId,
+        url: null,
+        postText: "x",
+        post: { title, company, location: "Kathmandu", salary: "", summary: "", requirements: [], keywords: [] },
+        match: { score: 64, keywords: [], requirements: [] },
+        status,
+        appliedOn: status === "saved" ? null : addDays(day, -5),
+        followUpOn: null,
+        notes: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
     );
   }
-  await query((sql) => sql`update jobs set status = 'applied', applied_on = current_date - 8, follow_up_on = current_date where id = ${jobId}`);
+  await withDb((db) => db.collection("jobs").updateOne({ _id: jobId as never }, { $set: { status: "applied", appliedOn: addDays(day, -8), followUpOn: day } }));
   await page.goto("/app/jobs");
   await page.screenshot(shot("jobs"));
   await page.goto("/app");

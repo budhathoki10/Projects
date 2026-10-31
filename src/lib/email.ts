@@ -55,14 +55,17 @@ export async function sendEmail(email: Email): Promise<{ id: string | null }> {
   return { id: null };
 }
 
+/** HTML-escape text before it goes into an email body. Names are chosen by whoever signs up, so they can't be trusted as markup. */
+export const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
 function layout(heading: string, intro: string, buttonLabel: string, link: string, outro: string) {
   const text = `${heading}\n\n${intro}\n\n${buttonLabel}: ${link}\n\n${outro}\n\nShortlist`;
   const html = `<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#1c1f1d;max-width:520px;margin:0 auto;padding:24px">
-<h1 style="font-size:20px">${heading}</h1>
-<p>${intro}</p>
-<p><a href="${link}" style="display:inline-block;background:#157a4a;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold">${buttonLabel}</a></p>
-<p style="font-size:13px;color:#5f6660">Or paste this link into your browser:<br>${link}</p>
-<p style="font-size:13px;color:#5f6660">${outro}</p>
+<h1 style="font-size:20px">${escapeHtml(heading)}</h1>
+<p>${escapeHtml(intro)}</p>
+<p><a href="${escapeHtml(link)}" style="display:inline-block;background:#1d2740;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold">${escapeHtml(buttonLabel)}</a></p>
+<p style="font-size:13px;color:#5f6660">Or paste this link into your browser:<br>${escapeHtml(link)}</p>
+<p style="font-size:13px;color:#5f6660">${escapeHtml(outro)}</p>
 </body></html>`;
   return { text, html };
 }
@@ -103,12 +106,11 @@ export function noticeMessage(
   paragraphs: string[],
   link?: { label: string; url: string },
 ): Email {
-  const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
   const text = [heading, ...paragraphs, link ? `${link.label}: ${link.url}` : null, "Shortlist"].filter(Boolean).join("\n\n");
   const html = `<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#1c1f1d;max-width:520px;margin:0 auto;padding:24px">
-<h1 style="font-size:20px">${esc(heading)}</h1>
-${paragraphs.map((p) => `<p style="white-space:pre-line">${esc(p)}</p>`).join("\n")}
-${link ? `<p><a href="${esc(link.url)}" style="display:inline-block;background:#1b1a17;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">${esc(link.label)}</a></p>` : ""}
+<h1 style="font-size:20px">${escapeHtml(heading)}</h1>
+${paragraphs.map((p) => `<p style="white-space:pre-line">${escapeHtml(p)}</p>`).join("\n")}
+${link ? `<p><a href="${escapeHtml(link.url)}" style="display:inline-block;background:#1b1a17;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">${escapeHtml(link.label)}</a></p>` : ""}
 </body></html>`;
   return { to, subject, text, html };
 }

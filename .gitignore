@@ -15,6 +15,11 @@
 
 # next.js
 /.next/
+/.next-e2e/
+/.next-cv-review/
+/tmp/cv-audit/
+/output/pdf/cv-review.pdf
+/.next-*/
 /out/
 
 # production

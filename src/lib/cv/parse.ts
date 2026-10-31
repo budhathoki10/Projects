@@ -4,6 +4,9 @@ import { aiEnabled, AiUnavailableError, quoted, structured } from "@/lib/ai";
 import type { Profile } from "@/lib/model/types";
 import { localId } from "@/lib/text";
 import { heuristicProfile } from "./heuristic";
+import { ProfileSchema } from "./profile-schema";
+import { profileNeedsRepair } from "./quality";
+import { textLinks, webUrl } from "./links";
 
 const ParsedCv = z.object({
   name: z.string(),
@@ -41,15 +44,37 @@ function withIds(p: z.infer<typeof ParsedCv>): Profile {
   };
 }
 
-/** Turn CV text into a profile. Uses Claude when configured, otherwise the plain-code reader. */
+/** Turn CV text into a profile. Uses the AI model when configured, otherwise the plain-code reader. */
 export async function parseCv(text: string): Promise<{ profile: Profile; method: "ai" | "basic" }> {
+  const basic = heuristicProfile(text);
+  const sourceUrls = new Set(textLinks(text));
   if (aiEnabled()) {
     try {
       const parsed = await structured({ task: "read", system: SYSTEM, prompt: `Convert this CV.\n\n${quoted("cv", text.slice(0, 60_000))}`, schema: ParsedCv });
-      return { profile: withIds(parsed), method: "ai" };
+      const profile = withIds(parsed);
+      if (profileNeedsRepair(profile)) throw new AiUnavailableError("Project paragraphs were mistaken for project titles");
+      // Annotation URIs are facts from the file, not something a language model needs to guess.
+      const verifiedLinks = profile.links.map(webUrl).filter((url): url is string => !!url && sourceUrls.has(url));
+      profile.links = basic.links.length ? basic.links : [...new Set(verifiedLinks)];
+      for (const project of profile.projects) {
+        const source = basic.projects.find((p) => p.name.toLowerCase() === project.name.toLowerCase() || p.name.toLowerCase().startsWith(project.name.toLowerCase()));
+        if (source?.link) project.link = source.link;
+        else if (!sourceUrls.has(webUrl(project.link) ?? "")) project.link = "";
+      }
+      // When the source gives explicit project headings and embedded live URLs, keep
+      // those boundaries and original paragraphs. The model must not split them again.
+      if (basic.projects.length && basic.projects.every((p) => p.link && p.bullets.length)) profile.projects = basic.projects;
+      for (const key of ["experience", "education", "skills", "projects", "certifications", "languages"] as const) {
+        if (!profile[key].length && basic[key].length) Object.assign(profile, { [key]: basic[key] });
+      }
+      for (const key of ["name", "headline", "email", "phone", "location", "summary"] as const) {
+        if (!profile[key]) profile[key] = basic[key];
+      }
+      if (!ProfileSchema.safeParse(profile).success) throw new AiUnavailableError("The extracted CV needs review");
+      return { profile, method: "ai" };
     } catch (err) {
       if (!(err instanceof AiUnavailableError)) console.error("AI CV parse failed", err);
     }
   }
-  return { profile: heuristicProfile(text), method: "basic" };
+  return { profile: basic, method: "basic" };
 }

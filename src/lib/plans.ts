@@ -1,29 +1,25 @@
-import type { User } from "@/db/schema";
+import type { User } from "@/db/types";
 
-/** One-time Job-hunt passes. They extend access and never renew on their own. */
-export const PASSES = {
-  month: { days: 30, usd: 15, npr: Number(process.env.KHALTI_PASS_30_NPR ?? 1500), label: "30 days" },
-  quarter: { days: 90, usd: 35, npr: Number(process.env.KHALTI_PASS_90_NPR ?? 3500), label: "90 days" },
-} as const;
-export type PassId = keyof typeof PASSES;
-
-export function isPassId(v: unknown): v is PassId {
-  return v === "month" || v === "quarter";
-}
-
-/** AI actions allowed per calendar month. The pass cap is a fair-use ceiling, not a selling point. */
+/** AI actions allowed per calendar month. The paid cap is a fair-use ceiling, not a selling point. */
 export const LIMITS = {
   free: { tailor: 3, cover: 3, interview: 3, import: 5, docx: false },
-  pass: { tailor: 200, cover: 200, interview: 200, import: 50, docx: true },
+  paid: { tailor: 200, cover: 200, interview: 200, import: 50, docx: true },
 } as const;
 export type UsageKind = "tailor" | "cover" | "interview" | "import";
 
-export function hasPass(user: Pick<User, "passUntil">, now = new Date()): boolean {
-  return !!user.passUntil && user.passUntil > now;
+type Entitlement = Pick<User, "subscriptionAccessUntil">;
+
+/**
+ * Paid access comes only from a Freemius subscription. The end date is worked out from stored,
+ * provider-confirmed data on every request (see src/lib/billing/access.ts), never from the browser.
+ */
+export function isPaid(user: Entitlement, now = new Date()): boolean {
+  const until = user.subscriptionAccessUntil ?? null;
+  return !!until && until > now;
 }
 
-export function limitsFor(user: Pick<User, "passUntil">) {
-  return hasPass(user) ? LIMITS.pass : LIMITS.free;
+export function limitsFor(user: Entitlement) {
+  return isPaid(user) ? LIMITS.paid : LIMITS.free;
 }
 
 /** "2026-10" for usage counting; months are UTC. */

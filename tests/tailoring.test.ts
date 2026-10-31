@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import mammoth from "mammoth";
 import { describe, expect, it } from "vitest";
-import { verifyPaddleSignature, interpretPaddleEvent } from "@/lib/billing/paddle";
 import { heuristicProfile } from "@/lib/cv/heuristic";
 import { wordDiff } from "@/lib/diff";
 import { cvDocxBuffer, cvFileName } from "@/lib/export/docx";
@@ -9,14 +8,13 @@ import { heuristicJob } from "@/lib/jobs/heuristic";
 import { highlight } from "@/lib/match/highlight";
 import { scoreLabel, scoreMatch } from "@/lib/match/score";
 import type { Change } from "@/lib/model/types";
-import { hasPass, limitsFor, monthKey } from "@/lib/plans";
+import { isPaid, limitsFor, monthKey } from "@/lib/plans";
 import { applyChanges } from "@/lib/tailor/apply";
 import { unsupportedFacts } from "@/lib/tailor/fact-check";
 import { followUpMessage } from "@/lib/tailor/follow-up";
 import { proposeChanges } from "@/lib/tailor/tailor";
 import { writeCoverLetter } from "@/lib/tailor/cover-letter";
 import { answerFeedback, interviewQuestions } from "@/lib/tailor/interview";
-import { createHmac } from "node:crypto";
 
 const profile = heuristicProfile(readFileSync("tests/fixtures/cv.txt", "utf8"));
 const post = heuristicJob(readFileSync("tests/fixtures/job.txt", "utf8"));
@@ -96,6 +94,16 @@ describe("no-invention check", () => {
 describe("applying changes", () => {
   const change = (c: Partial<Change> & Pick<Change, "kind">): Change => ({ id: "c", reason: "", flags: [], accepted: true, ...c }) as Change;
 
+  it("does not restore outdated facts after the source profile has been corrected", () => {
+    const corrected = { ...profile, summary: "Updated, accurate summary.", experience: profile.experience.map((e, i) => i ? e : { ...e, bullets: ["Corrected experience.", ...e.bullets.slice(1)] }) };
+    const cv = applyChanges(corrected, [
+      change({ kind: "summary", before: profile.summary, after: "Outdated summary." }),
+      change({ kind: "bullet", experienceId: brightdesk.id, index: 0, before: brightdesk.bullets[0], after: "Outdated experience." }),
+    ]);
+    expect(cv.summary).toBe(corrected.summary);
+    expect(cv.experience[0].bullets[0]).toBe("Corrected experience.");
+  });
+
   it("uses accepted changes and ignores rejected or blocked ones", () => {
     const cv = applyChanges(profile, [
       change({ kind: "summary", before: profile.summary, after: "New summary." }),
@@ -157,15 +165,16 @@ describe("without an AI key", () => {
 
   it("gives honest feedback on an answer", async () => {
     const weak = await answerFeedback("Tell me about a problem", "We had a problem and we fixed it as a team and it was good in the end I think.", profile, post);
-    expect(weak.score).toBeLessThanOrEqual(2);
-    expect(weak.improve.join(" ")).toMatch(/what you did yourself/);
+    expect(weak.score).toBeNull();
+    expect(weak.improve.join(" ")).toMatch(/what you did yourself/i);
     const strong = await answerFeedback(
       "Tell me about a problem",
       "Our renewals were slipping, so I set up a check-in call with each account two weeks before renewal. I wrote a short agenda and tracked answers in the CRM. Over six months churn on my accounts fell under 3 percent, and the team adopted the same calls. ".repeat(2),
       profile,
       post,
     );
-    expect(strong.score).toBeGreaterThanOrEqual(4);
+    expect(strong.score).toBeNull();
+    expect(strong.method).toBe("checklist");
   });
 });
 
@@ -175,7 +184,7 @@ describe("exports and small helpers", () => {
     expect(buf.subarray(0, 2).toString()).toBe("PK");
     const { value } = await mammoth.extractRawText({ buffer: buf });
     expect(value).toContain("Asha Gurung");
-    expect(value).toContain("EXPERIENCE");
+    expect(value).toMatch(/experience/i); // capitals are formatting in the Word file, not typed text
     expect(value).toContain("Onboarded 40 new business accounts through video calls and written guides");
     expect(cvFileName(profile, "Customer Success Lead", "docx")).toBe("asha-gurung-cv-customer-success-lead.docx");
   });
@@ -196,39 +205,12 @@ describe("exports and small helpers", () => {
     expect(m.body).toContain("I applied for Customer Success Lead at Northwind on 20 Oct 2026");
   });
 
-  it("knows who has a pass and what each plan allows", () => {
+  it("knows who is on a paid plan and what each plan allows", () => {
     const now = new Date("2026-10-29T10:00:00Z");
-    expect(hasPass({ passUntil: new Date("2026-11-01") }, now)).toBe(true);
-    expect(hasPass({ passUntil: new Date("2026-10-01") }, now)).toBe(false);
-    expect(hasPass({ passUntil: null }, now)).toBe(false);
-    expect(limitsFor({ passUntil: null }).docx).toBe(false);
+    expect(isPaid({ subscriptionAccessUntil: new Date("2026-11-01") }, now)).toBe(true);
+    expect(isPaid({ subscriptionAccessUntil: new Date("2026-10-01") }, now)).toBe(false);
+    expect(isPaid({ subscriptionAccessUntil: null }, now)).toBe(false);
+    expect(limitsFor({ subscriptionAccessUntil: null }).docx).toBe(false);
     expect(monthKey(now)).toBe("2026-10");
-  });
-});
-
-describe("Paddle passes", () => {
-  const env = { NEXT_PUBLIC_PADDLE_PRICE_30: "pri_30", NEXT_PUBLIC_PADDLE_PRICE_90: "pri_90" };
-  const event = (type: string, priceIds: string[], custom: Record<string, unknown> = { userId: "u1" }) => ({
-    event_id: "e",
-    event_type: type,
-    data: { id: "txn_1", currency_code: "USD", custom_data: custom, items: priceIds.map((id) => ({ price: { id } })), details: { totals: { grand_total: "1500" } } },
-  });
-
-  it("takes the days from the price paid, never from the buyer's checkout data", () => {
-    Object.assign(process.env, env);
-    expect(interpretPaddleEvent(event("transaction.completed", ["pri_30"]))).toMatchObject({ kind: "pass", userId: "u1", days: 30, amountMinor: 1500 });
-    expect(interpretPaddleEvent(event("transaction.completed", ["pri_90"], { userId: "u1", days: 3650 }))).toMatchObject({ days: 90 });
-    expect(interpretPaddleEvent(event("transaction.completed", ["pri_other"]))).toEqual({ kind: "ignore" });
-    expect(interpretPaddleEvent(event("transaction.created", ["pri_30"]))).toEqual({ kind: "ignore" });
-    expect(interpretPaddleEvent(event("transaction.completed", ["pri_30"], {}))).toEqual({ kind: "ignore" });
-  });
-
-  it("verifies webhook signatures", () => {
-    const body = '{"a":1}';
-    const ts = 1_793_000_000;
-    const h1 = createHmac("sha256", "secret").update(`${ts}:${body}`).digest("hex");
-    expect(verifyPaddleSignature(body, `ts=${ts};h1=${h1}`, "secret", ts)).toBe(true);
-    expect(verifyPaddleSignature(body, `ts=${ts};h1=${h1}`, "wrong", ts)).toBe(false);
-    expect(verifyPaddleSignature(body, `ts=${ts};h1=${h1}`, "secret", ts + 600)).toBe(false);
   });
 });

@@ -1,19 +1,21 @@
 import type { Profile } from "@/lib/model/types";
+import { linkLabel, webUrl } from "@/lib/cv/links";
 
 const dates = (s: string, e: string) => [s, e].filter(Boolean).join(" – ");
 
 /** The CV as a document: single column, standard headings, the same structure as the Word export. */
 function H({ children }: { children: string }) {
-  return <h2 className="mb-2 mt-6 border-b border-neutral-300 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-700">{children}</h2>;
+  return <h2 className="mb-2 mt-5 break-after-avoid border-b border-neutral-300 pb-1 text-[12px] font-semibold uppercase tracking-[0.05em] text-neutral-700">{children}</h2>;
 }
 
 export function CvPreview({ cv }: { cv: Profile }) {
-  const contact = [cv.email, cv.phone, cv.location, ...cv.links].filter(Boolean);
+  const contact = [cv.email, cv.phone, cv.location].filter(Boolean);
   return (
-    <article className="cv-sheet bg-white px-8 py-10 font-sans text-[13px] leading-snug text-neutral-900 shadow-sm print:p-0 print:shadow-none" aria-label="CV preview">
+    <article className="cv-sheet bg-white px-8 py-10 font-sans text-[13px] leading-snug text-neutral-900 print:p-0" aria-label="CV preview">
       <h1 className="text-2xl font-semibold tracking-tight">{cv.name}</h1>
       {cv.headline && <p className="mt-0.5 text-[15px] text-neutral-700">{cv.headline}</p>}
       {contact.length > 0 && <p className="mt-1 text-[12px] text-neutral-600">{contact.join("  |  ")}</p>}
+      {cv.links.length > 0 && <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-[#244f78]">{cv.links.map((value) => { const url = webUrl(value); return url ? <a key={value} href={url} target="_blank" rel="noreferrer" className="break-all underline underline-offset-2">{linkLabel(url)}</a> : <span key={value}>{value}</span>; })}</div>}
 
       {cv.summary && (
         <>
@@ -21,6 +23,7 @@ export function CvPreview({ cv }: { cv: Profile }) {
           <p>{cv.summary}</p>
         </>
       )}
+      {cv.skills.length > 0 && <><H>Skills</H><p>{cv.skills.join(", ")}</p></>}
       {cv.experience.length > 0 && (
         <>
           <H>Experience</H>
@@ -47,11 +50,9 @@ export function CvPreview({ cv }: { cv: Profile }) {
         <>
           <H>Projects</H>
           {cv.projects.map((p) => (
-            <section key={p.id} className="mb-3 break-inside-avoid">
-              <p>
-                <span className="font-semibold">{p.name}</span>
-                {p.link && <span className="text-neutral-600"> {p.link}</span>}
-              </p>
+            <section key={p.id} className="mb-4">
+              <h3 className="font-semibold">{p.name}</h3>
+              {webUrl(p.link) && <a href={webUrl(p.link)!} className="mt-0.5 block break-all text-[11px] font-normal text-[#244f78] underline" target="_blank" rel="noreferrer">{linkLabel(p.link)}</a>}
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
                 {p.bullets.map((b, i) => (
                   <li key={i}>{b}</li>
@@ -82,12 +83,6 @@ export function CvPreview({ cv }: { cv: Profile }) {
               )}
             </section>
           ))}
-        </>
-      )}
-      {cv.skills.length > 0 && (
-        <>
-          <H>Skills</H>
-          <p>{cv.skills.join(", ")}</p>
         </>
       )}
       {cv.certifications.length > 0 && (

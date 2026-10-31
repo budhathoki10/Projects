@@ -1,8 +1,7 @@
-import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { chromium } from "@playwright/test";
-import postgres from "postgres";
-import { EMAIL_OUTBOX, TEST_DATABASE_URL } from "../playwright.config";
+import { EMAIL_OUTBOX } from "../playwright.config";
+import { withDb } from "./helpers";
 
 export const CV_PDF = "test-results/fixtures/asha-gurung-cv.pdf";
 
@@ -23,16 +22,8 @@ async function makeCvPdf() {
 }
 
 export default async function globalSetup() {
-  const url = new URL(TEST_DATABASE_URL);
-  const admin = postgres({ host: url.hostname, port: Number(url.port || 5432), user: url.username, password: url.password, database: "postgres", max: 1, onnotice: () => {} });
-  const [exists] = await admin`select 1 from pg_database where datname = ${url.pathname.slice(1)}`;
-  if (!exists) await admin.unsafe(`create database "${url.pathname.slice(1)}"`);
-  await admin.end();
-
-  execFileSync("npx", ["tsx", "scripts/migrate.mts"], { env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL }, stdio: "inherit" });
-  const sql = postgres(TEST_DATABASE_URL, { max: 1, onnotice: () => {} });
-  await sql`truncate users, sessions, auth_tokens, payments, profiles, jobs, documents, interviews, usage cascade`;
-  await sql.end();
+  // Start every run from an empty database.
+  await withDb((db) => db.dropDatabase());
   rmSync(EMAIL_OUTBOX, { force: true });
   await makeCvPdf();
 }

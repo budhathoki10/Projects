@@ -1,26 +1,33 @@
+import { FlashToast } from "@/components/toast";
 import Link from "next/link";
+import type { CSSProperties } from "react";
+import { HeroPreview } from "@/components/landing/hero-preview";
+import { HowItWorks } from "@/components/landing/how-it-works";
+import { Reveal } from "@/components/landing/reveal";
+import { ScrollWords } from "@/components/landing/scroll-words";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import { ButtonLink, Eyebrow, FormMessage } from "@/components/ui";
-import { LIMITS, PASSES } from "@/lib/plans";
+import { ButtonLink } from "@/components/ui";
+import { priceLabels } from "@/lib/billing/config";
+import { LIMITS } from "@/lib/plans";
 
 const STEPS = [
-  ["Add your CV once", "Upload a PDF or Word file, or paste it. Check what we read. From then on, it's the only source of facts about you."],
-  ["Paste a job", "A link or the description. You see straight away what you already show, what's only on your skills list, and what's missing."],
-  ["Tailor it", "Your most relevant work moves up, in the employer's words. You accept each change. Download a PDF or Word file."],
+  ["Add your CV once", "Upload a PDF or Word file, or paste it. Check what we read. From then on, it’s the only source of facts about you."],
+  ["Paste a job", "A link or the description. You see straight away what you already show, what’s only on your skills list, and what’s missing."],
+  ["Tailor it", "Your most relevant work moves up, in the employer’s words. You accept each change. Download a PDF or Word file."],
   ["Apply, then follow up", "Track every application. A week with no answer, we remind you, with a polite note ready to send."],
 ] as const;
 
 const FAQ = [
   {
     q: "Will it make things up about me?",
-    a: "No. Every suggestion is checked against your own CV. A change that adds an employer, title, number, tool, skill or qualification you didn't give us is blocked, and you'll see exactly which word was the problem.",
+    a: "No. Every suggestion is checked against your own CV. A change that adds an employer, title, number, tool, skill or qualification you didn’t give us is blocked, and you’ll see exactly which word was the problem.",
   },
   {
     q: "Does it apply to jobs for me?",
     a: "No. Mass auto-applying gets accounts banned on job sites and annoys recruiters. Shortlist helps you send fewer, better applications, yourself.",
   },
   {
-    q: "What if a site won't let you read the job post?",
+    q: "What if a site won’t let you read the job post?",
     a: "Some sites only show posts to signed-in users. Copy the description from the page and paste it in; it works the same.",
   },
   {
@@ -29,171 +36,211 @@ const FAQ = [
   },
   {
     q: "What happens to my CV?",
-    a: "It's stored in your account to do the work you ask for, never sold, and not used to train AI models. Download or delete everything from Settings at any time.",
-  },
-  {
-    q: "I'm in Nepal. Can I pay in rupees?",
-    a: `Yes. NPR ${PASSES.month.npr.toLocaleString("en-US")} for 30 days or NPR ${PASSES.quarter.npr.toLocaleString("en-US")} for 90 days, through Khalti.`,
+    a: "It’s stored in your account to do the work you ask for, never sold, and not used to train AI models. Download or delete everything from Settings at any time.",
   },
 ];
 
-function Sample() {
+const WHY = [
+  "Recruiters spend seconds on a CV, and screening software looks for the words in the job post. The same CV sent to twenty jobs reads as written for none of them. Tailoring each one is what job seekers say is the hardest part.",
+  "AI tools that “optimise” a CV often do it by adding skills you don’t have. That gets you an interview you can’t pass. Shortlist only rewords and reorders what you’ve actually done, and shows you every change before it’s used.",
+];
+
+const h2 = "text-2xl font-semibold tracking-[-0.02em] sm:text-[2rem] sm:leading-[1.15]";
+
+/** A headline broken into words that rise out of a mask, one after another. Plain CSS: it plays without JavaScript. */
+function Words({ text, from = 0 }: { text: string; from?: number }) {
+  return text.split(" ").map((word, i) => (
+    <span key={i}>
+      <span className="word">
+        <span style={{ "--i": from + i } as CSSProperties}>{word}</span>
+      </span>{" "}
+    </span>
+  ));
+}
+
+function Arrow() {
   return (
-    <div className="relative space-y-3" aria-label="Example of Shortlist matching a job post and tailoring a CV">
-      <div className="rounded-md border border-border bg-surface p-5 text-sm leading-relaxed shadow-sm">
-        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted">Job post · Customer Success Lead</p>
-        <p className="mt-2">
-          You&apos;ll own onboarding for new accounts, keep <mark className="marker bg-transparent text-inherit">churn</mark> low and work closely with
-          sales. Experience with <mark className="marker bg-transparent text-inherit">Zendesk</mark> and{" "}
-          <span className="underline decoration-dotted underline-offset-4">HubSpot</span> needed; <span className="pen-mark">Salesforce</span> is a plus.
-        </p>
-        <div className="mt-4 flex items-center gap-3 border-t border-border pt-3">
-          <span className="font-mono text-2xl font-medium tabular-nums">72%</span>
-          <span className="text-[13px] text-muted">Worth applying, with a tailored CV</span>
-        </div>
-      </div>
-      <div className="ml-6 rounded-md border border-strong-border bg-surface p-4 text-sm shadow-sm">
-        <p className="text-[13px] font-medium">Support Specialist, Brightdesk</p>
-        <p className="mt-2 leading-relaxed">
-          <del className="text-faint">Answered customer tickets </del>
-          <ins className="marker no-underline">Onboarded 40 new business accounts and handled their support in Zendesk, </ins>
-          keeping churn under 3%
-        </p>
-        <p className="mt-2 text-[13px] text-money">Using · every fact is in your CV</p>
-      </div>
-      <div className="ml-12 rounded-md border border-pen/40 bg-pen-soft/40 p-4 text-sm">
-        <p className="leading-relaxed">…managed renewals in <strong>Salesforce</strong></p>
-        <p className="mt-1 text-[13px] text-pen">Blocked · Salesforce isn&apos;t in your CV</p>
-      </div>
-    </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="transition-transform duration-200 ease-out group-hover:translate-x-0.5">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
   );
 }
 
 export default async function Home({ searchParams }: PageProps<"/">) {
   const { deleted } = await searchParams;
+  const prices = priceLabels();
+  const rows = [
+    ["Tailored CVs with match check", `${LIMITS.free.tailor} a month`, `${LIMITS.paid.tailor} a month`],
+    ["Cover letters", `${LIMITS.free.cover} a month`, `${LIMITS.paid.cover} a month`],
+    ["Interview practice", `${LIMITS.free.interview} sessions a month`, `${LIMITS.paid.interview} sessions a month`],
+    ["Application tracker and follow-up reminders", "Yes", "Yes"],
+    ["PDF download", "Yes", "Yes"],
+    ["Word (.docx) download", "No", "Yes"],
+  ] as const;
   return (
     <>
       <SiteHeader />
-      <main className="flex-1">
-        {deleted === "1" && (
-          <div className="mx-auto max-w-5xl px-5 pt-6">
-            <FormMessage success="Your account and everything in it has been deleted." />
+      <main id="main" className="flex-1">
+        <FlashToast message={deleted === "1" ? "Account deleted. Everything in it has been removed." : null} clear={["deleted"]} />
+
+        {/* Hero: the headline, then the product doing its one job. */}
+        <section className="relative isolate overflow-hidden">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+            <div className="dots absolute inset-0 opacity-60" />
+            <div className="wash absolute -right-40 top-6 size-[40rem] max-lg:size-[26rem]" />
           </div>
-        )}
-        <section className="mx-auto grid max-w-5xl gap-12 px-5 pb-20 pt-14 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
-          <div>
-            <Eyebrow>For anyone applying for jobs</Eyebrow>
-            <h1 className="mt-4 font-serif text-5xl font-medium leading-[1.05] tracking-tight sm:text-6xl">A CV for every job. Nothing made up.</h1>
-            <p className="mt-6 max-w-xl text-lg text-muted">
-              Paste a job post. Shortlist shows how well you fit, then rewrites your CV and cover letter for that job using only what&apos;s true about
-              you. It keeps track of every application and reminds you to follow up.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <ButtonLink href="/signup" className="px-5 py-2.5 text-[15px]">
-                Start free
-              </ButtonLink>
-              <span className="text-sm text-muted">{LIMITS.free.tailor} tailored CVs a month free. No card.</span>
+          <div className="mx-auto grid max-w-5xl gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-14 lg:pb-28 lg:pt-20">
+            <div>
+              <p className="rise inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-[13px] font-medium text-muted">
+                <i className="size-1.5 rounded-full bg-accent" />
+                For anyone applying for jobs
+              </p>
+              <h1 className="t-display mt-5 text-balance">
+                <Words text="A CV for every job." />
+                <span className="block text-accent">
+                  <Words text="Nothing made up." from={5} />
+                </span>
+              </h1>
+              <p className="rise mt-5 max-w-xl text-base leading-7 text-muted sm:text-lg" style={{ "--d": "650ms" } as CSSProperties}>
+                Paste a job post. Shortlist shows how well you fit, then rewrites your CV and cover letter for that job using only what&apos;s true about you. It keeps track of every application and
+                reminds you to follow up.
+              </p>
+              <div className="rise mt-8 flex flex-wrap items-center gap-x-5 gap-y-3" style={{ "--d": "800ms" } as CSSProperties}>
+                <ButtonLink href="/signup" size="lg" className="group">
+                  Start free
+                  <Arrow />
+                </ButtonLink>
+                <span className="text-sm text-muted">{LIMITS.free.tailor} tailored CVs a month free. No card.</span>
+              </div>
             </div>
+            <HeroPreview />
           </div>
-          <Sample />
         </section>
 
-        <section id="how" className="border-t border-border bg-surface">
-          <div className="mx-auto max-w-5xl px-5 py-20">
-            <h2 className="font-serif text-4xl font-medium tracking-tight">How it works</h2>
-            <ol className="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2">
-              {STEPS.map(([title, text], i) => (
-                <li key={title} className="border-t border-strong-border pt-4">
-                  <p className="font-mono text-xs text-faint">{String(i + 1).padStart(2, "0")}</p>
-                  <h3 className="mt-1 font-medium">{title}</h3>
-                  <p className="mt-1.5 text-sm text-muted">{text}</p>
-                </li>
+        <section id="how" className="scroll-mt-16 border-y border-border bg-tint">
+          <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
+            <HowItWorks steps={STEPS} />
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
+          <div className="grid gap-8 md:grid-cols-[1fr_1.4fr] md:gap-12">
+            <Reveal>
+              <h2 className={h2}>Why one CV doesn&apos;t work</h2>
+            </Reveal>
+            <div className="space-y-5 text-lg leading-8 text-foreground">
+              {WHY.map((text) => (
+                <ScrollWords key={text} text={text} />
               ))}
-            </ol>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-5xl px-5 py-20">
-          <div className="grid gap-10 md:grid-cols-[1fr_1.4fr]">
-            <h2 className="font-serif text-4xl font-medium tracking-tight">Why one CV doesn&apos;t work</h2>
-            <div className="space-y-4 text-muted">
-              <p>
-                Recruiters spend seconds on a CV, and screening software looks for the words in the job post. The same CV sent to twenty jobs reads as
-                written for none of them. Tailoring each one is what job seekers say is the hardest part.
-              </p>
-              <p>
-                AI tools that &ldquo;optimise&rdquo; a CV often do it by adding skills you don&apos;t have. That gets you an interview you can&apos;t pass.
-                Shortlist only rewords and reorders what you&apos;ve actually done, and shows you every change before it&apos;s used.
-              </p>
             </div>
           </div>
         </section>
 
-        <section id="pricing" className="border-t border-border bg-surface">
-          <div className="mx-auto max-w-5xl px-5 py-20">
-            <h2 className="font-serif text-4xl font-medium tracking-tight">Pricing</h2>
-            <p className="mt-3 text-muted">Pay once for your job hunt. No subscription to forget about.</p>
-            <div className="mt-10 overflow-x-auto rounded-md border border-border">
-              <table className="w-full text-sm">
+        <section id="pricing" className="scroll-mt-16 border-y border-border bg-surface">
+          <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
+            <Reveal>
+              <h2 className={h2}>Pricing</h2>
+              <p className="mt-3 text-muted">Start free. Upgrade monthly or yearly when you need more applications, and cancel whenever you like.</p>
+            </Reveal>
+            <div className="mt-8 grid gap-4 sm:hidden">
+              {[
+                { name: "Free", price: "$0", note: null, col: 1, tinted: false },
+                { name: "Paid plan", price: prices.monthly ?? "Monthly", note: prices.yearly ? `or ${prices.yearly}` : null, col: 2, tinted: true },
+              ].map((plan, i) => (
+                <Reveal key={plan.name} delay={i * 0.08} className={`rounded-xl border p-5 ${plan.tinted ? "border-accent/40 bg-tint" : "border-border bg-background"}`}>
+                  <p className={`text-sm font-medium ${plan.tinted ? "text-accent-strong" : ""}`}>{plan.name}</p>
+                  <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{plan.price}</p>
+                  {plan.note && <p className="mt-0.5 text-[13px] text-muted">{plan.note}</p>}
+                  <ul className="mt-4 space-y-2.5 border-t border-border pt-4 text-sm">
+                    {rows.map((r) => (
+                      <li key={r[0]} className="flex items-baseline justify-between gap-4">
+                        <span className="text-muted">{r[0]}</span>
+                        <span className="shrink-0 text-right font-medium">{r[plan.col]}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Reveal>
+              ))}
+            </div>
+            <Reveal className="mt-8 hidden overflow-x-auto rounded-xl border border-border shadow-[0_1px_0_rgb(17_19_26/0.03)] sm:block">
+              <table className="w-full min-w-[32rem] text-sm">
+                <caption className="sr-only">What each plan includes</caption>
                 <thead className="border-b border-border bg-background text-left">
                   <tr>
-                    <th className="px-4 py-4 sm:w-1/2" />
-                    <th className="px-4 py-4">
-                      <span className="block font-medium">Free</span>
-                      <span className="font-mono text-2xl tabular-nums">$0</span>
+                    <th scope="col" className="px-4 py-5 sm:w-1/2">
+                      <span className="sr-only">Feature</span>
                     </th>
-                    <th className="px-4 py-4">
-                      <span className="block font-medium">Job-hunt pass</span>
-                      <span className="font-mono text-2xl tabular-nums">${PASSES.month.usd}</span>
-                      <span className="text-muted"> / 30 days</span>
+                    <th scope="col" className="px-4 py-5">
+                      <span className="block font-medium">Free</span>
+                      <span className="block text-2xl font-semibold tracking-tight tabular-nums">$0</span>
+                    </th>
+                    <th scope="col" className="bg-tint px-4 py-5">
+                      <span className="block font-medium text-accent-strong">Paid plan</span>
+                      <span className="block text-2xl font-semibold tracking-tight tabular-nums">{prices.monthly ?? "Monthly"}</span>
+                      {prices.yearly && <span className="mt-0.5 block text-[13px] font-normal text-muted">or {prices.yearly}</span>}
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {[
-                    ["Tailored CVs with match check", `${LIMITS.free.tailor} a month`, "As many as you need"],
-                    ["Cover letters", `${LIMITS.free.cover} a month`, "As many as you need"],
-                    ["Interview practice", `${LIMITS.free.interview} sessions a month`, "As many as you need"],
-                    ["Application tracker and follow-up reminders", "Yes", "Yes"],
-                    ["PDF download", "Yes", "Yes"],
-                    ["Word (.docx) download", "No", "Yes"],
-                  ].map(([row, free, pass]) => (
-                    <tr key={row}>
-                      <td className="px-4 py-3 text-muted">{row}</td>
-                      <td className="px-4 py-3">{free}</td>
-                      <td className="px-4 py-3">{pass}</td>
+                  {rows.map(([row, free, pass]) => (
+                    <tr key={row} className="transition-colors duration-150 hover:bg-surface-hover">
+                      <th scope="row" className="px-4 py-3.5 text-left font-normal text-muted">
+                        {row}
+                      </th>
+                      <td className="px-4 py-3.5">{free}</td>
+                      <td className="bg-tint px-4 py-3.5 font-medium">{pass}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-              <ButtonLink href="/signup">Start free</ButtonLink>
-              <p className="text-sm text-muted">
-                Or ${PASSES.quarter.usd} for 90 days. NPR {PASSES.month.npr.toLocaleString("en-US")} / {PASSES.quarter.npr.toLocaleString("en-US")} with
-                Khalti. Never renews on its own. 14-day refund.
-              </p>
-            </div>
+            </Reveal>
+            <Reveal className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3" delay={0.1}>
+              <ButtonLink href="/signup" className="group">
+                Start free
+                <Arrow />
+              </ButtonLink>
+              <p className="text-sm text-muted">Monthly or yearly. Cancel any time and keep what you&apos;ve paid for until it runs out.</p>
+            </Reveal>
           </div>
         </section>
 
-        <section className="mx-auto max-w-5xl px-5 py-20">
-          <h2 className="font-serif text-4xl font-medium tracking-tight">Questions</h2>
+        <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
+          <Reveal>
+            <h2 className={h2}>Questions</h2>
+          </Reveal>
           <dl className="mt-8 divide-y divide-border border-y border-border">
-            {FAQ.map((f) => (
-              <div key={f.q} className="grid gap-2 py-5 md:grid-cols-[1fr_1.6fr]">
+            {FAQ.map((f, i) => (
+              <Reveal key={f.q} delay={Math.min(i, 3) * 0.06} className="grid gap-2 py-5 transition-colors duration-150 md:grid-cols-[1fr_1.6fr] md:gap-8">
                 <dt className="font-medium">{f.q}</dt>
-                <dd className="text-muted">{f.a}</dd>
-              </div>
+                <dd className="leading-6 text-muted">{f.a}</dd>
+              </Reveal>
             ))}
           </dl>
           <p className="mt-8 text-sm text-muted">
             Something else?{" "}
-            <Link href="/terms" className="underline underline-offset-4">
+            <Link href="/terms" className="text-accent underline underline-offset-4">
               Read the terms
             </Link>{" "}
             or write to us.
           </p>
+        </section>
+
+        {/* The close: one clear next step, on a solid brand-colour band. */}
+        <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 sm:pb-24">
+          <Reveal className="relative overflow-hidden rounded-2xl bg-accent px-6 py-12 text-on-accent sm:px-12 sm:py-16">
+            <div aria-hidden="true" className="dots absolute inset-0 opacity-20 [--dot:currentColor]" />
+            <div className="relative max-w-xl">
+              <h2 className="text-2xl font-semibold tracking-[-0.02em] sm:text-[2rem] sm:leading-[1.15]">Your next application, tailored today.</h2>
+              <p className="mt-3 text-base leading-7 opacity-90">Add your CV once, paste a job, and check every change before it&apos;s used.</p>
+              <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
+                <ButtonLink href="/signup" size="lg" className="group bg-on-accent! text-accent! hover:opacity-90">
+                  Start free
+                  <Arrow />
+                </ButtonLink>
+                <span className="text-sm opacity-90">{LIMITS.free.tailor} tailored CVs a month free. No card.</span>
+              </div>
+            </div>
+          </Reveal>
         </section>
       </main>
       <SiteFooter />

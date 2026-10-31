@@ -17,7 +17,7 @@ describe("reading a CV without AI", () => {
     expect(p.email).toBe("asha.gurung@example.com");
     expect(p.phone).toBe("+977 9801234567");
     expect(p.location).toBe("Kathmandu, Nepal");
-    expect(p.links).toEqual(["linkedin.com/in/ashagurung"]);
+    expect(p.links).toEqual(["https://linkedin.com/in/ashagurung"]);
   });
 
   it("splits roles into title, employer, place, dates and bullets", () => {

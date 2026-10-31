@@ -2,34 +2,39 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { cvFileToText, MAX_CV_BYTES, UnreadableFileError } from "@/lib/cv/extract-text";
 import { parseCv } from "@/lib/cv/parse";
+import { ProfileSchema, profileError } from "@/lib/cv/profile-schema";
+import { profileNeedsRepair } from "@/lib/cv/quality";
+import { originalCvFile } from "@/lib/cv/original";
 import type { Profile } from "@/lib/model/types";
 import { rescoreAll } from "@/lib/services/jobs";
 import { getProfile, saveProfile } from "@/lib/services/profile";
+import { discardCvImport, getCvImport, stageCvImport } from "@/lib/services/cv-imports";
 import { refundAllowance, spendAllowance } from "@/lib/services/usage";
 import { cleanText, localId } from "@/lib/text";
 
-export type ProfileState = { error?: string; success?: string } | undefined;
+export type ProfileState = { error?: string; success?: string; preview?: Profile; method?: "ai" | "basic"; source?: string; importId?: string; originalType?: string } | undefined;
 
-/** Read a CV (file or pasted text) into the profile, replacing what's there. */
+/** Extract a draft for review. The saved profile stays in place until the user confirms. */
 export async function importCv(_: ProfileState, formData: FormData): Promise<ProfileState> {
   const user = await requireUser();
   const file = formData.get("file");
   const pasted = cleanText(String(formData.get("text") ?? ""));
   let text = pasted;
+  let bytes: Uint8Array | null = null;
   if (file instanceof File && file.size > 0) {
-    if (file.size > MAX_CV_BYTES) return { error: "That file is over 5 MB. Export a smaller PDF, or paste the text." };
+    if (file.size > MAX_CV_BYTES) return { error: "This file exceeds the 5 MB limit. Upload a smaller file, or paste your CV text." };
     try {
-      text = await cvFileToText({ name: file.name, type: file.type, bytes: new Uint8Array(await file.arrayBuffer()) });
+      bytes = new Uint8Array(await file.arrayBuffer());
+      text = await cvFileToText({ name: file.name, type: file.type, bytes });
     } catch (err) {
-      return { error: err instanceof UnreadableFileError ? err.message : "We couldn't read that file." };
+      return { error: err instanceof UnreadableFileError ? err.message : "Unable to read this file. Try another file, or paste your CV text." };
     }
   }
   if (text.length < 80) return { error: "Upload your CV, or paste at least a few lines of it." };
-  if (!(await spendAllowance(user, "import"))) return { error: "You've imported a lot of CVs this month. Edit your profile below instead." };
+  if (!(await spendAllowance(user, "import"))) return { error: "You’ve reached your monthly CV import limit. You can still edit your saved profile below." };
 
   const { profile, method } = await parseCv(text).catch(async (err) => {
     await refundAllowance(user.id, "import");
@@ -37,31 +42,29 @@ export async function importCv(_: ProfileState, formData: FormData): Promise<Pro
   });
   if (!profile.email) profile.email = user.email;
   if (!profile.name) profile.name = user.name;
-  await saveProfile(user.id, profile);
+  const original = bytes && file instanceof File ? originalCvFile(file.name, file.type, bytes, profile) : null;
+  const importId = await stageCvImport(user.id, { profile, method, sourceText: text, original });
+  return { preview: profile, method, source: text, importId, originalType: original?.type };
+}
+
+export async function confirmCvImport(_: ProfileState, formData: FormData): Promise<ProfileState> {
+  const user = await requireUser();
+  const pending = await getCvImport(user.id, String(formData.get("importId") ?? ""));
+  if (!pending) return { error: "This review has expired or was replaced by a newer upload. Read your CV again; your saved profile is unchanged." };
+  const parsed = ProfileSchema.safeParse(pending.profile);
+  if (!parsed.success) return { error: profileError(parsed.error.issues) };
+  const profile = parsed.data;
+  if (profileNeedsRepair(profile)) return { error: "Some project descriptions were read as titles. Re-upload the original CV so we can recover its sections and hidden URLs." };
+  if (!profile.experience.length && !profile.projects.length && !profile.education.length) {
+    return { error: "No experience, projects or education were recognised. Try pasting the CV text, or fill in your profile below. Your existing profile is unchanged." };
+  }
+  await saveProfile(user.id, profile, pending.sourceText, pending.original);
+  await discardCvImport(user.id, pending._id);
   await rescoreAll(user.id, profile);
   revalidatePath("/app", "layout");
   // A redirect, because the import form moves once a profile exists and would lose its message.
-  redirect(`/app/profile?imported=${method}&at=${Date.now()}`);
+  redirect(`/app/profile?imported=${pending.method}&at=${Date.now()}`);
 }
-
-const Str = (max: number) => z.string().trim().max(max);
-const ProfileSchema = z.object({
-  name: Str(120).min(1, "Add your name"),
-  headline: Str(160),
-  email: Str(200),
-  phone: Str(60),
-  location: Str(160),
-  links: z.array(Str(300)).max(10),
-  summary: Str(2000),
-  experience: z
-    .array(z.object({ id: Str(60), title: Str(160), company: Str(160), location: Str(160), start: Str(40), end: Str(40), bullets: z.array(Str(600)).max(20) }))
-    .max(30),
-  education: z.array(z.object({ id: Str(60), school: Str(200), degree: Str(200), start: Str(40), end: Str(40), details: z.array(Str(400)).max(10) })).max(15),
-  skills: z.array(Str(80)).max(100),
-  projects: z.array(z.object({ id: Str(60), name: Str(200), link: Str(300), bullets: z.array(Str(600)).max(10) })).max(20),
-  certifications: z.array(Str(200)).max(30),
-  languages: z.array(Str(80)).max(20),
-});
 
 /** Save the edited profile. Empty rows and bullets are dropped, and entries keep stable ids. */
 export async function updateProfile(_: ProfileState, formData: FormData): Promise<ProfileState> {
@@ -70,10 +73,10 @@ export async function updateProfile(_: ProfileState, formData: FormData): Promis
   try {
     raw = JSON.parse(String(formData.get("profile") ?? "{}"));
   } catch {
-    return { error: "Couldn't read the form. Reload and try again." };
+    return { error: "Unable to read your profile changes. Copy any unsaved text before refreshing this page, then try again." };
   }
   const parsed = ProfileSchema.safeParse(raw);
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return { error: profileError(parsed.error.issues) };
   const p = parsed.data;
   const nonEmpty = (xs: string[]) => xs.map((x) => x.trim()).filter(Boolean);
   const profile: Profile = {
@@ -91,7 +94,7 @@ export async function updateProfile(_: ProfileState, formData: FormData): Promis
   await saveProfile(user.id, profile);
   await rescoreAll(user.id, profile);
   revalidatePath("/app", "layout");
-  return { success: "Saved. Your job matches are updated, and new tailored CVs will use this version." };
+  return { success: "Profile saved. Your job matches have been updated. New application documents will use this version." };
 }
 
 /** Download everything we hold in the profile, as JSON. */
