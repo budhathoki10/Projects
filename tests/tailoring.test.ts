@@ -214,3 +214,30 @@ describe("exports and small helpers", () => {
     expect(monthKey(now)).toBe("2026-10");
   });
 });
+
+describe("fallback cover letter wording and gap list", () => {
+  const sample = "Requirements\n- 3+ years in customer support or customer success\n- Experience with Zendesk and HubSpot\n- Strong written communication in English\n- Comfortable running onboarding calls with business customers\nNice to have\n- Salesforce experience\n- Experience reducing churn";
+  const noisy = { ...heuristicJob(sample), keywords: ["3+ years", "years", "onboarding calls", "business customers", "Zendesk", "HubSpot", "Salesforce", "reducing churn"] };
+
+  it("never treats 'years' or other filler as a skill the candidate worked with", async () => {
+    const post2 = { ...noisy, title: "Customer Success Lead", company: "Northwind" };
+    post2.requirements = [{ text: "3+ years in customer support or customer success", kind: "must", keywords: ["years", "3+ years"] }, ...post2.requirements];
+    const letter = await writeCoverLetter(profile, post2, scoreMatch(profile, post2));
+    expect(letter.text).not.toMatch(/\byears\b.*\bwhich\b|with years|and years/i);
+    expect(letter.text).not.toContain("I've already worked with");
+    expect(letter.text).toMatch(/Zendesk, which is what this role calls for/);
+    expect(letter.flags).toEqual([]);
+  });
+
+  it("offers only concrete addable skills as gaps", async () => {
+    const { cleanPost } = await import("@/lib/jobs/extract");
+    const { isAddableSkill } = await import("@/lib/match/skills");
+    const cleaned = cleanPost(noisy);
+    const gaps = scoreMatch(profile, cleaned).keywords.filter((k) => k.where === "missing" && isAddableSkill(k.keyword)).map((k) => k.keyword);
+    expect(gaps.sort()).toEqual(["HubSpot", "Salesforce"]);
+    // Even without cleaning, the match and gap filter ignore the noise.
+    const raw = scoreMatch(profile, noisy).keywords.filter((k) => k.where === "missing" && isAddableSkill(k.keyword)).map((k) => k.keyword);
+    expect(raw.sort()).toEqual(["HubSpot", "Salesforce"]);
+    expect(scoreMatch(profile, heuristicJob(sample)).keywords.filter((k) => k.where === "missing" && isAddableSkill(k.keyword)).map((k) => k.keyword).sort()).toEqual(["HubSpot", "Salesforce"]);
+  });
+});

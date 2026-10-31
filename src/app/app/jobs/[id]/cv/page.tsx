@@ -17,6 +17,7 @@ import { recommendTemplates } from "@/lib/templates/registry";
 import { usageThisMonth } from "@/lib/services/usage";
 import { jobHasCriteria } from "@/lib/jobs/quality";
 import { scoreMatch } from "@/lib/match/score";
+import { isAddableSkill } from "@/lib/match/skills";
 
 export const metadata: Metadata = { title: "Tailored CV" };
 
@@ -38,7 +39,7 @@ export default async function CvTab({ params }: PageProps<"/app/jobs/[id]/cv">) 
   const left = Math.max(0, limits.tailor - usage.tailor);
   // What the post asks for that your CV doesn't mention at all. Scored live, so an addition disappears at once.
   const gaps = scoreMatch(profile, job.post)
-    .keywords.filter((k) => k.where === "missing")
+    .keywords.filter((k) => k.where === "missing" && isAddableSkill(k.keyword))
     .map((k) => k.keyword)
     .slice(0, 8);
   const roles = profile.experience.map((e) => ({ id: e.id, label: [e.title, e.company].filter(Boolean).join(", ") || "Untitled role" }));
